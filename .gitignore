@@ -8,6 +8,13 @@
 truffle/bin/
 spawn/bin/
 
+# Lambda binaries
+bootstrap
+function.zip
+**/lambda/*/bootstrap
+**/lambda/*-orchestrator
+**/lambda/*-handler
+
 # Test binary, built with `go test -c`
 *.test
 

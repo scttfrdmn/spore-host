@@ -1,0 +1,87 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Parameters:
+  Environment:
+    Type: String
+    Default: production
+    AllowedValues: [production, staging]
+    Description: Deployment environment
+
+Resources:
+  AutoScaleOrchestratorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub spawn-autoscale-orchestrator-${Environment}
+      Runtime: provided.al2023
+      Architectures: [arm64]
+      Handler: bootstrap
+      CodeUri: .
+      MemorySize: 512
+      Timeout: 900
+      Environment:
+        Variables:
+          AUTOSCALE_GROUPS_TABLE: !Ref AutoScaleGroupsTable
+          HYBRID_REGISTRY_TABLE: spawn-hybrid-registry
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref AutoScaleGroupsTable
+        - DynamoDBCrudPolicy:
+            TableName: spawn-hybrid-registry
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ec2:DescribeInstances
+                - ec2:RunInstances
+                - ec2:TerminateInstances
+                - ec2:CreateTags
+              Resource: '*'
+        - Statement:
+            - Effect: Allow
+              Action:
+                - lambda:InvokeFunction
+              Resource: !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:spawn-autoscale-orchestrator-${Environment}
+      Events:
+        ScheduleEvent:
+          Type: Schedule
+          Properties:
+            Schedule: rate(1 minute)
+            Enabled: true
+
+  AutoScaleGroupsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub spawn-autoscale-groups-${Environment}
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: autoscale_group_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: autoscale_group_id
+          KeyType: HASH
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: mycelium
+
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/spawn-autoscale-orchestrator-${Environment}
+      RetentionInDays: 30
+
+Outputs:
+  FunctionArn:
+    Description: ARN of the autoscale orchestrator Lambda function
+    Value: !GetAtt AutoScaleOrchestratorFunction.Arn
+    Export:
+      Name: !Sub ${Environment}-autoscale-orchestrator-arn
+
+  TableName:
+    Description: Name of the autoscale groups DynamoDB table
+    Value: !Ref AutoScaleGroupsTable
+    Export:
+      Name: !Sub ${Environment}-autoscale-groups-table
