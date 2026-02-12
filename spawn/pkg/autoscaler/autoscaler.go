@@ -17,6 +17,7 @@ type AutoScaler struct {
 	dbClient           *Client
 	healthChecker      *HealthChecker
 	capacityReconciler *CapacityReconciler
+	policyEvaluator    *PolicyEvaluator
 }
 
 // NewAutoScaler creates a new autoscaler
@@ -24,12 +25,14 @@ func NewAutoScaler(config *Config) *AutoScaler {
 	dbClient := NewClient(config.DynamoClient, config.TableName)
 	healthChecker := NewHealthChecker(config.EC2Client, config.DynamoClient, config.RegistryTable)
 	capacityReconciler := NewCapacityReconciler(config.EC2Client)
+	policyEvaluator := NewPolicyEvaluator(config.SQSClient)
 
 	return &AutoScaler{
 		config:             config,
 		dbClient:           dbClient,
 		healthChecker:      healthChecker,
 		capacityReconciler: capacityReconciler,
+		policyEvaluator:    policyEvaluator,
 	}
 }
 
@@ -45,6 +48,32 @@ func (a *AutoScaler) Reconcile(ctx context.Context, groupID string) error {
 	if group.Status != "active" {
 		log.Printf("skipping group %s (status: %s)", group.GroupName, group.Status)
 		return nil
+	}
+
+	// Evaluate scaling policy (if present)
+	if group.ScalingPolicy != nil {
+		newDesired, queueDepth, changed, err := a.policyEvaluator.EvaluatePolicy(ctx, group)
+		if err != nil {
+			log.Printf("policy evaluation failed for %s: %v", group.GroupName, err)
+		} else if changed {
+			log.Printf("[%s] policy triggered: %d → %d (queue: %d msgs)",
+				group.GroupName, group.DesiredCapacity, newDesired, queueDepth)
+
+			oldDesired := group.DesiredCapacity
+			group.DesiredCapacity = newDesired
+
+			// Update scaling state
+			if group.ScalingState == nil {
+				group.ScalingState = &ScalingState{}
+			}
+			group.ScalingState.LastQueueDepth = queueDepth
+			group.ScalingState.LastCalculatedCapacity = newDesired
+			if newDesired > oldDesired {
+				group.ScalingState.LastScaleUp = time.Now()
+			} else {
+				group.ScalingState.LastScaleDown = time.Now()
+			}
+		}
 	}
 
 	log.Printf("reconciling group %s (desired: %d)", group.GroupName, group.DesiredCapacity)

@@ -16,6 +16,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"github.com/aws/aws-sdk-go-v2/service/lambda"
 	lambdaTypes "github.com/aws/aws-sdk-go-v2/service/lambda/types"
+	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/scttfrdmn/mycelium/spawn/pkg/autoscaler"
 	"github.com/spf13/cobra"
 )
@@ -47,6 +48,14 @@ var (
 	autoscaleNewDesired int
 	autoscaleNewMin     int
 	autoscaleNewMax     int
+
+	// Scaling policy flags
+	scalingPolicy             string
+	queueURL                  string
+	targetMessagesPerInstance int
+	scaleUpCooldown           int
+	scaleDownCooldown         int
+	removePolicyFlag          bool
 
 	// Global flags
 	autoscaleTableName string
@@ -102,6 +111,20 @@ var autoscaleTerminateCmd = &cobra.Command{
 	RunE:  runAutoscaleTerminate,
 }
 
+var autoscaleSetPolicyCmd = &cobra.Command{
+	Use:   "set-policy <group-name>",
+	Short: "Set or update scaling policy for an autoscale group",
+	Args:  cobra.ExactArgs(1),
+	RunE:  runAutoscaleSetPolicy,
+}
+
+var autoscaleScalingActivityCmd = &cobra.Command{
+	Use:   "scaling-activity <group-name>",
+	Short: "Show recent scaling activity for an autoscale group",
+	Args:  cobra.ExactArgs(1),
+	RunE:  runAutoscaleScalingActivity,
+}
+
 func init() {
 	rootCmd.AddCommand(autoscaleCmd)
 	autoscaleCmd.AddCommand(autoscaleLaunchCmd)
@@ -111,6 +134,8 @@ func init() {
 	autoscaleCmd.AddCommand(autoscalePauseCmd)
 	autoscaleCmd.AddCommand(autoscaleResumeCmd)
 	autoscaleCmd.AddCommand(autoscaleTerminateCmd)
+	autoscaleCmd.AddCommand(autoscaleSetPolicyCmd)
+	autoscaleCmd.AddCommand(autoscaleScalingActivityCmd)
 
 	// Global flags
 	autoscaleCmd.PersistentFlags().StringVar(&autoscaleTableName, "table", "spawn-autoscale-groups", "DynamoDB table name")
@@ -132,6 +157,17 @@ func init() {
 	autoscaleLaunchCmd.Flags().StringVar(&autoscaleUserData, "user-data", "", "User data script (base64 encoded)")
 	autoscaleLaunchCmd.Flags().StringToStringVar(&autoscaleTags, "tags", map[string]string{}, "Additional tags (key=value)")
 
+	autoscaleLaunchCmd.Flags().StringVar(&scalingPolicy, "scaling-policy", "",
+		"Scaling policy type: 'queue-depth' (empty = manual mode)")
+	autoscaleLaunchCmd.Flags().StringVar(&queueURL, "queue-url", "",
+		"SQS queue URL for queue-depth policy (required if --scaling-policy=queue-depth)")
+	autoscaleLaunchCmd.Flags().IntVar(&targetMessagesPerInstance, "target-messages-per-instance", 10,
+		"Target messages per instance for queue-depth scaling")
+	autoscaleLaunchCmd.Flags().IntVar(&scaleUpCooldown, "scale-up-cooldown", 60,
+		"Scale-up cooldown in seconds")
+	autoscaleLaunchCmd.Flags().IntVar(&scaleDownCooldown, "scale-down-cooldown", 300,
+		"Scale-down cooldown in seconds")
+
 	autoscaleLaunchCmd.MarkFlagRequired("name")
 	autoscaleLaunchCmd.MarkFlagRequired("desired-capacity")
 	autoscaleLaunchCmd.MarkFlagRequired("instance-type")
@@ -141,6 +177,20 @@ func init() {
 	autoscaleUpdateCmd.Flags().IntVar(&autoscaleNewDesired, "desired-capacity", -1, "New desired capacity")
 	autoscaleUpdateCmd.Flags().IntVar(&autoscaleNewMin, "min-capacity", -1, "New minimum capacity")
 	autoscaleUpdateCmd.Flags().IntVar(&autoscaleNewMax, "max-capacity", -1, "New maximum capacity")
+
+	// Set-policy flags
+	autoscaleSetPolicyCmd.Flags().StringVar(&scalingPolicy, "scaling-policy", "",
+		"Scaling policy type: 'queue-depth'")
+	autoscaleSetPolicyCmd.Flags().StringVar(&queueURL, "queue-url", "",
+		"SQS queue URL for queue-depth policy")
+	autoscaleSetPolicyCmd.Flags().IntVar(&targetMessagesPerInstance, "target-messages-per-instance", 10,
+		"Target messages per instance for queue-depth scaling")
+	autoscaleSetPolicyCmd.Flags().IntVar(&scaleUpCooldown, "scale-up-cooldown", 60,
+		"Scale-up cooldown in seconds")
+	autoscaleSetPolicyCmd.Flags().IntVar(&scaleDownCooldown, "scale-down-cooldown", 300,
+		"Scale-down cooldown in seconds")
+	autoscaleSetPolicyCmd.Flags().BoolVar(&removePolicyFlag, "none", false,
+		"Remove scaling policy (revert to manual mode)")
 }
 
 func getAutoscaler(ctx context.Context) (*autoscaler.AutoScaler, error) {
@@ -154,10 +204,12 @@ func getAutoscaler(ctx context.Context) (*autoscaler.AutoScaler, error) {
 
 	ec2Client := ec2.NewFromConfig(cfg)
 	dynamoClient := dynamodb.NewFromConfig(cfg)
+	sqsClient := sqs.NewFromConfig(cfg)
 
 	return autoscaler.NewAutoScaler(&autoscaler.Config{
 		EC2Client:     ec2Client,
 		DynamoClient:  dynamoClient,
+		SQSClient:     sqsClient,
 		TableName:     tableName,
 		RegistryTable: "spawn-hybrid-registry",
 	}), nil
@@ -169,6 +221,16 @@ func runAutoscaleLaunch(cmd *cobra.Command, args []string) error {
 	// Validate inputs
 	if autoscaleDesired < 1 {
 		return fmt.Errorf("desired-capacity must be at least 1")
+	}
+
+	// Validate scaling policy flags
+	if scalingPolicy != "" {
+		if scalingPolicy != "queue-depth" {
+			return fmt.Errorf("invalid scaling policy: %s (only 'queue-depth' supported)", scalingPolicy)
+		}
+		if queueURL == "" {
+			return fmt.Errorf("--queue-url required when --scaling-policy is set")
+		}
 	}
 
 	// Set defaults
@@ -227,6 +289,17 @@ func runAutoscaleLaunch(cmd *cobra.Command, args []string) error {
 		},
 		HealthCheckInterval: 60 * time.Second,
 		ReplacementStrategy: "immediate",
+	}
+
+	// Add scaling policy if specified
+	if scalingPolicy == "queue-depth" {
+		group.ScalingPolicy = &autoscaler.ScalingPolicy{
+			PolicyType:                "queue-depth",
+			QueueURL:                  queueURL,
+			TargetMessagesPerInstance: targetMessagesPerInstance,
+			ScaleUpCooldownSeconds:    scaleUpCooldown,
+			ScaleDownCooldownSeconds:  scaleDownCooldown,
+		}
 	}
 
 	if err := as.CreateGroup(ctx, group); err != nil {
@@ -548,6 +621,109 @@ func runAutoscaleTerminate(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
+func runAutoscaleSetPolicy(cmd *cobra.Command, args []string) error {
+	ctx := context.Background()
+	groupName := args[0]
+
+	as, err := getAutoscaler(ctx)
+	if err != nil {
+		return err
+	}
+
+	group, err := as.GetGroupByName(ctx, groupName)
+	if err != nil {
+		return fmt.Errorf("get group: %w", err)
+	}
+
+	// Handle --none flag (remove policy)
+	if removePolicyFlag {
+		group.ScalingPolicy = nil
+		fmt.Printf("Removed scaling policy from %s (reverted to manual mode)\n", groupName)
+	} else {
+		// Validate and set policy
+		if scalingPolicy == "" {
+			return fmt.Errorf("--scaling-policy required (or use --none to remove)")
+		}
+		if scalingPolicy != "queue-depth" {
+			return fmt.Errorf("invalid scaling policy: %s (only 'queue-depth' supported)", scalingPolicy)
+		}
+		if queueURL == "" {
+			return fmt.Errorf("--queue-url required when --scaling-policy is set")
+		}
+
+		group.ScalingPolicy = &autoscaler.ScalingPolicy{
+			PolicyType:                scalingPolicy,
+			QueueURL:                  queueURL,
+			TargetMessagesPerInstance: targetMessagesPerInstance,
+			ScaleUpCooldownSeconds:    scaleUpCooldown,
+			ScaleDownCooldownSeconds:  scaleDownCooldown,
+		}
+
+		fmt.Printf("Updated scaling policy for %s\n", groupName)
+	}
+
+	// Update group in DynamoDB
+	if err := as.UpdateGroup(ctx, group); err != nil {
+		return fmt.Errorf("update group: %w", err)
+	}
+
+	// Trigger Lambda
+	if err := triggerLambda(ctx, group.AutoScaleGroupID); err != nil {
+		log.Printf("Warning: failed to trigger Lambda: %v", err)
+	} else {
+		fmt.Println("Triggered immediate reconciliation.")
+	}
+
+	return nil
+}
+
+func runAutoscaleScalingActivity(cmd *cobra.Command, args []string) error {
+	ctx := context.Background()
+	groupName := args[0]
+
+	as, err := getAutoscaler(ctx)
+	if err != nil {
+		return err
+	}
+
+	group, err := as.GetGroupByName(ctx, groupName)
+	if err != nil {
+		return fmt.Errorf("get group: %w", err)
+	}
+
+	// Display scaling state
+	if group.ScalingPolicy == nil {
+		fmt.Println("No scaling policy configured (manual mode)")
+		return nil
+	}
+
+	fmt.Printf("Scaling Policy: %s\n", group.ScalingPolicy.PolicyType)
+	fmt.Printf("Queue: %s\n", group.ScalingPolicy.QueueURL)
+	fmt.Printf("Target: %d messages/instance\n", group.ScalingPolicy.TargetMessagesPerInstance)
+	fmt.Println()
+
+	if group.ScalingState == nil {
+		fmt.Println("No scaling activity yet")
+		return nil
+	}
+
+	fmt.Printf("Last Queue Depth: %d messages\n", group.ScalingState.LastQueueDepth)
+	fmt.Printf("Last Calculated Capacity: %d instances\n", group.ScalingState.LastCalculatedCapacity)
+
+	if !group.ScalingState.LastScaleUp.IsZero() {
+		fmt.Printf("Last Scale Up: %s (%s ago)\n",
+			group.ScalingState.LastScaleUp.Format(time.RFC3339),
+			time.Since(group.ScalingState.LastScaleUp).Round(time.Second))
+	}
+	if !group.ScalingState.LastScaleDown.IsZero() {
+		fmt.Printf("Last Scale Down: %s (%s ago)\n",
+			group.ScalingState.LastScaleDown.Format(time.RFC3339),
+			time.Since(group.ScalingState.LastScaleDown).Round(time.Second))
+	}
+
+	return nil
+}
+
 func triggerLambda(ctx context.Context, groupID string) error {
 	cfg, err := config.LoadDefaultConfig(ctx)
 	if err != nil {
@@ -580,4 +756,29 @@ func printGroupStatus(group *autoscaler.AutoScaleGroup) {
 		fmt.Printf("Last Scale Event: %s\n", group.LastScaleEvent.Format("2006-01-02 15:04:05 MST"))
 	}
 	fmt.Printf("Health Check Interval: %v\n", group.HealthCheckInterval)
+
+	// Display scaling policy info
+	if group.ScalingPolicy != nil {
+		fmt.Printf("\nScaling Policy: %s\n", group.ScalingPolicy.PolicyType)
+		fmt.Printf("  Queue: %s\n", group.ScalingPolicy.QueueURL)
+		fmt.Printf("  Target: %d messages/instance\n", group.ScalingPolicy.TargetMessagesPerInstance)
+		fmt.Printf("  Cooldowns: up=%ds, down=%ds\n",
+			group.ScalingPolicy.ScaleUpCooldownSeconds,
+			group.ScalingPolicy.ScaleDownCooldownSeconds)
+
+		if group.ScalingState != nil {
+			fmt.Printf("\nCurrent State:\n")
+			fmt.Printf("  Queue Depth: %d messages\n", group.ScalingState.LastQueueDepth)
+			if !group.ScalingState.LastScaleUp.IsZero() {
+				fmt.Printf("  Last Scale Up: %s ago\n",
+					time.Since(group.ScalingState.LastScaleUp).Round(time.Second))
+			}
+			if !group.ScalingState.LastScaleDown.IsZero() {
+				fmt.Printf("  Last Scale Down: %s ago\n",
+					time.Since(group.ScalingState.LastScaleDown).Round(time.Second))
+			}
+		}
+	} else {
+		fmt.Println("\nScaling Policy: Manual (no automatic scaling)")
+	}
 }

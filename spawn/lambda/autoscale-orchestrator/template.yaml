@@ -41,6 +41,11 @@ Resources:
               Action:
                 - lambda:InvokeFunction
               Resource: !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:spawn-autoscale-orchestrator-${Environment}
+        - Statement:
+            - Effect: Allow
+              Action:
+                - sqs:GetQueueAttributes
+              Resource: '*'
       Events:
         ScheduleEvent:
           Type: Schedule

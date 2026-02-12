@@ -5,31 +5,35 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
+	"github.com/aws/aws-sdk-go-v2/service/sqs"
 )
 
 // Config holds dependencies for the autoscaler
 type Config struct {
 	EC2Client     *ec2.Client
 	DynamoClient  *dynamodb.Client
+	SQSClient     *sqs.Client
 	TableName     string
 	RegistryTable string
 }
 
 // AutoScaleGroup represents an auto-scaling job array configuration
 type AutoScaleGroup struct {
-	AutoScaleGroupID    string        `dynamodbav:"autoscale_group_id"`
-	GroupName           string        `dynamodbav:"group_name"`
-	JobArrayID          string        `dynamodbav:"job_array_id"`
-	DesiredCapacity     int           `dynamodbav:"desired_capacity"`
-	MinCapacity         int           `dynamodbav:"min_capacity"`
-	MaxCapacity         int           `dynamodbav:"max_capacity"`
+	AutoScaleGroupID    string         `dynamodbav:"autoscale_group_id"`
+	GroupName           string         `dynamodbav:"group_name"`
+	JobArrayID          string         `dynamodbav:"job_array_id"`
+	DesiredCapacity     int            `dynamodbav:"desired_capacity"`
+	MinCapacity         int            `dynamodbav:"min_capacity"`
+	MaxCapacity         int            `dynamodbav:"max_capacity"`
 	LaunchTemplate      LaunchTemplate `dynamodbav:"launch_template"`
-	Status              string        `dynamodbav:"status"` // "active", "paused", "terminated"
-	CreatedAt           time.Time     `dynamodbav:"created_at"`
-	UpdatedAt           time.Time     `dynamodbav:"updated_at"`
-	LastScaleEvent      time.Time     `dynamodbav:"last_scale_event"`
-	HealthCheckInterval time.Duration `dynamodbav:"health_check_interval"`
-	ReplacementStrategy string        `dynamodbav:"replacement_strategy"` // "immediate", "rolling"
+	Status              string         `dynamodbav:"status"` // "active", "paused", "terminated"
+	CreatedAt           time.Time      `dynamodbav:"created_at"`
+	UpdatedAt           time.Time      `dynamodbav:"updated_at"`
+	LastScaleEvent      time.Time      `dynamodbav:"last_scale_event"`
+	HealthCheckInterval time.Duration  `dynamodbav:"health_check_interval"`
+	ReplacementStrategy string         `dynamodbav:"replacement_strategy"` // "immediate", "rolling"
+	ScalingPolicy       *ScalingPolicy `dynamodbav:"scaling_policy,omitempty"`
+	ScalingState        *ScalingState  `dynamodbav:"scaling_state,omitempty"`
 }
 
 // LaunchTemplate defines how to launch new instances

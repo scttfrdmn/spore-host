@@ -13,6 +13,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	lambdaSDK "github.com/aws/aws-sdk-go-v2/service/lambda"
 	"github.com/aws/aws-sdk-go-v2/service/lambda/types"
+	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/scttfrdmn/mycelium/spawn/pkg/autoscaler"
 )
 
@@ -52,12 +53,14 @@ func init() {
 	// Create clients
 	ec2Client := ec2.NewFromConfig(cfg)
 	dynamoClient := dynamodb.NewFromConfig(cfg)
+	sqsClient := sqs.NewFromConfig(cfg)
 	lambdaClient = lambdaSDK.NewFromConfig(cfg)
 
 	// Create autoscaler
 	autoscalerInstance = autoscaler.NewAutoScaler(&autoscaler.Config{
 		EC2Client:     ec2Client,
 		DynamoClient:  dynamoClient,
+		SQSClient:     sqsClient,
 		TableName:     autoscaleTableName,
 		RegistryTable: registryTableName,
 	})
