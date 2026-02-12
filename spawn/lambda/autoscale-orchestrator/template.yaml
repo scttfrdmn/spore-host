@@ -8,6 +8,11 @@ Parameters:
     AllowedValues: [production, staging]
     Description: Deployment environment
 
+  EC2RoleArn:
+    Type: String
+    Default: 'arn:aws:iam::435415984226:role/spawn-autoscale-ec2'
+    Description: ARN of the cross-account EC2 management role in mycelium-dev
+
 Resources:
   AutoScaleOrchestratorFunction:
     Type: AWS::Serverless::Function
@@ -23,6 +28,8 @@ Resources:
         Variables:
           AUTOSCALE_GROUPS_TABLE: !Ref AutoScaleGroupsTable
           HYBRID_REGISTRY_TABLE: spawn-hybrid-registry
+          EC2_ROLE_ARN: !Ref EC2RoleArn
+          EC2_EXTERNAL_ID: spawn-autoscale-orchestrator
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref AutoScaleGroupsTable
@@ -31,11 +38,8 @@ Resources:
         - Statement:
             - Effect: Allow
               Action:
-                - ec2:DescribeInstances
-                - ec2:RunInstances
-                - ec2:TerminateInstances
-                - ec2:CreateTags
-              Resource: '*'
+                - sts:AssumeRole
+              Resource: !Ref EC2RoleArn
         - Statement:
             - Effect: Allow
               Action:

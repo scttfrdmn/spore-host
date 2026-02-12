@@ -8,12 +8,15 @@ import (
 	"time"
 
 	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials/stscreds"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	lambdaSDK "github.com/aws/aws-sdk-go-v2/service/lambda"
 	"github.com/aws/aws-sdk-go-v2/service/lambda/types"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
+	"github.com/aws/aws-sdk-go-v2/service/sts"
 	"github.com/scttfrdmn/mycelium/spawn/pkg/autoscaler"
 )
 
@@ -49,9 +52,31 @@ func init() {
 	}
 
 	functionName = os.Getenv("AWS_LAMBDA_FUNCTION_NAME")
+	ec2RoleARN := os.Getenv("EC2_ROLE_ARN")
+	externalID := os.Getenv("EC2_EXTERNAL_ID")
 
 	// Create clients
-	ec2Client := ec2.NewFromConfig(cfg)
+	var ec2Client *ec2.Client
+	if ec2RoleARN != "" {
+		// Use cross-account role for EC2 operations
+		log.Printf("assuming cross-account role: %s", ec2RoleARN)
+		stsClient := sts.NewFromConfig(cfg)
+		creds := stscreds.NewAssumeRoleProvider(stsClient, ec2RoleARN, func(o *stscreds.AssumeRoleOptions) {
+			o.RoleSessionName = "spawn-autoscale-orchestrator"
+			if externalID != "" {
+				o.ExternalID = aws.String(externalID)
+			}
+		})
+		ec2Cfg, err := config.LoadDefaultConfig(ctx, config.WithCredentialsProvider(creds))
+		if err != nil {
+			log.Fatalf("failed to create cross-account config: %v", err)
+		}
+		ec2Client = ec2.NewFromConfig(ec2Cfg)
+	} else {
+		// Use default credentials
+		ec2Client = ec2.NewFromConfig(cfg)
+	}
+
 	dynamoClient := dynamodb.NewFromConfig(cfg)
 	sqsClient := sqs.NewFromConfig(cfg)
 	lambdaClient = lambdaSDK.NewFromConfig(cfg)
@@ -63,6 +88,8 @@ func init() {
 		SQSClient:     sqsClient,
 		TableName:     autoscaleTableName,
 		RegistryTable: registryTableName,
+		EC2RoleARN:    ec2RoleARN,
+		ExternalID:    externalID,
 	})
 
 	log.Printf("autoscale orchestrator initialized (table: %s, registry: %s)",

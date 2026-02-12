@@ -15,6 +15,8 @@ type Config struct {
 	SQSClient     *sqs.Client
 	TableName     string
 	RegistryTable string
+	EC2RoleARN    string // Cross-account role ARN for EC2 operations (optional)
+	ExternalID    string // External ID for assuming cross-account role (optional)
 }
 
 // AutoScaleGroup represents an auto-scaling job array configuration
