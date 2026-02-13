@@ -283,3 +283,235 @@ func TestParseIntAttr(t *testing.T) {
 		})
 	}
 }
+
+func TestNormalizeQueues(t *testing.T) {
+	pe := &PolicyEvaluator{}
+
+	tests := []struct {
+		name   string
+		policy *ScalingPolicy
+		want   []QueueConfig
+	}{
+		{
+			name: "multi-queue with weights",
+			policy: &ScalingPolicy{
+				Queues: []QueueConfig{
+					{QueueURL: "https://sqs/queue1", Weight: 0.6},
+					{QueueURL: "https://sqs/queue2", Weight: 0.4},
+				},
+			},
+			want: []QueueConfig{
+				{QueueURL: "https://sqs/queue1", Weight: 0.6},
+				{QueueURL: "https://sqs/queue2", Weight: 0.4},
+			},
+		},
+		{
+			name: "multi-queue with default weights",
+			policy: &ScalingPolicy{
+				Queues: []QueueConfig{
+					{QueueURL: "https://sqs/queue1"},
+					{QueueURL: "https://sqs/queue2"},
+				},
+			},
+			want: []QueueConfig{
+				{QueueURL: "https://sqs/queue1", Weight: 1.0},
+				{QueueURL: "https://sqs/queue2", Weight: 1.0},
+			},
+		},
+		{
+			name: "backward compat - single queue",
+			policy: &ScalingPolicy{
+				QueueURL: "https://sqs/queue",
+			},
+			want: []QueueConfig{
+				{QueueURL: "https://sqs/queue", Weight: 1.0},
+			},
+		},
+		{
+			name:   "no queues configured",
+			policy: &ScalingPolicy{},
+			want:   nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := pe.normalizeQueues(tt.policy)
+
+			if len(got) != len(tt.want) {
+				t.Errorf("got %d queues, want %d", len(got), len(tt.want))
+				return
+			}
+
+			for i := range got {
+				if got[i].QueueURL != tt.want[i].QueueURL {
+					t.Errorf("queue %d: got URL %s, want %s", i, got[i].QueueURL, tt.want[i].QueueURL)
+				}
+				if got[i].Weight != tt.want[i].Weight {
+					t.Errorf("queue %d: got weight %.2f, want %.2f", i, got[i].Weight, tt.want[i].Weight)
+				}
+			}
+		})
+	}
+}
+
+func TestGetWeightedQueueDepth(t *testing.T) {
+	tests := []struct {
+		name       string
+		queues     []QueueConfig
+		mockDepth  int
+		want       int
+		wantErr    bool
+	}{
+		{
+			name: "single queue",
+			queues: []QueueConfig{
+				{QueueURL: "https://sqs/queue1", Weight: 1.0},
+			},
+			mockDepth: 100,
+			want:      100,
+		},
+		{
+			name: "equal weights",
+			queues: []QueueConfig{
+				{QueueURL: "https://sqs/queue1", Weight: 1.0},
+				{QueueURL: "https://sqs/queue2", Weight: 1.0},
+			},
+			mockDepth: 50,
+			want:      100, // 50*1.0 + 50*1.0
+		},
+		{
+			name: "weighted 60/40",
+			queues: []QueueConfig{
+				{QueueURL: "https://sqs/queue1", Weight: 0.6},
+				{QueueURL: "https://sqs/queue2", Weight: 0.4},
+			},
+			mockDepth: 100,
+			want:      100, // 100*0.6 + 100*0.4
+		},
+		{
+			name: "priority queue (80/20)",
+			queues: []QueueConfig{
+				{QueueURL: "https://sqs/high", Weight: 0.8},
+				{QueueURL: "https://sqs/low", Weight: 0.2},
+			},
+			mockDepth: 100,
+			want:      100, // 100*0.8 + 100*0.2
+		},
+		{
+			name: "three queues",
+			queues: []QueueConfig{
+				{QueueURL: "https://sqs/q1", Weight: 0.5},
+				{QueueURL: "https://sqs/q2", Weight: 0.3},
+				{QueueURL: "https://sqs/q3", Weight: 0.2},
+			},
+			mockDepth: 100,
+			want:      100, // 100*0.5 + 100*0.3 + 100*0.2
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockSQS := &mockSQSClient{queueDepth: tt.mockDepth}
+			pe := NewPolicyEvaluator(mockSQS)
+
+			got, err := pe.getWeightedQueueDepth(context.Background(), tt.queues)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("got error %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			if got != tt.want {
+				t.Errorf("got %d, want %d", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestEvaluatePolicy_MultiQueue(t *testing.T) {
+	tests := []struct {
+		name           string
+		queues         []QueueConfig
+		queueDepth     int
+		target         int
+		currentDesired int
+		min            int
+		max            int
+		wantDesired    int
+		wantChanged    bool
+	}{
+		{
+			name: "two queues equal weights",
+			queues: []QueueConfig{
+				{QueueURL: "https://sqs/q1", Weight: 1.0},
+				{QueueURL: "https://sqs/q2", Weight: 1.0},
+			},
+			queueDepth:     50,  // Each queue has 50, total = 100
+			target:         10,  // 100 / 10 = 10 instances
+			currentDesired: 5,
+			min:            0,
+			max:            20,
+			wantDesired:    10,
+			wantChanged:    true,
+		},
+		{
+			name: "priority queue 80/20",
+			queues: []QueueConfig{
+				{QueueURL: "https://sqs/high", Weight: 0.8},
+				{QueueURL: "https://sqs/low", Weight: 0.2},
+			},
+			queueDepth:     100, // Weighted: 100*0.8 + 100*0.2 = 100
+			target:         10,
+			currentDesired: 5,
+			min:            0,
+			max:            20,
+			wantDesired:    10,
+			wantChanged:    true,
+		},
+		{
+			name: "backward compat single queue",
+			queues: []QueueConfig{
+				{QueueURL: "https://sqs/queue", Weight: 1.0},
+			},
+			queueDepth:     50,
+			target:         10,
+			currentDesired: 3,
+			min:            0,
+			max:            20,
+			wantDesired:    5,
+			wantChanged:    true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockSQS := &mockSQSClient{queueDepth: tt.queueDepth}
+			pe := NewPolicyEvaluator(mockSQS)
+
+			group := &AutoScaleGroup{
+				DesiredCapacity: tt.currentDesired,
+				MinCapacity:     tt.min,
+				MaxCapacity:     tt.max,
+				ScalingPolicy: &ScalingPolicy{
+					PolicyType:                "queue-depth",
+					Queues:                    tt.queues,
+					TargetMessagesPerInstance: tt.target,
+					ScaleUpCooldownSeconds:    60,
+					ScaleDownCooldownSeconds:  300,
+				},
+			}
+
+			gotDesired, _, gotChanged, err := pe.EvaluatePolicy(context.Background(), group)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			if gotDesired != tt.wantDesired {
+				t.Errorf("got desired %d, want %d", gotDesired, tt.wantDesired)
+			}
+			if gotChanged != tt.wantChanged {
+				t.Errorf("got changed %v, want %v", gotChanged, tt.wantChanged)
+			}
+		})
+	}
+}
