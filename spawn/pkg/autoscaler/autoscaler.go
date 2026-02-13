@@ -30,7 +30,7 @@ func NewAutoScaler(config *Config) *AutoScaler {
 	capacityReconciler := NewCapacityReconciler(config.EC2Client)
 	policyEvaluator := NewPolicyEvaluator(config.SQSClient)
 	metricEvaluator := NewMetricEvaluator(config.CloudWatchClient)
-	drainManager := NewDrainManager(config.EC2Client, config.RegistryTable)
+	drainManager := NewDrainManager(config.EC2Client, config.DynamoClient, config.RegistryTable)
 	scheduleEvaluator := NewScheduleEvaluator()
 
 	return &AutoScaler{
