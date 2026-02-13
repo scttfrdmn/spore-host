@@ -50,6 +50,11 @@ Resources:
               Action:
                 - sqs:GetQueueAttributes
               Resource: '*'
+        - Statement:
+            - Effect: Allow
+              Action:
+                - cloudwatch:GetMetricStatistics
+              Resource: '*'
       Events:
         ScheduleEvent:
           Type: Schedule
