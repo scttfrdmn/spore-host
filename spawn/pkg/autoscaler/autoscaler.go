@@ -20,6 +20,7 @@ type AutoScaler struct {
 	policyEvaluator    *PolicyEvaluator
 	metricEvaluator    *MetricEvaluator
 	drainManager       *DrainManager
+	scheduleEvaluator  *ScheduleEvaluator
 }
 
 // NewAutoScaler creates a new autoscaler
@@ -30,6 +31,7 @@ func NewAutoScaler(config *Config) *AutoScaler {
 	policyEvaluator := NewPolicyEvaluator(config.SQSClient)
 	metricEvaluator := NewMetricEvaluator(config.CloudWatchClient)
 	drainManager := NewDrainManager(config.EC2Client, config.RegistryTable)
+	scheduleEvaluator := NewScheduleEvaluator()
 
 	return &AutoScaler{
 		config:             config,
@@ -39,6 +41,7 @@ func NewAutoScaler(config *Config) *AutoScaler {
 		policyEvaluator:    policyEvaluator,
 		metricEvaluator:    metricEvaluator,
 		drainManager:       drainManager,
+		scheduleEvaluator:  scheduleEvaluator,
 	}
 }
 
@@ -54,6 +57,36 @@ func (a *AutoScaler) Reconcile(ctx context.Context, groupID string) error {
 	if group.Status != "active" {
 		log.Printf("skipping group %s (status: %s)", group.GroupName, group.Status)
 		return nil
+	}
+
+	// Evaluate scheduled actions first (highest priority - overrides desired capacity)
+	if group.ScheduleConfig != nil && len(group.ScheduleConfig.Actions) > 0 {
+		desired, min, max, actionName, shouldApply := a.scheduleEvaluator.EvaluateSchedule(
+			group.ScheduleConfig,
+			time.Now(),
+		)
+		if shouldApply {
+			log.Printf("[%s] scheduled action %q triggered: desired=%d, min=%d, max=%d",
+				group.GroupName, actionName, desired, min, max)
+
+			// Apply scheduled capacity overrides
+			group.DesiredCapacity = desired
+			if min > 0 {
+				group.MinCapacity = min
+			}
+			if max > 0 {
+				group.MaxCapacity = max
+			}
+
+			// Update scaling state
+			if group.ScalingState == nil {
+				group.ScalingState = &ScalingState{}
+			}
+			group.ScalingState.LastCalculatedCapacity = desired
+
+			// Skip other policy evaluations when schedule is active
+			goto reconcile
+		}
 	}
 
 	// Evaluate scaling policy (if present)
@@ -82,6 +115,7 @@ func (a *AutoScaler) Reconcile(ctx context.Context, groupID string) error {
 		}
 	}
 
+reconcile:
 	log.Printf("reconciling group %s (desired: %d)", group.GroupName, group.DesiredCapacity)
 
 	// Discover current instances

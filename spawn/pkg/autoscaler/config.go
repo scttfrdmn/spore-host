@@ -40,6 +40,7 @@ type AutoScaleGroup struct {
 	MetricPolicy        *MetricScalingPolicy  `dynamodbav:"metric_policy,omitempty"`
 	ScalingState        *ScalingState         `dynamodbav:"scaling_state,omitempty"`
 	DrainConfig         *DrainConfig          `dynamodbav:"drain_config,omitempty"`
+	ScheduleConfig      *ScheduleConfig       `dynamodbav:"schedule_config,omitempty"`
 }
 
 // LaunchTemplate defines how to launch new instances
