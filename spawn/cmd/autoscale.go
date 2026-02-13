@@ -66,6 +66,15 @@ var (
 	targetValue     float64
 	periodSeconds   int
 
+	// Schedule flags
+	autoscaleScheduleName       string
+	autoscaleScheduleExpression string
+	autoscaleScheduleDesired    int
+	autoscaleScheduleMin        int
+	autoscaleScheduleMax        int
+	autoscaleScheduleTimezone   string
+	autoscaleScheduleEnabled    bool
+
 	// Global flags
 	autoscaleTableName string
 	autoscaleEnv       string
@@ -148,6 +157,27 @@ var autoscaleMetricActivityCmd = &cobra.Command{
 	RunE:  runAutoscaleMetricActivity,
 }
 
+var autoscaleAddScheduleCmd = &cobra.Command{
+	Use:   "add-schedule <group-name>",
+	Short: "Add a scheduled action to an autoscale group",
+	Args:  cobra.ExactArgs(1),
+	RunE:  runAutoscaleAddSchedule,
+}
+
+var autoscaleRemoveScheduleCmd = &cobra.Command{
+	Use:   "remove-schedule <group-name> <schedule-name>",
+	Short: "Remove a scheduled action from an autoscale group",
+	Args:  cobra.ExactArgs(2),
+	RunE:  runAutoscaleRemoveSchedule,
+}
+
+var autoscaleListSchedulesCmd = &cobra.Command{
+	Use:   "list-schedules <group-name>",
+	Short: "List all scheduled actions for an autoscale group",
+	Args:  cobra.ExactArgs(1),
+	RunE:  runAutoscaleListSchedules,
+}
+
 func init() {
 	rootCmd.AddCommand(autoscaleCmd)
 	autoscaleCmd.AddCommand(autoscaleLaunchCmd)
@@ -161,6 +191,9 @@ func init() {
 	autoscaleCmd.AddCommand(autoscaleScalingActivityCmd)
 	autoscaleCmd.AddCommand(autoscaleSetMetricPolicyCmd)
 	autoscaleCmd.AddCommand(autoscaleMetricActivityCmd)
+	autoscaleCmd.AddCommand(autoscaleAddScheduleCmd)
+	autoscaleCmd.AddCommand(autoscaleRemoveScheduleCmd)
+	autoscaleCmd.AddCommand(autoscaleListSchedulesCmd)
 
 	// Global flags
 	autoscaleCmd.PersistentFlags().StringVar(&autoscaleTableName, "table", "spawn-autoscale-groups", "DynamoDB table name")
@@ -244,6 +277,22 @@ func init() {
 		"Metric evaluation period in seconds")
 	autoscaleSetMetricPolicyCmd.Flags().BoolVar(&removePolicyFlag, "none", false,
 		"Remove metric policy")
+
+	// add-schedule flags
+	autoscaleAddScheduleCmd.Flags().StringVar(&autoscaleScheduleName, "name", "",
+		"Schedule name (required)")
+	autoscaleAddScheduleCmd.Flags().StringVar(&autoscaleScheduleExpression, "schedule", "",
+		"Cron expression: 'second minute hour day month weekday' (required)")
+	autoscaleAddScheduleCmd.Flags().IntVar(&autoscaleScheduleDesired, "desired-capacity", 0,
+		"Desired capacity (required)")
+	autoscaleAddScheduleCmd.Flags().IntVar(&autoscaleScheduleMin, "min-capacity", 0,
+		"Minimum capacity override (optional)")
+	autoscaleAddScheduleCmd.Flags().IntVar(&autoscaleScheduleMax, "max-capacity", 0,
+		"Maximum capacity override (optional)")
+	autoscaleAddScheduleCmd.Flags().StringVar(&autoscaleScheduleTimezone, "timezone", "UTC",
+		"Timezone (e.g., America/New_York)")
+	autoscaleAddScheduleCmd.Flags().BoolVar(&autoscaleScheduleEnabled, "enabled", true,
+		"Enable the schedule immediately")
 }
 
 func getAutoscaler(ctx context.Context) (*autoscaler.AutoScaler, error) {
@@ -989,4 +1038,225 @@ func printGroupStatus(group *autoscaler.AutoScaleGroup) {
 		fmt.Printf("  Target: %.1f\n", group.MetricPolicy.TargetValue)
 		fmt.Printf("  Period: %ds\n", group.MetricPolicy.PeriodSeconds)
 	}
+
+	// Display schedule info
+	if group.ScheduleConfig != nil && len(group.ScheduleConfig.Actions) > 0 {
+		fmt.Printf("\nScheduled Actions: %d\n", len(group.ScheduleConfig.Actions))
+		for _, action := range group.ScheduleConfig.Actions {
+			status := "enabled"
+			if !action.Enabled {
+				status = "disabled"
+			}
+			fmt.Printf("  - %s (%s)\n", action.Name, status)
+			fmt.Printf("    Schedule: %s\n", action.Schedule)
+			fmt.Printf("    Desired: %d", action.DesiredCapacity)
+			if action.MinCapacity > 0 || action.MaxCapacity > 0 {
+				fmt.Printf(" (min: %d, max: %d)", action.MinCapacity, action.MaxCapacity)
+			}
+			fmt.Println()
+			if action.Timezone != "" && action.Timezone != "UTC" {
+				fmt.Printf("    Timezone: %s\n", action.Timezone)
+			}
+		}
+	}
+}
+
+func runAutoscaleAddSchedule(cmd *cobra.Command, args []string) error {
+	groupName := args[0]
+
+	// Validate required flags
+	if autoscaleScheduleName == "" {
+		return fmt.Errorf("--name required")
+	}
+	if autoscaleScheduleExpression == "" {
+		return fmt.Errorf("--schedule required")
+	}
+	if autoscaleScheduleDesired <= 0 {
+		return fmt.Errorf("--desired-capacity must be > 0")
+	}
+
+	ctx := context.Background()
+	as, err := getAutoscaler(ctx)
+	if err != nil {
+		return err
+	}
+
+	// Load group
+	group, err := as.GetGroupByName(ctx, groupName)
+	if err != nil {
+		return fmt.Errorf("get group: %w", err)
+	}
+
+	// Validate schedule expression
+	evaluator := autoscaler.NewScheduleEvaluator()
+	if err := evaluator.ValidateSchedule(autoscaleScheduleExpression); err != nil {
+		return fmt.Errorf("invalid schedule expression: %w", err)
+	}
+
+	// Initialize schedule config if needed
+	if group.ScheduleConfig == nil {
+		group.ScheduleConfig = &autoscaler.ScheduleConfig{
+			Actions: []autoscaler.ScheduledAction{},
+		}
+	}
+
+	// Check if schedule with same name exists
+	for i, action := range group.ScheduleConfig.Actions {
+		if action.Name == autoscaleScheduleName {
+			// Update existing schedule
+			group.ScheduleConfig.Actions[i] = autoscaler.ScheduledAction{
+				Name:            autoscaleScheduleName,
+				Schedule:        autoscaleScheduleExpression,
+				DesiredCapacity: autoscaleScheduleDesired,
+				MinCapacity:     autoscaleScheduleMin,
+				MaxCapacity:     autoscaleScheduleMax,
+				Timezone:        autoscaleScheduleTimezone,
+				Enabled:         autoscaleScheduleEnabled,
+			}
+			if err := as.UpdateGroup(ctx, group); err != nil {
+				return fmt.Errorf("update group: %w", err)
+			}
+			fmt.Printf("Updated schedule %q for group %s\n", autoscaleScheduleName, groupName)
+
+			// Show next trigger time
+			nextTime, _ := evaluator.GetNextTriggerTime(autoscaleScheduleExpression, autoscaleScheduleTimezone)
+			if !nextTime.IsZero() {
+				fmt.Printf("Next trigger: %s (%s)\n", nextTime.Format(time.RFC3339), time.Until(nextTime).Round(time.Second))
+			}
+			return nil
+		}
+	}
+
+	// Add new schedule
+	group.ScheduleConfig.Actions = append(group.ScheduleConfig.Actions, autoscaler.ScheduledAction{
+		Name:            autoscaleScheduleName,
+		Schedule:        autoscaleScheduleExpression,
+		DesiredCapacity: autoscaleScheduleDesired,
+		MinCapacity:     autoscaleScheduleMin,
+		MaxCapacity:     autoscaleScheduleMax,
+		Timezone:        autoscaleScheduleTimezone,
+		Enabled:         autoscaleScheduleEnabled,
+	})
+
+	if err := as.UpdateGroup(ctx, group); err != nil {
+		return fmt.Errorf("update group: %w", err)
+	}
+
+	fmt.Printf("Added schedule %q to group %s\n", autoscaleScheduleName, groupName)
+
+	// Show next trigger time
+	nextTime, _ := evaluator.GetNextTriggerTime(autoscaleScheduleExpression, autoscaleScheduleTimezone)
+	if !nextTime.IsZero() {
+		fmt.Printf("Next trigger: %s (%s)\n", nextTime.Format(time.RFC3339), time.Until(nextTime).Round(time.Second))
+	}
+
+	return nil
+}
+
+func runAutoscaleRemoveSchedule(cmd *cobra.Command, args []string) error {
+	groupName := args[0]
+	scheduleName := args[1]
+
+	ctx := context.Background()
+	as, err := getAutoscaler(ctx)
+	if err != nil {
+		return err
+	}
+
+	// Load group
+	group, err := as.GetGroupByName(ctx, groupName)
+	if err != nil {
+		return fmt.Errorf("get group: %w", err)
+	}
+
+	if group.ScheduleConfig == nil || len(group.ScheduleConfig.Actions) == 0 {
+		return fmt.Errorf("no schedules configured for group %s", groupName)
+	}
+
+	// Find and remove schedule
+	found := false
+	newActions := make([]autoscaler.ScheduledAction, 0)
+	for _, action := range group.ScheduleConfig.Actions {
+		if action.Name == scheduleName {
+			found = true
+		} else {
+			newActions = append(newActions, action)
+		}
+	}
+
+	if !found {
+		return fmt.Errorf("schedule %q not found in group %s", scheduleName, groupName)
+	}
+
+	group.ScheduleConfig.Actions = newActions
+	if err := as.UpdateGroup(ctx, group); err != nil {
+		return fmt.Errorf("update group: %w", err)
+	}
+
+	fmt.Printf("Removed schedule %q from group %s\n", scheduleName, groupName)
+	return nil
+}
+
+func runAutoscaleListSchedules(cmd *cobra.Command, args []string) error {
+	groupName := args[0]
+
+	ctx := context.Background()
+	as, err := getAutoscaler(ctx)
+	if err != nil {
+		return err
+	}
+
+	// Load group
+	group, err := as.GetGroupByName(ctx, groupName)
+	if err != nil {
+		return fmt.Errorf("get group: %w", err)
+	}
+
+	if group.ScheduleConfig == nil || len(group.ScheduleConfig.Actions) == 0 {
+		fmt.Printf("No scheduled actions for group %s\n", groupName)
+		return nil
+	}
+
+	evaluator := autoscaler.NewScheduleEvaluator()
+
+	fmt.Printf("Scheduled Actions for %s:\n\n", groupName)
+	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+	fmt.Fprintln(w, "NAME\tSCHEDULE\tDESIRED\tMIN\tMAX\tTIMEZONE\tENABLED\tNEXT TRIGGER")
+
+	for _, action := range group.ScheduleConfig.Actions {
+		status := "yes"
+		if !action.Enabled {
+			status = "no"
+		}
+
+		minStr := "-"
+		if action.MinCapacity > 0 {
+			minStr = fmt.Sprintf("%d", action.MinCapacity)
+		}
+
+		maxStr := "-"
+		if action.MaxCapacity > 0 {
+			maxStr = fmt.Sprintf("%d", action.MaxCapacity)
+		}
+
+		tz := action.Timezone
+		if tz == "" {
+			tz = "UTC"
+		}
+
+		nextTrigger := "-"
+		if action.Enabled {
+			nextTime, err := evaluator.GetNextTriggerTime(action.Schedule, action.Timezone)
+			if err == nil && !nextTime.IsZero() {
+				nextTrigger = time.Until(nextTime).Round(time.Second).String()
+			}
+		}
+
+		fmt.Fprintf(w, "%s\t%s\t%d\t%s\t%s\t%s\t%s\t%s\n",
+			action.Name, action.Schedule, action.DesiredCapacity,
+			minStr, maxStr, tz, status, nextTrigger)
+	}
+
+	w.Flush()
+	return nil
 }
