@@ -52,7 +52,9 @@ var (
 
 	// Scaling policy flags
 	scalingPolicy             string
-	queueURL                  string
+	queueURL                  string   // Single queue (backward compat)
+	queueURLs                 []string // Multi-queue support
+	queueWeights              []float64 // Weights for multi-queue
 	targetMessagesPerInstance int
 	scaleUpCooldown           int
 	scaleDownCooldown         int
@@ -252,7 +254,11 @@ func init() {
 	autoscaleSetPolicyCmd.Flags().StringVar(&scalingPolicy, "scaling-policy", "",
 		"Scaling policy type: 'queue-depth'")
 	autoscaleSetPolicyCmd.Flags().StringVar(&queueURL, "queue-url", "",
-		"SQS queue URL for queue-depth policy")
+		"SQS queue URL for single-queue policy (deprecated: use --queue)")
+	autoscaleSetPolicyCmd.Flags().StringSliceVar(&queueURLs, "queue", []string{},
+		"SQS queue URL (can be specified multiple times for multi-queue)")
+	autoscaleSetPolicyCmd.Flags().Float64SliceVar(&queueWeights, "queue-weight", []float64{},
+		"Queue weight 0.0-1.0 (must match number of --queue flags)")
 	autoscaleSetPolicyCmd.Flags().IntVar(&targetMessagesPerInstance, "target-messages-per-instance", 10,
 		"Target messages per instance for queue-depth scaling")
 	autoscaleSetPolicyCmd.Flags().IntVar(&scaleUpCooldown, "scale-up-cooldown", 60,
@@ -760,19 +766,26 @@ func runAutoscaleSetPolicy(cmd *cobra.Command, args []string) error {
 		if scalingPolicy != "queue-depth" {
 			return fmt.Errorf("invalid scaling policy: %s (only 'queue-depth' supported)", scalingPolicy)
 		}
-		if queueURL == "" {
-			return fmt.Errorf("--queue-url required when --scaling-policy is set")
+
+		// Build queue configuration (multi-queue or single queue)
+		queues, err := buildQueueConfig(queueURLs, queueWeights, queueURL)
+		if err != nil {
+			return err
 		}
 
 		group.ScalingPolicy = &autoscaler.ScalingPolicy{
 			PolicyType:                scalingPolicy,
-			QueueURL:                  queueURL,
+			Queues:                    queues,
 			TargetMessagesPerInstance: targetMessagesPerInstance,
 			ScaleUpCooldownSeconds:    scaleUpCooldown,
 			ScaleDownCooldownSeconds:  scaleDownCooldown,
 		}
 
-		fmt.Printf("Updated scaling policy for %s\n", groupName)
+		if len(queues) == 1 {
+			fmt.Printf("Updated scaling policy for %s (single queue)\n", groupName)
+		} else {
+			fmt.Printf("Updated scaling policy for %s (%d queues)\n", groupName, len(queues))
+		}
 	}
 
 	// Update group in DynamoDB
@@ -933,6 +946,46 @@ func runAutoscaleMetricActivity(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
+// buildQueueConfig creates queue configuration from CLI flags
+func buildQueueConfig(queueURLs []string, queueWeights []float64, legacyQueueURL string) ([]autoscaler.QueueConfig, error) {
+	// Multi-queue mode: --queue flags
+	if len(queueURLs) > 0 {
+		// Validate weights
+		if len(queueWeights) > 0 && len(queueWeights) != len(queueURLs) {
+			return nil, fmt.Errorf("number of --queue-weight (%d) must match number of --queue (%d)",
+				len(queueWeights), len(queueURLs))
+		}
+
+		queues := make([]autoscaler.QueueConfig, len(queueURLs))
+		for i, url := range queueURLs {
+			weight := 1.0
+			if i < len(queueWeights) {
+				weight = queueWeights[i]
+				if weight <= 0 || weight > 1.0 {
+					return nil, fmt.Errorf("queue weight must be between 0.0 and 1.0, got %.2f", weight)
+				}
+			}
+			queues[i] = autoscaler.QueueConfig{
+				QueueURL: url,
+				Weight:   weight,
+			}
+		}
+		return queues, nil
+	}
+
+	// Single queue mode (backward compat): --queue-url flag
+	if legacyQueueURL != "" {
+		return []autoscaler.QueueConfig{
+			{
+				QueueURL: legacyQueueURL,
+				Weight:   1.0,
+			},
+		}, nil
+	}
+
+	return nil, fmt.Errorf("--queue or --queue-url required when --scaling-policy is set")
+}
+
 func buildMetricPolicy(policyType string, target float64, name, namespace, statistic string, period int) (*autoscaler.MetricScalingPolicy, error) {
 	var policy *autoscaler.MetricScalingPolicy
 
@@ -1008,7 +1061,24 @@ func printGroupStatus(group *autoscaler.AutoScaleGroup) {
 	// Display scaling policy info
 	if group.ScalingPolicy != nil {
 		fmt.Printf("\nScaling Policy: %s\n", group.ScalingPolicy.PolicyType)
-		fmt.Printf("  Queue: %s\n", group.ScalingPolicy.QueueURL)
+
+		// Display queues (multi-queue or single queue)
+		if len(group.ScalingPolicy.Queues) > 1 {
+			fmt.Printf("  Queues: %d (multi-queue)\n", len(group.ScalingPolicy.Queues))
+			for i, q := range group.ScalingPolicy.Queues {
+				weight := q.Weight
+				if weight == 0 {
+					weight = 1.0
+				}
+				fmt.Printf("    %d. %s (weight: %.1f)\n", i+1, q.QueueURL, weight)
+			}
+		} else if len(group.ScalingPolicy.Queues) == 1 {
+			fmt.Printf("  Queue: %s\n", group.ScalingPolicy.Queues[0].QueueURL)
+		} else if group.ScalingPolicy.QueueURL != "" {
+			// Backward compat
+			fmt.Printf("  Queue: %s\n", group.ScalingPolicy.QueueURL)
+		}
+
 		fmt.Printf("  Target: %d messages/instance\n", group.ScalingPolicy.TargetMessagesPerInstance)
 		fmt.Printf("  Cooldowns: up=%ds, down=%ds\n",
 			group.ScalingPolicy.ScaleUpCooldownSeconds,
