@@ -11,6 +11,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/cloudwatch"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
@@ -56,6 +57,14 @@ var (
 	scaleUpCooldown           int
 	scaleDownCooldown         int
 	removePolicyFlag          bool
+
+	// Metric policy flags
+	metricPolicy    string
+	metricName      string
+	metricNamespace string
+	metricStatistic string
+	targetValue     float64
+	periodSeconds   int
 
 	// Global flags
 	autoscaleTableName string
@@ -125,6 +134,20 @@ var autoscaleScalingActivityCmd = &cobra.Command{
 	RunE:  runAutoscaleScalingActivity,
 }
 
+var autoscaleSetMetricPolicyCmd = &cobra.Command{
+	Use:   "set-metric-policy <group-name>",
+	Short: "Set or update metric-based scaling policy",
+	Args:  cobra.ExactArgs(1),
+	RunE:  runAutoscaleSetMetricPolicy,
+}
+
+var autoscaleMetricActivityCmd = &cobra.Command{
+	Use:   "metric-activity <group-name>",
+	Short: "Show recent metric-based scaling activity",
+	Args:  cobra.ExactArgs(1),
+	RunE:  runAutoscaleMetricActivity,
+}
+
 func init() {
 	rootCmd.AddCommand(autoscaleCmd)
 	autoscaleCmd.AddCommand(autoscaleLaunchCmd)
@@ -136,6 +159,8 @@ func init() {
 	autoscaleCmd.AddCommand(autoscaleTerminateCmd)
 	autoscaleCmd.AddCommand(autoscaleSetPolicyCmd)
 	autoscaleCmd.AddCommand(autoscaleScalingActivityCmd)
+	autoscaleCmd.AddCommand(autoscaleSetMetricPolicyCmd)
+	autoscaleCmd.AddCommand(autoscaleMetricActivityCmd)
 
 	// Global flags
 	autoscaleCmd.PersistentFlags().StringVar(&autoscaleTableName, "table", "spawn-autoscale-groups", "DynamoDB table name")
@@ -167,6 +192,18 @@ func init() {
 		"Scale-up cooldown in seconds")
 	autoscaleLaunchCmd.Flags().IntVar(&scaleDownCooldown, "scale-down-cooldown", 300,
 		"Scale-down cooldown in seconds")
+	autoscaleLaunchCmd.Flags().StringVar(&metricPolicy, "metric-policy", "",
+		"Metric policy type: 'cpu', 'memory', or 'custom'")
+	autoscaleLaunchCmd.Flags().Float64Var(&targetValue, "target-value", 0,
+		"Target metric value (e.g., 70.0 for 70% CPU)")
+	autoscaleLaunchCmd.Flags().StringVar(&metricName, "metric-name", "",
+		"CloudWatch metric name (for custom metrics)")
+	autoscaleLaunchCmd.Flags().StringVar(&metricNamespace, "metric-namespace", "",
+		"CloudWatch namespace (for custom metrics)")
+	autoscaleLaunchCmd.Flags().StringVar(&metricStatistic, "metric-statistic", "Average",
+		"Metric statistic: Average, Maximum, or Minimum")
+	autoscaleLaunchCmd.Flags().IntVar(&periodSeconds, "metric-period", 300,
+		"Metric evaluation period in seconds")
 
 	autoscaleLaunchCmd.MarkFlagRequired("name")
 	autoscaleLaunchCmd.MarkFlagRequired("desired-capacity")
@@ -191,6 +228,22 @@ func init() {
 		"Scale-down cooldown in seconds")
 	autoscaleSetPolicyCmd.Flags().BoolVar(&removePolicyFlag, "none", false,
 		"Remove scaling policy (revert to manual mode)")
+
+	// Set-metric-policy flags
+	autoscaleSetMetricPolicyCmd.Flags().StringVar(&metricPolicy, "metric-policy", "",
+		"Metric policy type: 'cpu', 'memory', or 'custom'")
+	autoscaleSetMetricPolicyCmd.Flags().Float64Var(&targetValue, "target-value", 0,
+		"Target metric value (e.g., 70.0 for 70% CPU)")
+	autoscaleSetMetricPolicyCmd.Flags().StringVar(&metricName, "metric-name", "",
+		"CloudWatch metric name (for custom metrics)")
+	autoscaleSetMetricPolicyCmd.Flags().StringVar(&metricNamespace, "metric-namespace", "",
+		"CloudWatch namespace (for custom metrics)")
+	autoscaleSetMetricPolicyCmd.Flags().StringVar(&metricStatistic, "metric-statistic", "Average",
+		"Metric statistic: Average, Maximum, or Minimum")
+	autoscaleSetMetricPolicyCmd.Flags().IntVar(&periodSeconds, "metric-period", 300,
+		"Metric evaluation period in seconds")
+	autoscaleSetMetricPolicyCmd.Flags().BoolVar(&removePolicyFlag, "none", false,
+		"Remove metric policy")
 }
 
 func getAutoscaler(ctx context.Context) (*autoscaler.AutoScaler, error) {
@@ -205,13 +258,15 @@ func getAutoscaler(ctx context.Context) (*autoscaler.AutoScaler, error) {
 	ec2Client := ec2.NewFromConfig(cfg)
 	dynamoClient := dynamodb.NewFromConfig(cfg)
 	sqsClient := sqs.NewFromConfig(cfg)
+	cloudwatchClient := cloudwatch.NewFromConfig(cfg)
 
 	return autoscaler.NewAutoScaler(&autoscaler.Config{
-		EC2Client:     ec2Client,
-		DynamoClient:  dynamoClient,
-		SQSClient:     sqsClient,
-		TableName:     tableName,
-		RegistryTable: "spawn-hybrid-registry",
+		EC2Client:        ec2Client,
+		DynamoClient:     dynamoClient,
+		SQSClient:        sqsClient,
+		CloudWatchClient: cloudwatchClient,
+		TableName:        tableName,
+		RegistryTable:    "spawn-hybrid-registry",
 	}), nil
 }
 
@@ -300,6 +355,15 @@ func runAutoscaleLaunch(cmd *cobra.Command, args []string) error {
 			ScaleUpCooldownSeconds:    scaleUpCooldown,
 			ScaleDownCooldownSeconds:  scaleDownCooldown,
 		}
+	}
+
+	// Add metric policy if specified
+	if metricPolicy != "" {
+		policy, err := buildMetricPolicy(metricPolicy, targetValue, metricName, metricNamespace, metricStatistic, periodSeconds)
+		if err != nil {
+			return err
+		}
+		group.MetricPolicy = policy
 	}
 
 	if err := as.CreateGroup(ctx, group); err != nil {
@@ -724,6 +788,141 @@ func runAutoscaleScalingActivity(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
+func runAutoscaleSetMetricPolicy(cmd *cobra.Command, args []string) error {
+	ctx := context.Background()
+	groupName := args[0]
+
+	as, err := getAutoscaler(ctx)
+	if err != nil {
+		return err
+	}
+
+	group, err := as.GetGroupByName(ctx, groupName)
+	if err != nil {
+		return fmt.Errorf("get group: %w", err)
+	}
+
+	// Handle --none flag (remove policy)
+	if removePolicyFlag {
+		group.MetricPolicy = nil
+		fmt.Printf("Removed metric policy from %s\n", groupName)
+	} else {
+		// Validate and set policy
+		if metricPolicy == "" {
+			return fmt.Errorf("--metric-policy required (or use --none to remove)")
+		}
+
+		policy, err := buildMetricPolicy(metricPolicy, targetValue, metricName, metricNamespace, metricStatistic, periodSeconds)
+		if err != nil {
+			return err
+		}
+
+		group.MetricPolicy = policy
+		fmt.Printf("Updated metric policy for %s\n", groupName)
+	}
+
+	// Update group in DynamoDB
+	if err := as.UpdateGroup(ctx, group); err != nil {
+		return fmt.Errorf("update group: %w", err)
+	}
+
+	// Trigger Lambda
+	if err := triggerLambda(ctx, group.AutoScaleGroupID); err != nil {
+		log.Printf("Warning: failed to trigger Lambda: %v", err)
+	} else {
+		fmt.Println("Triggered immediate reconciliation.")
+	}
+
+	return nil
+}
+
+func runAutoscaleMetricActivity(cmd *cobra.Command, args []string) error {
+	ctx := context.Background()
+	groupName := args[0]
+
+	as, err := getAutoscaler(ctx)
+	if err != nil {
+		return err
+	}
+
+	group, err := as.GetGroupByName(ctx, groupName)
+	if err != nil {
+		return fmt.Errorf("get group: %w", err)
+	}
+
+	// Display metric policy
+	if group.MetricPolicy == nil {
+		fmt.Println("No metric policy configured")
+		return nil
+	}
+
+	fmt.Printf("Metric Policy: %s\n", group.MetricPolicy.MetricType)
+	fmt.Printf("Metric: %s (%s)\n", group.MetricPolicy.MetricName, group.MetricPolicy.Namespace)
+	fmt.Printf("Statistic: %s\n", group.MetricPolicy.Statistic)
+	fmt.Printf("Target: %.1f\n", group.MetricPolicy.TargetValue)
+	fmt.Printf("Period: %ds\n", group.MetricPolicy.PeriodSeconds)
+	fmt.Println()
+
+	if group.ScalingState == nil {
+		fmt.Println("No scaling activity yet")
+		return nil
+	}
+
+	fmt.Printf("Last Calculated Capacity: %d instances\n", group.ScalingState.LastCalculatedCapacity)
+
+	if !group.ScalingState.LastScaleUp.IsZero() {
+		fmt.Printf("Last Scale Up: %s (%s ago)\n",
+			group.ScalingState.LastScaleUp.Format(time.RFC3339),
+			time.Since(group.ScalingState.LastScaleUp).Round(time.Second))
+	}
+	if !group.ScalingState.LastScaleDown.IsZero() {
+		fmt.Printf("Last Scale Down: %s (%s ago)\n",
+			group.ScalingState.LastScaleDown.Format(time.RFC3339),
+			time.Since(group.ScalingState.LastScaleDown).Round(time.Second))
+	}
+
+	return nil
+}
+
+func buildMetricPolicy(policyType string, target float64, name, namespace, statistic string, period int) (*autoscaler.MetricScalingPolicy, error) {
+	var policy *autoscaler.MetricScalingPolicy
+
+	switch policyType {
+	case "cpu", "memory":
+		policy = autoscaler.GetMetricPolicyDefaults(policyType)
+		if target > 0 {
+			policy.TargetValue = target
+		}
+	case "custom":
+		if name == "" || namespace == "" {
+			return nil, fmt.Errorf("--metric-name and --metric-namespace required for custom metrics")
+		}
+		if target == 0 {
+			return nil, fmt.Errorf("--target-value required for custom metrics")
+		}
+		policy = &autoscaler.MetricScalingPolicy{
+			MetricType:    "custom",
+			MetricName:    name,
+			Namespace:     namespace,
+			Statistic:     statistic,
+			TargetValue:   target,
+			PeriodSeconds: period,
+		}
+	default:
+		return nil, fmt.Errorf("invalid metric policy: %s (use 'cpu', 'memory', or 'custom')", policyType)
+	}
+
+	// Apply custom statistic and period if specified
+	if statistic != "Average" {
+		policy.Statistic = statistic
+	}
+	if period != 300 {
+		policy.PeriodSeconds = period
+	}
+
+	return policy, nil
+}
+
 func triggerLambda(ctx context.Context, groupID string) error {
 	cfg, err := config.LoadDefaultConfig(ctx)
 	if err != nil {
@@ -779,6 +978,15 @@ func printGroupStatus(group *autoscaler.AutoScaleGroup) {
 			}
 		}
 	} else {
-		fmt.Println("\nScaling Policy: Manual (no automatic scaling)")
+		fmt.Println("\nScaling Policy: Manual (no queue-based scaling)")
+	}
+
+	// Display metric policy info
+	if group.MetricPolicy != nil {
+		fmt.Printf("\nMetric Policy: %s\n", group.MetricPolicy.MetricType)
+		fmt.Printf("  Metric: %s (%s)\n", group.MetricPolicy.MetricName, group.MetricPolicy.Namespace)
+		fmt.Printf("  Statistic: %s\n", group.MetricPolicy.Statistic)
+		fmt.Printf("  Target: %.1f\n", group.MetricPolicy.TargetValue)
+		fmt.Printf("  Period: %ds\n", group.MetricPolicy.PeriodSeconds)
 	}
 }
