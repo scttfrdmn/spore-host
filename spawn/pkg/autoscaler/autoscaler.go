@@ -59,6 +59,12 @@ func (a *AutoScaler) Reconcile(ctx context.Context, groupID string) error {
 		return nil
 	}
 
+	// Declare hybrid policy variables (must be before goto)
+	var queueDesired, metricDesired int
+	var queueDepth int
+	var metricValue float64
+	var hasQueuePolicy, hasMetricPolicy bool
+
 	// Evaluate scheduled actions first (highest priority - overrides desired capacity)
 	if group.ScheduleConfig != nil && len(group.ScheduleConfig.Actions) > 0 {
 		desired, min, max, actionName, shouldApply := a.scheduleEvaluator.EvaluateSchedule(
@@ -89,29 +95,18 @@ func (a *AutoScaler) Reconcile(ctx context.Context, groupID string) error {
 		}
 	}
 
-	// Evaluate scaling policy (if present)
+	// Evaluate hybrid policies (queue + metric)
+	// Both policies can be active; combine their recommendations intelligently
+
+	// Evaluate queue policy (if present)
 	if group.ScalingPolicy != nil {
-		newDesired, queueDepth, changed, err := a.policyEvaluator.EvaluatePolicy(ctx, group)
+		newDesired, depth, _, err := a.policyEvaluator.EvaluatePolicy(ctx, group)
 		if err != nil {
 			log.Printf("policy evaluation failed for %s: %v", group.GroupName, err)
-		} else if changed {
-			log.Printf("[%s] policy triggered: %d → %d (queue: %d msgs)",
-				group.GroupName, group.DesiredCapacity, newDesired, queueDepth)
-
-			oldDesired := group.DesiredCapacity
-			group.DesiredCapacity = newDesired
-
-			// Update scaling state
-			if group.ScalingState == nil {
-				group.ScalingState = &ScalingState{}
-			}
-			group.ScalingState.LastQueueDepth = queueDepth
-			group.ScalingState.LastCalculatedCapacity = newDesired
-			if newDesired > oldDesired {
-				group.ScalingState.LastScaleUp = time.Now()
-			} else {
-				group.ScalingState.LastScaleDown = time.Now()
-			}
+		} else {
+			queueDesired = newDesired
+			queueDepth = depth
+			hasQueuePolicy = true
 		}
 	}
 
@@ -126,22 +121,46 @@ reconcile:
 
 	log.Printf("found %d instances for group %s", len(instances), group.GroupName)
 
-	// Evaluate metric policy (if present and no queue policy)
+	// Evaluate metric policy (if present)
 	// Metric policy requires existing instances to query metrics
-	if group.MetricPolicy != nil && group.ScalingPolicy == nil {
-		newDesired, metricValue, changed, err := a.metricEvaluator.EvaluateMetricPolicy(ctx, group, instances)
+	if group.MetricPolicy != nil {
+		newDesired, value, _, err := a.metricEvaluator.EvaluateMetricPolicy(ctx, group, instances)
 		if err != nil {
 			log.Printf("metric policy evaluation failed for %s: %v", group.GroupName, err)
-		} else if changed {
-			log.Printf("[%s] metric policy triggered: %d → %d (metric: %.2f)",
-				group.GroupName, group.DesiredCapacity, newDesired, metricValue)
+		} else {
+			metricDesired = newDesired
+			metricValue = value
+			hasMetricPolicy = true
+		}
+	}
 
-			oldDesired := group.DesiredCapacity
+	// Combine policy recommendations using hybrid logic
+	if hasQueuePolicy || hasMetricPolicy {
+		oldDesired := group.DesiredCapacity
+		newDesired := a.combineHybridPolicies(
+			group.DesiredCapacity,
+			queueDesired, hasQueuePolicy,
+			metricDesired, hasMetricPolicy,
+		)
+
+		if newDesired != oldDesired {
+			reason := a.getHybridScalingReason(
+				oldDesired, newDesired,
+				queueDesired, hasQueuePolicy,
+				metricDesired, hasMetricPolicy,
+				queueDepth, metricValue,
+			)
+			log.Printf("[%s] hybrid policy: %d → %d (%s)",
+				group.GroupName, oldDesired, newDesired, reason)
+
 			group.DesiredCapacity = newDesired
 
 			// Update scaling state
 			if group.ScalingState == nil {
 				group.ScalingState = &ScalingState{}
+			}
+			if hasQueuePolicy {
+				group.ScalingState.LastQueueDepth = queueDepth
 			}
 			group.ScalingState.LastCalculatedCapacity = newDesired
 			if newDesired > oldDesired {
@@ -291,4 +310,78 @@ func (a *AutoScaler) DeleteGroup(ctx context.Context, groupID string) error {
 // ListActiveGroups lists all active groups
 func (a *AutoScaler) ListActiveGroups(ctx context.Context) ([]*AutoScaleGroup, error) {
 	return a.dbClient.ListActiveGroups(ctx)
+}
+
+// combineHybridPolicies combines queue and metric policy recommendations
+// Strategy:
+//   - Scale up: take maximum (respond to either work or resource pressure)
+//   - Scale down: take maximum (more conservative, only scale down when both agree)
+func (a *AutoScaler) combineHybridPolicies(
+	current int,
+	queueDesired int, hasQueue bool,
+	metricDesired int, hasMetric bool,
+) int {
+	// Single policy: use it directly
+	if hasQueue && !hasMetric {
+		return queueDesired
+	}
+	if hasMetric && !hasQueue {
+		return metricDesired
+	}
+	if !hasQueue && !hasMetric {
+		return current
+	}
+
+	// Hybrid: both policies active
+	scaleUp := queueDesired > current || metricDesired > current
+
+	if scaleUp {
+		// Scale up: take maximum (aggressive, respond to either signal)
+		if queueDesired > metricDesired {
+			return queueDesired
+		}
+		return metricDesired
+	}
+
+	// Scale down: take maximum (conservative, need both to agree)
+	// This means we scale down to the HIGHER of the two recommendations
+	// Example: queue says 5, metric says 3 → scale to 5 (more conservative)
+	if queueDesired > metricDesired {
+		return queueDesired
+	}
+	return metricDesired
+}
+
+// getHybridScalingReason returns a human-readable reason for hybrid scaling decision
+func (a *AutoScaler) getHybridScalingReason(
+	oldDesired, newDesired int,
+	queueDesired int, hasQueue bool,
+	metricDesired int, hasMetric bool,
+	queueDepth int,
+	metricValue float64,
+) string {
+	if !hasQueue && !hasMetric {
+		return "no policy"
+	}
+
+	if hasQueue && !hasMetric {
+		return fmt.Sprintf("queue: %d msgs", queueDepth)
+	}
+
+	if hasMetric && !hasQueue {
+		return fmt.Sprintf("metric: %.2f", metricValue)
+	}
+
+	// Hybrid
+	scaleUp := newDesired > oldDesired
+	if scaleUp {
+		if queueDesired >= metricDesired {
+			return fmt.Sprintf("queue: %d msgs (queue: %d, metric: %d)", queueDepth, queueDesired, metricDesired)
+		}
+		return fmt.Sprintf("metric: %.2f (queue: %d, metric: %d)", metricValue, queueDesired, metricDesired)
+	}
+
+	// Scale down: both policies agreed
+	return fmt.Sprintf("both policies (queue: %d msgs → %d, metric: %.2f → %d)",
+		queueDepth, queueDesired, metricValue, metricDesired)
 }
