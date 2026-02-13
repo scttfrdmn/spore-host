@@ -3,6 +3,7 @@ package autoscaler
 import (
 	"time"
 
+	"github.com/aws/aws-sdk-go-v2/service/cloudwatch"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
@@ -10,13 +11,14 @@ import (
 
 // Config holds dependencies for the autoscaler
 type Config struct {
-	EC2Client     *ec2.Client
-	DynamoClient  *dynamodb.Client
-	SQSClient     *sqs.Client
-	TableName     string
-	RegistryTable string
-	EC2RoleARN    string // Cross-account role ARN for EC2 operations (optional)
-	ExternalID    string // External ID for assuming cross-account role (optional)
+	EC2Client        *ec2.Client
+	DynamoClient     *dynamodb.Client
+	SQSClient        *sqs.Client
+	CloudWatchClient *cloudwatch.Client
+	TableName        string
+	RegistryTable    string
+	EC2RoleARN       string // Cross-account role ARN for EC2 operations (optional)
+	ExternalID       string // External ID for assuming cross-account role (optional)
 }
 
 // AutoScaleGroup represents an auto-scaling job array configuration
@@ -33,9 +35,10 @@ type AutoScaleGroup struct {
 	UpdatedAt           time.Time      `dynamodbav:"updated_at"`
 	LastScaleEvent      time.Time      `dynamodbav:"last_scale_event"`
 	HealthCheckInterval time.Duration  `dynamodbav:"health_check_interval"`
-	ReplacementStrategy string         `dynamodbav:"replacement_strategy"` // "immediate", "rolling"
-	ScalingPolicy       *ScalingPolicy `dynamodbav:"scaling_policy,omitempty"`
-	ScalingState        *ScalingState  `dynamodbav:"scaling_state,omitempty"`
+	ReplacementStrategy string                `dynamodbav:"replacement_strategy"` // "immediate", "rolling"
+	ScalingPolicy       *ScalingPolicy        `dynamodbav:"scaling_policy,omitempty"`
+	MetricPolicy        *MetricScalingPolicy  `dynamodbav:"metric_policy,omitempty"`
+	ScalingState        *ScalingState         `dynamodbav:"scaling_state,omitempty"`
 }
 
 // LaunchTemplate defines how to launch new instances

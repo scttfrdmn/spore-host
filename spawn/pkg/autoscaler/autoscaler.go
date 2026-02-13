@@ -18,6 +18,7 @@ type AutoScaler struct {
 	healthChecker      *HealthChecker
 	capacityReconciler *CapacityReconciler
 	policyEvaluator    *PolicyEvaluator
+	metricEvaluator    *MetricEvaluator
 }
 
 // NewAutoScaler creates a new autoscaler
@@ -26,6 +27,7 @@ func NewAutoScaler(config *Config) *AutoScaler {
 	healthChecker := NewHealthChecker(config.EC2Client, config.DynamoClient, config.RegistryTable)
 	capacityReconciler := NewCapacityReconciler(config.EC2Client)
 	policyEvaluator := NewPolicyEvaluator(config.SQSClient)
+	metricEvaluator := NewMetricEvaluator(config.CloudWatchClient)
 
 	return &AutoScaler{
 		config:             config,
@@ -33,6 +35,7 @@ func NewAutoScaler(config *Config) *AutoScaler {
 		healthChecker:      healthChecker,
 		capacityReconciler: capacityReconciler,
 		policyEvaluator:    policyEvaluator,
+		metricEvaluator:    metricEvaluator,
 	}
 }
 
@@ -85,6 +88,32 @@ func (a *AutoScaler) Reconcile(ctx context.Context, groupID string) error {
 	}
 
 	log.Printf("found %d instances for group %s", len(instances), group.GroupName)
+
+	// Evaluate metric policy (if present and no queue policy)
+	// Metric policy requires existing instances to query metrics
+	if group.MetricPolicy != nil && group.ScalingPolicy == nil {
+		newDesired, metricValue, changed, err := a.metricEvaluator.EvaluateMetricPolicy(ctx, group, instances)
+		if err != nil {
+			log.Printf("metric policy evaluation failed for %s: %v", group.GroupName, err)
+		} else if changed {
+			log.Printf("[%s] metric policy triggered: %d → %d (metric: %.2f)",
+				group.GroupName, group.DesiredCapacity, newDesired, metricValue)
+
+			oldDesired := group.DesiredCapacity
+			group.DesiredCapacity = newDesired
+
+			// Update scaling state
+			if group.ScalingState == nil {
+				group.ScalingState = &ScalingState{}
+			}
+			group.ScalingState.LastCalculatedCapacity = newDesired
+			if newDesired > oldDesired {
+				group.ScalingState.LastScaleUp = time.Now()
+			} else {
+				group.ScalingState.LastScaleDown = time.Now()
+			}
+		}
+	}
 
 	// Check health
 	health, err := a.healthChecker.CheckInstances(ctx, group.JobArrayID, instances)

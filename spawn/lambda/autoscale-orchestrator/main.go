@@ -11,6 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials/stscreds"
+	"github.com/aws/aws-sdk-go-v2/service/cloudwatch"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	lambdaSDK "github.com/aws/aws-sdk-go-v2/service/lambda"
@@ -79,17 +80,19 @@ func init() {
 
 	dynamoClient := dynamodb.NewFromConfig(cfg)
 	sqsClient := sqs.NewFromConfig(cfg)
+	cloudwatchClient := cloudwatch.NewFromConfig(cfg)
 	lambdaClient = lambdaSDK.NewFromConfig(cfg)
 
 	// Create autoscaler
 	autoscalerInstance = autoscaler.NewAutoScaler(&autoscaler.Config{
-		EC2Client:     ec2Client,
-		DynamoClient:  dynamoClient,
-		SQSClient:     sqsClient,
-		TableName:     autoscaleTableName,
-		RegistryTable: registryTableName,
-		EC2RoleARN:    ec2RoleARN,
-		ExternalID:    externalID,
+		EC2Client:        ec2Client,
+		DynamoClient:     dynamoClient,
+		SQSClient:        sqsClient,
+		CloudWatchClient: cloudwatchClient,
+		TableName:        autoscaleTableName,
+		RegistryTable:    registryTableName,
+		EC2RoleARN:       ec2RoleARN,
+		ExternalID:       externalID,
 	})
 
 	log.Printf("autoscale orchestrator initialized (table: %s, registry: %s)",
