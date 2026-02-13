@@ -19,6 +19,7 @@ type AutoScaler struct {
 	capacityReconciler *CapacityReconciler
 	policyEvaluator    *PolicyEvaluator
 	metricEvaluator    *MetricEvaluator
+	drainManager       *DrainManager
 }
 
 // NewAutoScaler creates a new autoscaler
@@ -28,6 +29,7 @@ func NewAutoScaler(config *Config) *AutoScaler {
 	capacityReconciler := NewCapacityReconciler(config.EC2Client)
 	policyEvaluator := NewPolicyEvaluator(config.SQSClient)
 	metricEvaluator := NewMetricEvaluator(config.CloudWatchClient)
+	drainManager := NewDrainManager(config.EC2Client, config.RegistryTable)
 
 	return &AutoScaler{
 		config:             config,
@@ -36,6 +38,7 @@ func NewAutoScaler(config *Config) *AutoScaler {
 		capacityReconciler: capacityReconciler,
 		policyEvaluator:    policyEvaluator,
 		metricEvaluator:    metricEvaluator,
+		drainManager:       drainManager,
 	}
 }
 
@@ -115,6 +118,34 @@ func (a *AutoScaler) Reconcile(ctx context.Context, groupID string) error {
 		}
 	}
 
+	// Handle draining instances (if drain enabled)
+	if group.DrainConfig != nil && group.DrainConfig.Enabled {
+		drainingInstances, err := a.drainManager.GetDrainingInstances(ctx, group.AutoScaleGroupID)
+		if err != nil {
+			log.Printf("error getting draining instances for %s: %v", group.GroupName, err)
+		} else if len(drainingInstances) > 0 {
+			log.Printf("found %d draining instances for %s", len(drainingInstances), group.GroupName)
+
+			// Check which draining instances are ready to terminate
+			readyToTerminate, err := a.drainManager.CheckDrainStatus(ctx, drainingInstances, group.DrainConfig)
+			if err != nil {
+				log.Printf("error checking drain status for %s: %v", group.GroupName, err)
+			} else if len(readyToTerminate) > 0 {
+				log.Printf("terminating %d drained instances for %s", len(readyToTerminate), group.GroupName)
+
+				// Terminate drained instances
+				if err := a.capacityReconciler.TerminateInstances(ctx, readyToTerminate); err != nil {
+					log.Printf("error terminating drained instances: %v", err)
+				}
+
+				// Clear drain state
+				if err := a.drainManager.ClearDrainState(ctx, readyToTerminate); err != nil {
+					log.Printf("error clearing drain state: %v", err)
+				}
+			}
+		}
+	}
+
 	// Check health
 	health, err := a.healthChecker.CheckInstances(ctx, group.JobArrayID, instances)
 	if err != nil {
@@ -133,7 +164,7 @@ func (a *AutoScaler) Reconcile(ctx context.Context, groupID string) error {
 
 	// Execute plan if changes needed
 	if plan.ToLaunch > 0 || len(plan.ToTerminate) > 0 {
-		if err := a.capacityReconciler.ExecutePlan(ctx, group, plan); err != nil {
+		if err := a.capacityReconciler.ExecutePlanWithDrain(ctx, group, plan, a.drainManager, group.DrainConfig); err != nil {
 			return fmt.Errorf("execute plan: %w", err)
 		}
 

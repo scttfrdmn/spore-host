@@ -64,6 +64,17 @@ func (c *CapacityReconciler) ExecutePlan(
 	group *AutoScaleGroup,
 	plan *CapacityPlan,
 ) error {
+	return c.ExecutePlanWithDrain(ctx, group, plan, nil, nil)
+}
+
+// ExecutePlanWithDrain executes the capacity plan with optional graceful drain
+func (c *CapacityReconciler) ExecutePlanWithDrain(
+	ctx context.Context,
+	group *AutoScaleGroup,
+	plan *CapacityPlan,
+	drainManager *DrainManager,
+	drainConfig *DrainConfig,
+) error {
 	// Launch new instances first
 	if plan.ToLaunch > 0 {
 		if err := c.launchInstances(ctx, group, plan.ToLaunch); err != nil {
@@ -72,12 +83,29 @@ func (c *CapacityReconciler) ExecutePlan(
 		log.Printf("launched %d instances for group %s", plan.ToLaunch, group.GroupName)
 	}
 
-	// Terminate unhealthy instances
-	for _, instanceID := range plan.ToTerminate {
-		if err := c.terminateInstance(ctx, instanceID); err != nil {
-			log.Printf("failed to terminate %s: %v", instanceID, err)
-		} else {
-			log.Printf("terminated unhealthy instance %s", instanceID)
+	// Handle terminations
+	if len(plan.ToTerminate) > 0 {
+		// Check if graceful drain is enabled
+		useDrain := drainConfig != nil && drainConfig.Enabled && drainManager != nil
+
+		if useDrain {
+			// Mark instances for graceful drain instead of immediate termination
+			if err := drainManager.MarkForDrain(ctx, plan.ToTerminate); err != nil {
+				log.Printf("failed to mark instances for drain: %v", err)
+				// Fall back to immediate termination
+				useDrain = false
+			}
+		}
+
+		if !useDrain {
+			// Immediate termination (unhealthy instances or drain disabled)
+			for _, instanceID := range plan.ToTerminate {
+				if err := c.terminateInstance(ctx, instanceID); err != nil {
+					log.Printf("failed to terminate %s: %v", instanceID, err)
+				} else {
+					log.Printf("terminated instance %s", instanceID)
+				}
+			}
 		}
 	}
 
@@ -157,6 +185,22 @@ func (c *CapacityReconciler) launchInstances(
 	}
 
 	// Instances will register themselves via spored agent
+
+	return nil
+}
+
+// TerminateInstances terminates multiple instances
+func (c *CapacityReconciler) TerminateInstances(ctx context.Context, instanceIDs []string) error {
+	if len(instanceIDs) == 0 {
+		return nil
+	}
+
+	_, err := c.ec2Client.TerminateInstances(ctx, &ec2.TerminateInstancesInput{
+		InstanceIds: instanceIDs,
+	})
+	if err != nil {
+		return fmt.Errorf("terminate instances: %w", err)
+	}
 
 	return nil
 }
