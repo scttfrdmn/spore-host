@@ -49,10 +49,28 @@ func (c *CapacityReconciler) PlanCapacity(
 
 	plan.CurrentCapacity = plan.HealthyCount + plan.PendingCount
 
-	// Calculate how many to launch
+	// Calculate capacity changes
 	delta := plan.DesiredCapacity - plan.CurrentCapacity
+
 	if delta > 0 {
+		// Scale up: launch more instances
 		plan.ToLaunch = delta
+	} else if delta < 0 {
+		// Scale down: terminate excess healthy instances
+		excessCount := -delta
+
+		// Select healthy instances for termination (oldest first)
+		healthyInstances := make([]HealthStatus, 0)
+		for _, h := range health {
+			if h.Healthy && h.EC2State == "running" {
+				healthyInstances = append(healthyInstances, h)
+			}
+		}
+
+		// Terminate the oldest healthy instances
+		for i := 0; i < excessCount && i < len(healthyInstances); i++ {
+			plan.ToTerminate = append(plan.ToTerminate, healthyInstances[i].InstanceID)
+		}
 	}
 
 	return plan, nil
