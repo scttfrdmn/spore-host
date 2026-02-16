@@ -108,14 +108,24 @@
 - Run `make check` before every commit
 
 ## Project Tracking
-- Track all work via GitHub Issues
-- Use GitHub Projects for planning/status
-- Use Milestones for releases/versions
-- Create labels as needed if no good existing match
+**Single Source of Truth: GitHub**
+- Track ALL work via GitHub Issues (not ROADMAP.md or other files)
+- Use GitHub Projects for planning/status visualization
+- Use GitHub Milestones for release grouping
+- Use GitHub Labels for categorization
 - Close issues via commit message: `Fixes #123`
+
+**Do NOT maintain:**
+- ROADMAP.md or similar planning documents
+- TODO lists in markdown files
+- External tracking spreadsheets
+- Status documents
+
+**Rationale:** Maintaining parallel tracking systems leads to synchronization issues. GitHub provides built-in tools for all project management needs.
 
 ## Do Not
 - Create README, docs, or configs unless asked
+- Maintain ROADMAP.md or other project tracking files (use GitHub Issues/Milestones instead)
 - Add dependencies without justification
 - Use `interface{}` or `any` without reason
 - Ignore returned errors
