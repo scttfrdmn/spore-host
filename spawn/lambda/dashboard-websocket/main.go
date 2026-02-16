@@ -13,6 +13,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 )
 
@@ -119,9 +120,9 @@ func handleDisconnect(ctx context.Context, dynamoClient *dynamodb.Client, connec
 	// Delete connection from DynamoDB
 	_, err := dynamoClient.DeleteItem(ctx, &dynamodb.DeleteItemInput{
 		TableName: aws.String(connectionsTable),
-		Key: map[string]dynamodb.AttributeValue{
-			"connection_id": &dynamodb.AttributeValue{
-				S: aws.String(connectionID),
+		Key: map[string]types.AttributeValue{
+			"connection_id": &types.AttributeValueMemberS{
+				Value: connectionID,
 			},
 		},
 	})

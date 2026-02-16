@@ -15,7 +15,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/apigatewaymanagementapi"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
-	"github.com/aws/smithy-go"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
 
 const (
@@ -109,8 +109,7 @@ func handler(ctx context.Context, event events.DynamoDBEvent) error {
 			err := publishToConnection(ctx, mgmtClient, conn.ConnectionID, messageJSON)
 			if err != nil {
 				// Check if connection is stale (410 Gone)
-				var ae smithy.APIError
-				if ok := smithy.As(err, &ae); ok && ae.ErrorCode() == "GoneException" {
+				if apiErr, ok := err.(interface{ ErrorCode() string }); ok && apiErr.ErrorCode() == "GoneException" {
 					fmt.Printf("Connection %s is stale (410), marking for deletion\n", conn.ConnectionID)
 					staleConnections = append(staleConnections, conn.ConnectionID)
 				} else {
@@ -164,11 +163,17 @@ func parseSweepEvent(record events.DynamoDBEventRecord) (eventType string, event
 			return "", nil, "", fmt.Errorf("NewImage is nil for INSERT/MODIFY event")
 		}
 
-		// Unmarshal into a map for flexibility
-		var sweep map[string]interface{}
-		err := attributevalue.UnmarshalMap(record.Change.NewImage, &sweep)
-		if err != nil {
-			return "", nil, "", fmt.Errorf("failed to unmarshal sweep: %w", err)
+		// Convert to map[string]interface{} directly from events.DynamoDBAttributeValue
+		sweep := make(map[string]interface{})
+		for key, val := range record.Change.NewImage {
+			// Extract the underlying value from DynamoDBAttributeValue
+			if strVal := val.String(); strVal != "" {
+				sweep[key] = strVal
+			} else if numVal := val.Number(); numVal != "" {
+				sweep[key] = numVal
+			} else if boolVal := val.Boolean(); boolVal {
+				sweep[key] = boolVal
+			}
 		}
 
 		// Extract user ID for filtering
@@ -182,17 +187,16 @@ func parseSweepEvent(record events.DynamoDBEventRecord) (eventType string, event
 			return "", nil, "", fmt.Errorf("OldImage is nil for REMOVE event")
 		}
 
-		var sweep map[string]interface{}
-		err := attributevalue.UnmarshalMap(record.Change.OldImage, &sweep)
-		if err != nil {
-			return "", nil, "", fmt.Errorf("failed to unmarshal sweep: %w", err)
+		var sweepID, userIDVal string
+		if val, ok := record.Change.OldImage["sweep_id"]; ok {
+			sweepID = val.String()
+		}
+		if val, ok := record.Change.OldImage["user_id"]; ok {
+			userIDVal = val.String()
 		}
 
-		sweepID, _ := sweep["sweep_id"].(string)
-		userID, _ := sweep["user_id"].(string)
-
 		data := map[string]string{"sweep_id": sweepID}
-		return "sweep:delete", data, userID, nil
+		return "sweep:delete", data, userIDVal, nil
 
 	default:
 		return "", nil, "", nil
@@ -208,11 +212,17 @@ func parseAutoscaleEvent(record events.DynamoDBEventRecord) (eventType string, e
 			return "", nil, "", fmt.Errorf("NewImage is nil for INSERT/MODIFY event")
 		}
 
-		// Unmarshal into a map for flexibility
-		var group map[string]interface{}
-		err := attributevalue.UnmarshalMap(record.Change.NewImage, &group)
-		if err != nil {
-			return "", nil, "", fmt.Errorf("failed to unmarshal autoscale group: %w", err)
+		// Convert to map[string]interface{} directly from events.DynamoDBAttributeValue
+		group := make(map[string]interface{})
+		for key, val := range record.Change.NewImage {
+			// Extract the underlying value from DynamoDBAttributeValue
+			if strVal := val.String(); strVal != "" {
+				group[key] = strVal
+			} else if numVal := val.Number(); numVal != "" {
+				group[key] = numVal
+			} else if boolVal := val.Boolean(); boolVal {
+				group[key] = boolVal
+			}
 		}
 
 		// TODO: Extract user ID from group data or associated instances
@@ -227,13 +237,10 @@ func parseAutoscaleEvent(record events.DynamoDBEventRecord) (eventType string, e
 			return "", nil, "", fmt.Errorf("OldImage is nil for REMOVE event")
 		}
 
-		var group map[string]interface{}
-		err := attributevalue.UnmarshalMap(record.Change.OldImage, &group)
-		if err != nil {
-			return "", nil, "", fmt.Errorf("failed to unmarshal autoscale group: %w", err)
+		var groupID string
+		if val, ok := record.Change.OldImage["autoscale_group_id"]; ok {
+			groupID = val.String()
 		}
-
-		groupID, _ := group["autoscale_group_id"].(string)
 
 		data := map[string]string{"autoscale_group_id": groupID}
 		return "autoscale:delete", data, "", nil
@@ -280,9 +287,9 @@ func publishToConnection(ctx context.Context, mgmtClient *apigatewaymanagementap
 func deleteConnection(ctx context.Context, dynamoClient *dynamodb.Client, connectionID string) error {
 	_, err := dynamoClient.DeleteItem(ctx, &dynamodb.DeleteItemInput{
 		TableName: aws.String(connectionsTable),
-		Key: map[string]dynamodb.AttributeValue{
-			"connection_id": &dynamodb.AttributeValue{
-				S: aws.String(connectionID),
+		Key: map[string]types.AttributeValue{
+			"connection_id": &types.AttributeValueMemberS{
+				Value: connectionID,
 			},
 		},
 	})

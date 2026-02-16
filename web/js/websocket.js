@@ -48,16 +48,8 @@ class DashboardWebSocket {
                 sessionToken: credentials.sessionToken || ''
             }));
 
-            // TODO: Update this endpoint after deployment
-            // Get this value from setup-websocket-api.sh output
-            this.wsEndpoint = 'wss://YOUR_API_ID.execute-api.us-east-1.amazonaws.com/production';
-
-            // Check if endpoint is configured
-            if (this.wsEndpoint.includes('YOUR_API_ID')) {
-                console.warn('WebSocket: Endpoint not configured yet, falling back to polling');
-                this.enablePollingFallback();
-                return;
-            }
+            // WebSocket API Gateway endpoint
+            this.wsEndpoint = 'wss://ir832sgfz2.execute-api.us-east-1.amazonaws.com/production';
 
             // Connect to WebSocket
             const url = `${this.wsEndpoint}?token=${encodeURIComponent(token)}`;
