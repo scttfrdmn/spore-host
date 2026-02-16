@@ -401,6 +401,11 @@ document.addEventListener('DOMContentLoaded', async function() {
             await loadDashboard(); // From main.js
             updateLastRefreshedTime(); // From main.js
             startAutoRefresh(); // From main.js
+
+            // Initialize WebSocket for real-time updates
+            if (typeof initWebSocket === 'function') {
+                initWebSocket(); // From websocket.js
+            }
         } else {
             // Show login page
             showLoginPage();

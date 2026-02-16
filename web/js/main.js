@@ -1129,9 +1129,16 @@ async function refreshCurrentDashboardView() {
     if (currentDashboardTab === 'instances') {
         await loadDashboard();
     } else if (currentDashboardTab === 'sweeps') {
-        await loadSweeps();
+        // Skip polling if WebSocket is connected
+        if (!dashboardWebSocket || !dashboardWebSocket.isConnected) {
+            await loadSweeps();
+        }
     } else if (currentDashboardTab === 'autoscale') {
-        await loadAutoscaleGroups();
+        // Skip polling if WebSocket is connected
+        if (!dashboardWebSocket || !dashboardWebSocket.isConnected) {
+            await loadAutoscaleGroups();
+        }
+        // Always refresh cost summary (not real-time)
         await loadCostSummary();
     }
 }

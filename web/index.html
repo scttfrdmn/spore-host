@@ -229,6 +229,7 @@ tar -xzf spawn_*_$(uname -s)_$(uname -m).tar.gz
 
         <!-- Web Dashboard -->
         <section id="dashboard" class="dashboard" style="display: none;">
+            <div id="connection-status" class="status-disconnected" title="Disconnected"></div>
             <div id="user-display" class="user-display"></div>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
                 <h2 style="margin: 0;">🍄 Your Spores</h2>
@@ -504,6 +505,7 @@ spawn --lang fr    # French</code></pre>
     </div>
 
     <script src="js/auth.js?v=2"></script>
+    <script src="js/websocket.js?v=1"></script>
     <script src="js/main.js?v=2"></script>
     <script>
     function scrollToDashboard(event) {
