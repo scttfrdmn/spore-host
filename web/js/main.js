@@ -1084,33 +1084,43 @@ function switchDashboardTab(tab) {
     // Update tab buttons
     const instancesTab = document.getElementById('tab-instances');
     const sweepsTab = document.getElementById('tab-sweeps');
+    const autoscaleTab = document.getElementById('tab-autoscale');
     const instancesContent = document.getElementById('instances-tab-content');
     const sweepsContent = document.getElementById('sweeps-tab-content');
+    const autoscaleContent = document.getElementById('autoscale-tab-content');
+
+    // Reset all tabs
+    [instancesTab, sweepsTab, autoscaleTab].forEach(t => {
+        if (t) {
+            t.classList.remove('active');
+            t.style.borderBottom = '3px solid transparent';
+            t.style.color = 'var(--text-muted)';
+        }
+    });
+
+    [instancesContent, sweepsContent, autoscaleContent].forEach(c => {
+        if (c) c.style.display = 'none';
+    });
 
     if (tab === 'instances') {
         instancesTab.classList.add('active');
         instancesTab.style.borderBottom = '3px solid var(--accent-blue)';
         instancesTab.style.color = 'var(--accent-blue)';
-        sweepsTab.classList.remove('active');
-        sweepsTab.style.borderBottom = '3px solid transparent';
-        sweepsTab.style.color = 'var(--text-muted)';
-
         instancesContent.style.display = 'block';
-        sweepsContent.style.display = 'none';
-
         loadDashboard();
     } else if (tab === 'sweeps') {
         sweepsTab.classList.add('active');
         sweepsTab.style.borderBottom = '3px solid var(--accent-blue)';
         sweepsTab.style.color = 'var(--accent-blue)';
-        instancesTab.classList.remove('active');
-        instancesTab.style.borderBottom = '3px solid transparent';
-        instancesTab.style.color = 'var(--text-muted)';
-
         sweepsContent.style.display = 'block';
-        instancesContent.style.display = 'none';
-
         loadSweeps();
+    } else if (tab === 'autoscale') {
+        autoscaleTab.classList.add('active');
+        autoscaleTab.style.borderBottom = '3px solid var(--accent-blue)';
+        autoscaleTab.style.color = 'var(--accent-blue)';
+        autoscaleContent.style.display = 'block';
+        loadAutoscaleGroups();
+        loadCostSummary();
     }
 }
 
@@ -1120,6 +1130,9 @@ async function refreshCurrentDashboardView() {
         await loadDashboard();
     } else if (currentDashboardTab === 'sweeps') {
         await loadSweeps();
+    } else if (currentDashboardTab === 'autoscale') {
+        await loadAutoscaleGroups();
+        await loadCostSummary();
     }
 }
 
@@ -1456,10 +1469,387 @@ async function cancelSweep(sweepId) {
     }
 }
 
+// ═══════════════════════════════════════════════════════════════
+// Autoscale Groups Functions
+// ═══════════════════════════════════════════════════════════════
+
+let allAutoscaleGroupsCache = [];
+
+// Load autoscale groups from API
+async function loadAutoscaleGroups() {
+    const tbody = document.getElementById('autoscale-tbody');
+    const errorDiv = document.getElementById('autoscale-error');
+    const loadingDiv = document.getElementById('autoscale-loading');
+
+    try {
+        if (loadingDiv) loadingDiv.style.display = 'block';
+        if (errorDiv) errorDiv.style.display = 'none';
+        if (tbody) tbody.innerHTML = '';
+
+        const apiEndpoint = 'https://api.spore.host/api/autoscale-groups';
+
+        const response = await fetch(apiEndpoint, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            credentials: 'include'
+        });
+
+        if (!response.ok) {
+            throw new Error(`API returned ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+
+        if (loadingDiv) loadingDiv.style.display = 'none';
+
+        if (data.success && data.autoscale_groups && data.autoscale_groups.length > 0) {
+            allAutoscaleGroupsCache = data.autoscale_groups;
+            applyAutoscaleFilters();
+        } else {
+            allAutoscaleGroupsCache = [];
+            if (tbody) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 3rem;">
+                            <div style="max-width: 600px; margin: 0 auto;">
+                                <div style="font-size: 3rem; margin-bottom: 1rem;">⚙️</div>
+                                <h3 style="color: var(--accent-blue); margin-bottom: 1rem;">No Autoscale Groups Yet</h3>
+                                <p style="color: var(--text-secondary); margin-bottom: 2rem; line-height: 1.8;">
+                                    Create autoscale groups to automatically manage capacity based on queues, metrics, or schedules.
+                                </p>
+                                <div style="background: rgba(79, 195, 247, 0.08); border: 1px solid rgba(79, 195, 247, 0.3); border-radius: 8px; padding: 1.5rem; text-align: left;">
+                                    <h4 style="color: var(--accent-blue); margin-bottom: 1rem; text-align: center;">🚀 Quick Start</h4>
+                                    <pre style="background: var(--bg-dark); padding: 1rem; border-radius: 4px; overflow-x: auto;"><code>spawn autoscale launch \\
+  --name my-workers \\
+  --desired 5 --min 2 --max 10 \\
+  --instance-type t3.micro</code></pre>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+    } catch (error) {
+        console.error('Failed to load autoscale groups:', error);
+
+        if (loadingDiv) loadingDiv.style.display = 'none';
+
+        if (errorDiv) {
+            errorDiv.style.display = 'block';
+            errorDiv.innerHTML = `<strong>Error:</strong> ${error.message || 'Unknown error'}`;
+        }
+    }
+}
+
+// Load cost summary
+async function loadCostSummary() {
+    try {
+        const apiEndpoint = 'https://api.spore.host/api/cost-summary';
+
+        const response = await fetch(apiEndpoint, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            credentials: 'include'
+        });
+
+        if (!response.ok) {
+            throw new Error(`API returned ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (data.success && data.cost) {
+            const cost = data.cost;
+
+            // Update cost widgets
+            const hourlyElem = document.getElementById('cost-hourly');
+            const monthlyElem = document.getElementById('cost-monthly');
+            const countElem = document.getElementById('cost-instance-count');
+            const breakdownElem = document.getElementById('cost-breakdown');
+
+            if (hourlyElem) hourlyElem.textContent = `$${cost.total_hourly_cost.toFixed(2)}`;
+            if (monthlyElem) monthlyElem.textContent = `$${cost.estimated_monthly_cost.toFixed(2)}`;
+            if (countElem) countElem.textContent = cost.instance_count;
+
+            // Format breakdown
+            if (breakdownElem && cost.breakdown_by_type) {
+                const breakdownHTML = Object.entries(cost.breakdown_by_type)
+                    .sort((a, b) => b[1].count - a[1].count)
+                    .map(([type, info]) =>
+                        `${type}: ${info.count}x ($${info.hourly_cost.toFixed(2)}/hr)`
+                    )
+                    .join(' • ');
+
+                breakdownElem.innerHTML = breakdownHTML || 'No running instances';
+            }
+        }
+    } catch (error) {
+        console.error('Failed to load cost summary:', error);
+    }
+}
+
+// Render autoscale groups table
+function renderAutoscaleGroupsTable(groups) {
+    const tbody = document.getElementById('autoscale-tbody');
+    if (!tbody) return;
+
+    tbody.innerHTML = '';
+
+    groups.forEach(group => {
+        const row = document.createElement('tr');
+        row.className = 'autoscale-group-row';
+        row.style.cursor = 'pointer';
+        row.onclick = () => toggleGroupDetails(group.autoscale_group_id);
+
+        // Name
+        const nameCell = document.createElement('td');
+        nameCell.innerHTML = `
+            <div style="font-weight: 500;">${group.group_name || group.autoscale_group_id}</div>
+            <div style="font-size: 0.8rem; color: var(--text-muted);">${group.autoscale_group_id.substring(0, 12)}...</div>
+        `;
+        row.appendChild(nameCell);
+
+        // Status
+        const statusCell = document.createElement('td');
+        statusCell.innerHTML = getGroupStatusBadge(group.status);
+        row.appendChild(statusCell);
+
+        // Capacity
+        const capacityCell = document.createElement('td');
+        capacityCell.innerHTML = `
+            <div>${group.current_capacity} / ${group.desired_capacity}</div>
+            <div style="font-size: 0.8rem; color: var(--text-muted);">
+                ${group.current_capacity === group.desired_capacity ? '✅ At target' : '⏳ Scaling'}
+            </div>
+        `;
+        row.appendChild(capacityCell);
+
+        // Min/Max
+        const rangeCell = document.createElement('td');
+        rangeCell.textContent = `${group.min_capacity} / ${group.max_capacity}`;
+        row.appendChild(rangeCell);
+
+        // Policy
+        const policyCell = document.createElement('td');
+        policyCell.innerHTML = formatPolicyType(group.policy_type);
+        row.appendChild(policyCell);
+
+        // Last Event
+        const eventCell = document.createElement('td');
+        eventCell.textContent = formatRelativeTime(new Date(group.last_scale_event));
+        eventCell.style.color = 'var(--text-muted)';
+        row.appendChild(eventCell);
+
+        tbody.appendChild(row);
+
+        // Add details row (hidden by default)
+        const detailRow = document.createElement('tr');
+        detailRow.id = `detail-${group.autoscale_group_id}`;
+        detailRow.className = 'autoscale-group-detail';
+        detailRow.style.display = 'none';
+
+        const detailCell = document.createElement('td');
+        detailCell.colSpan = 6;
+        detailCell.innerHTML = '<div style="padding: 1rem; text-align: center; color: var(--text-muted);">Loading details...</div>';
+        detailRow.appendChild(detailCell);
+
+        tbody.appendChild(detailRow);
+    });
+}
+
+// Toggle group details
+async function toggleGroupDetails(groupId) {
+    const detailRow = document.getElementById(`detail-${groupId}`);
+    if (!detailRow) return;
+
+    if (detailRow.style.display === 'table-row') {
+        detailRow.style.display = 'none';
+        return;
+    }
+
+    // Show loading
+    detailRow.style.display = 'table-row';
+    detailRow.querySelector('td').innerHTML = '<div style="padding: 1rem; text-align: center; color: var(--text-muted);">Loading details...</div>';
+
+    try {
+        const apiEndpoint = `https://api.spore.host/api/autoscale-groups/${groupId}`;
+
+        const response = await fetch(apiEndpoint, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            credentials: 'include'
+        });
+
+        if (!response.ok) {
+            throw new Error(`API returned ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (data.success && data.group) {
+            renderGroupDetails(detailRow, data.group);
+        } else {
+            throw new Error('Failed to load group details');
+        }
+    } catch (error) {
+        console.error('Failed to load group details:', error);
+        detailRow.querySelector('td').innerHTML = `<div style="padding: 1rem; text-align: center; color: var(--accent-red);">Error: ${error.message}</div>`;
+    }
+}
+
+// Render group details
+function renderGroupDetails(detailRow, group) {
+    const cell = detailRow.querySelector('td');
+
+    let detailHTML = `
+        <div style="padding: 1.5rem; background: rgba(0, 0, 0, 0.2); border-radius: 8px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+                <div>
+                    <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem;">Healthy Instances</div>
+                    <div style="font-size: 1.5rem; font-weight: bold; color: var(--accent-green);">${group.healthy_count}</div>
+                </div>
+                <div>
+                    <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem;">Unhealthy Instances</div>
+                    <div style="font-size: 1.5rem; font-weight: bold; color: var(--accent-red);">${group.unhealthy_count}</div>
+                </div>
+                <div>
+                    <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem;">Pending Instances</div>
+                    <div style="font-size: 1.5rem; font-weight: bold; color: var(--accent-blue);">${group.pending_count}</div>
+                </div>
+            </div>
+    `;
+
+    if (group.instances && group.instances.length > 0) {
+        detailHTML += `
+            <h4 style="margin-bottom: 1rem; color: var(--text-primary);">Instances</h4>
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: rgba(0, 0, 0, 0.3);">
+                            <th style="padding: 0.5rem; text-align: left; border-bottom: 1px solid var(--border);">Instance ID</th>
+                            <th style="padding: 0.5rem; text-align: left; border-bottom: 1px solid var(--border);">State</th>
+                            <th style="padding: 0.5rem; text-align: left; border-bottom: 1px solid var(--border);">Health</th>
+                            <th style="padding: 0.5rem; text-align: left; border-bottom: 1px solid var(--border);">Launched</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+
+        group.instances.forEach(inst => {
+            const healthBadge = inst.health_status === 'healthy'
+                ? '<span style="color: var(--accent-green);">✅ Healthy</span>'
+                : inst.health_status === 'pending'
+                ? '<span style="color: var(--accent-blue);">⏳ Pending</span>'
+                : '<span style="color: var(--accent-red);">❌ Unhealthy</span>';
+
+            detailHTML += `
+                <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
+                    <td style="padding: 0.5rem; font-family: monospace; font-size: 0.9rem;">${inst.instance_id}</td>
+                    <td style="padding: 0.5rem;">${inst.state}</td>
+                    <td style="padding: 0.5rem;">${healthBadge}</td>
+                    <td style="padding: 0.5rem; color: var(--text-muted); font-size: 0.9rem;">${formatRelativeTime(new Date(inst.launched_at))}</td>
+                </tr>
+            `;
+        });
+
+        detailHTML += `
+                    </tbody>
+                </table>
+            </div>
+        `;
+    } else {
+        detailHTML += '<p style="color: var(--text-muted); text-align: center;">No instances</p>';
+    }
+
+    detailHTML += '</div>';
+
+    cell.innerHTML = detailHTML;
+}
+
+// Get group status badge
+function getGroupStatusBadge(status) {
+    switch (status) {
+        case 'active':
+            return '<span style="background: rgba(102, 187, 106, 0.2); color: var(--accent-green); padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.85rem; font-weight: 500;">✅ Active</span>';
+        case 'paused':
+            return '<span style="background: rgba(255, 193, 7, 0.2); color: #FFC107; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.85rem; font-weight: 500;">⏸️ Paused</span>';
+        case 'terminated':
+            return '<span style="background: rgba(244, 67, 54, 0.2); color: var(--accent-red); padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.85rem; font-weight: 500;">❌ Terminated</span>';
+        default:
+            return '<span style="background: rgba(158, 158, 158, 0.2); color: var(--text-muted); padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.85rem; font-weight: 500;">❓ Unknown</span>';
+    }
+}
+
+// Format policy type
+function formatPolicyType(type) {
+    switch (type) {
+        case 'queue':
+            return '<span style="color: var(--accent-blue);">📋 Queue-based</span>';
+        case 'metric':
+            return '<span style="color: var(--accent-green);">📊 Metric-based</span>';
+        case 'schedule':
+            return '<span style="color: #FFC107;">⏰ Scheduled</span>';
+        case 'none':
+            return '<span style="color: var(--text-muted);">⚙️ Manual</span>';
+        default:
+            return '<span style="color: var(--text-muted);">❓ Unknown</span>';
+    }
+}
+
+// Apply autoscale filters
+function applyAutoscaleFilters() {
+    const searchInput = document.getElementById('autoscale-search-input');
+    const statusFilter = document.getElementById('autoscale-status-filter');
+
+    const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
+    const statusValue = statusFilter ? statusFilter.value : '';
+
+    let filtered = allAutoscaleGroupsCache.filter(group => {
+        // Search filter
+        if (searchTerm) {
+            const name = (group.group_name || '').toLowerCase();
+            const id = group.autoscale_group_id.toLowerCase();
+            if (!name.includes(searchTerm) && !id.includes(searchTerm)) {
+                return false;
+            }
+        }
+
+        // Status filter
+        if (statusValue && group.status !== statusValue) {
+            return false;
+        }
+
+        return true;
+    });
+
+    renderAutoscaleGroupsTable(filtered);
+}
+
+// Clear autoscale filters
+function clearAutoscaleFilters() {
+    const searchInput = document.getElementById('autoscale-search-input');
+    const statusFilter = document.getElementById('autoscale-status-filter');
+
+    if (searchInput) searchInput.value = '';
+    if (statusFilter) statusFilter.value = '';
+
+    applyAutoscaleFilters();
+}
+
 // Auto-refresh sweeps (every 10 seconds if on sweeps tab)
 setInterval(() => {
     if (currentDashboardTab === 'sweeps' && document.getElementById('sweeps-tab-content').style.display !== 'none') {
         loadSweeps();
+    } else if (currentDashboardTab === 'autoscale' && document.getElementById('autoscale-tab-content').style.display !== 'none') {
+        loadAutoscaleGroups();
+        loadCostSummary();
     }
 }, 10000);
 

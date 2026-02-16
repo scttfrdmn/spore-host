@@ -186,3 +186,80 @@ type SweepInstance struct {
 	TerminatedAt string `dynamodbav:"terminated_at,omitempty"`
 	ErrorMessage string `dynamodbav:"error_message,omitempty"`
 }
+
+// Autoscale API Response structures
+
+// AutoScaleGroupsAPIResponse is the response for /api/autoscale-groups
+type AutoScaleGroupsAPIResponse struct {
+	Success            bool                  `json:"success"`
+	Message            string                `json:"message,omitempty"`
+	Error              string                `json:"error,omitempty"`
+	TotalGroups        int                   `json:"total_groups"`
+	AutoScaleGroups    []AutoScaleGroupInfo  `json:"autoscale_groups"`
+}
+
+// AutoScaleGroupDetailAPIResponse is the response for /api/autoscale-groups/{id}
+type AutoScaleGroupDetailAPIResponse struct {
+	Success bool               `json:"success"`
+	Message string             `json:"message,omitempty"`
+	Error   string             `json:"error,omitempty"`
+	Group   GroupDetailInfo    `json:"group"`
+}
+
+// CostSummaryAPIResponse is the response for /api/cost-summary
+type CostSummaryAPIResponse struct {
+	Success bool        `json:"success"`
+	Message string      `json:"message,omitempty"`
+	Error   string      `json:"error,omitempty"`
+	Cost    CostSummary `json:"cost"`
+}
+
+// AutoScaleGroupInfo represents autoscale group summary information
+type AutoScaleGroupInfo struct {
+	AutoScaleGroupID string    `json:"autoscale_group_id"`
+	GroupName        string    `json:"group_name"`
+	Status           string    `json:"status"`
+	DesiredCapacity  int       `json:"desired_capacity"`
+	CurrentCapacity  int       `json:"current_capacity"`
+	MinCapacity      int       `json:"min_capacity"`
+	MaxCapacity      int       `json:"max_capacity"`
+	PolicyType       string    `json:"policy_type"`
+	LastScaleEvent   time.Time `json:"last_scale_event"`
+	CreatedAt        time.Time `json:"created_at"`
+}
+
+// GroupDetailInfo represents detailed autoscale group information
+type GroupDetailInfo struct {
+	AutoScaleGroupInfo
+	HealthyCount        int                 `json:"healthy_count"`
+	UnhealthyCount      int                 `json:"unhealthy_count"`
+	PendingCount        int                 `json:"pending_count"`
+	QueueDepth          *int                `json:"queue_depth,omitempty"`
+	MetricValue         *float64            `json:"metric_value,omitempty"`
+	NextScheduledAction *string             `json:"next_scheduled_action,omitempty"`
+	Instances           []GroupInstanceInfo `json:"instances"`
+}
+
+// GroupInstanceInfo represents instance info within an autoscale group
+type GroupInstanceInfo struct {
+	InstanceID       string  `json:"instance_id"`
+	State            string  `json:"state"`
+	HealthStatus     string  `json:"health_status"`
+	HeartbeatAge     float64 `json:"heartbeat_age_seconds"`
+	SpotInterruption bool    `json:"spot_interruption"`
+	LaunchedAt       time.Time `json:"launched_at"`
+}
+
+// CostSummary represents current cost information
+type CostSummary struct {
+	TotalHourlyCost      float64                `json:"total_hourly_cost"`
+	EstimatedMonthlyCost float64                `json:"estimated_monthly_cost"`
+	InstanceCount        int                    `json:"instance_count"`
+	BreakdownByType      map[string]TypeCost    `json:"breakdown_by_type"`
+}
+
+// TypeCost represents cost breakdown by instance type
+type TypeCost struct {
+	Count      int     `json:"count"`
+	HourlyCost float64 `json:"hourly_cost"`
+}

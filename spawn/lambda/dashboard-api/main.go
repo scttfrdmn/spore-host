@@ -70,6 +70,20 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		}
 		return handleCancelSweep(ctx, cfg, sweepID, userID)
 
+	case path == "/api/autoscale-groups" && method == "GET":
+		return handleListAutoscaleGroups(ctx, cfg, userID)
+
+	case path == "/api/autoscale-groups/" && method == "GET":
+		// Extract group ID from path
+		groupID := request.PathParameters["id"]
+		if groupID == "" {
+			return errorResponse(400, "Autoscale group ID is required"), nil
+		}
+		return handleGetAutoscaleGroup(ctx, cfg, groupID, userID)
+
+	case path == "/api/cost-summary" && method == "GET":
+		return handleGetCostSummary(ctx, cfg, userID)
+
 	case path == "/api/user/profile" && method == "GET":
 		return handleGetUserProfile(ctx, cfg, userID, accountID, accountBase36)
 
