@@ -1,6 +1,6 @@
 # Spawn Development Roadmap
 
-**Last Updated:** 2026-01-30 (v0.19.0)
+**Last Updated:** 2026-02-14 (v0.20.0)
 
 ## Current Status
 
@@ -145,6 +145,19 @@ Spawn has evolved from a single-instance tool into a **production-ready cloud or
 - **Production Ready**: Zero breaking changes, opt-in via tags/config
 - **Delivered:** v0.19.0
 
+#### 15. Auto-Scaling Job Arrays ✅ **COMPLETED** (#118-121)
+- **Phase 1**: Core infrastructure with health checks and capacity reconciliation
+- **Phase 2**: Queue-based dynamic scaling (SQS depth monitoring)
+- **Phase 3**: Metric-based scaling (CloudWatch CPU/memory integration)
+- **Phase 4.1**: Graceful instance drain with timeout management
+- **Phase 4.2**: Scheduled scaling with cron expressions and timezone support
+- **Phase 4.3**: Multi-queue support with weighted priorities (0.0-1.0)
+- **Phase 4.4**: Hybrid policies (queue + metric + schedule) with intelligent combination
+- **Drain Enhancement**: Job registry integration for intelligent drain detection
+- **Cross-Account**: Lambda in mycelium-infra orchestrating EC2 in mycelium-dev
+- **Production Ready**: Deployed and validated in production with E2E testing
+- **Delivered:** v0.20.0
+
 ---
 
 ## What's Actually Remaining
@@ -180,31 +193,9 @@ Spawn has evolved from a single-instance tool into a **production-ready cloud or
 
 ---
 
-#### 2. Auto-Scaling Job Arrays
-**Status:** Design phase
-
-**Features:**
-- Maintain N target instances (replace failures/interruptions)
-- Scale up/down based on queue depth
-- Spot instance replacement with on-demand fallback
-- Health checks and automatic recovery
-- Integration with existing job arrays
-
-**Estimated Effort:** 3-4 weeks
-
-**Dependencies:** None (builds on existing job arrays)
-
-**Use Cases Unlocked:**
-- Long-running cluster workloads
-- Self-healing distributed systems
-- Dynamic workload scaling
-- Resilient spot instance clusters
-
----
-
 ### Medium Priority
 
-#### 3. Advanced Volume Management
+#### 2. Advanced Volume Management
 **Status:** ~50% complete
 
 **What's Needed:**
@@ -218,7 +209,7 @@ Spawn has evolved from a single-instance tool into a **production-ready cloud or
 
 ---
 
-#### 4. Enhanced Network Configuration
+#### 3. Enhanced Network Configuration
 **Status:** ~60% complete
 
 **What's Needed:**
@@ -232,7 +223,7 @@ Spawn has evolved from a single-instance tool into a **production-ready cloud or
 
 ---
 
-#### 5. Template Marketplace
+#### 4. Template Marketplace
 **Status:** Design phase
 
 **Features:**
@@ -248,7 +239,7 @@ Spawn has evolved from a single-instance tool into a **production-ready cloud or
 
 ### Lower Priority / Future Enhancements
 
-#### 6. Integration Ecosystem
+#### 5. Integration Ecosystem
 - **Terraform Provider**: Manage spawn resources via IaC
 - **GitHub Actions**: spawn action for CI/CD
 - **Kubernetes Operator**: Spawn resources from K8s
@@ -259,7 +250,7 @@ Spawn has evolved from a single-instance tool into a **production-ready cloud or
 
 ---
 
-#### 7. Advanced Cost Features
+#### 6. Advanced Cost Features
 - Cost allocation tags
 - Chargeback reports by team/project
 - Cost anomaly detection
@@ -271,7 +262,7 @@ Spawn has evolved from a single-instance tool into a **production-ready cloud or
 
 ---
 
-#### 8. Enterprise Features
+#### 7. Enterprise Features
 - SSO integration (Okta, Azure AD)
 - RBAC (role-based access control)
 - Audit logging (CloudTrail integration)
@@ -478,14 +469,18 @@ Spawn has evolved from a single-instance tool into a **production-ready cloud or
   - Scheduled executions
   - Data staging
   - Advanced DNS features
+  - Auto-scaling job arrays with hybrid policies
 
-**Current State (v0.13.0):** spawn is **production-ready with enterprise-grade security and comprehensive documentation**. The core platform is complete, battle-tested, and fully documented.
+**Current State (v0.20.0):** spawn is **production-ready with enterprise-grade security, comprehensive documentation, and auto-scaling capabilities**. The core platform is complete, battle-tested, and fully documented.
 
-**v0.14.0 Direction:** NIST compliance frameworks (800-171 for CUI, 800-53 for FedRAMP) to enable government and regulated industry adoption.
+**v0.20.0 Milestone:** Auto-scaling job arrays with queue-based, metric-based, and scheduled scaling. Hybrid policies enable intelligent capacity management for dynamic workloads.
 
-**Future Work (v0.15.0+):**
+**v0.21.0+ Direction:** Enhanced auto-scaling features (predictive scaling, cost optimization), NIST compliance frameworks (800-171 for CUI, 800-53 for FedRAMP), web dashboard, and template marketplace.
+
+**Future Work:**
+- Predictive scaling with ML-based forecasting
+- Cost optimization with spot/on-demand mix strategies
 - Web dashboard with job array visualization
-- Auto-scaling job arrays
 - Template marketplace
 - Additional enterprise features (SSO, RBAC)
 - Advanced cost features (chargeback, anomaly detection)

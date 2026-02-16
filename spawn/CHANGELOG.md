@@ -50,6 +50,117 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **All launches now have 1h idle timeout by default** (use `--no-timeout` to disable)
 - Users must explicitly opt-in to unsafe behavior instead of accidentally creating zombies
 
+## [0.20.0] - 2026-02-14
+
+**Auto-Scaling Job Arrays** - Production-ready auto-scaling system with queue-based, metric-based, and scheduled scaling. Supports multi-queue weighted priorities and hybrid policy combinations.
+
+### Added
+
+#### Auto-Scaling Job Arrays (Issues #118-121)
+
+**Phase 1: Core Infrastructure**
+- Health checks and capacity reconciliation
+- Automatic instance replacement for failures
+- Min/max/desired capacity management
+- Cross-account orchestration (Lambda in mycelium-infra, EC2 in mycelium-dev)
+- DynamoDB state tracking (`spawn-autoscale-groups-production`)
+
+**Phase 2: Queue-Based Scaling**
+- SQS queue depth monitoring
+- Dynamic capacity calculation: `ceil(queue_depth / target_messages_per_instance)`
+- Configurable scale-up (60s) and scale-down (300s) cooldown periods
+- Scale to zero support for cost optimization
+- CLI: `spawn autoscale set-policy --scaling-policy queue-depth`
+
+**Phase 3: Metric-Based Scaling**
+- CloudWatch metric integration (CPU, memory, custom)
+- Target value scaling (e.g., maintain 70% CPU utilization)
+- Configurable metric period and statistics
+- CLI: `spawn autoscale set-metric-policy --metric-policy cpu --target-value 70`
+
+**Phase 4.1: Graceful Drain**
+- Timeout-based drain configuration
+- Job registry integration for intelligent drain detection
+- Check interval and heartbeat staleness thresholds
+- Graceful degradation if registry unavailable
+
+**Phase 4.2: Scheduled Scaling**
+- Cron expression support (6-field format: second minute hour day month weekday)
+- Timezone support (IANA timezone names)
+- Multiple schedules per group
+- 1-minute trigger window for Lambda timing jitter
+- Highest priority (overrides all other policies)
+- CLI: `spawn autoscale add-schedule --schedule "0 0 9 * * MON-FRI" --timezone America/New_York`
+
+**Phase 4.3: Multi-Queue Support**
+- Multiple SQS queues per autoscale group
+- Weighted priorities (0.0-1.0 per queue)
+- Weighted depth calculation: `Σ(queue_depth × weight)`
+- Backward compatible with single queue
+- CLI: `spawn autoscale set-policy --queue URL1 --queue-weight 0.7 --queue URL2 --queue-weight 0.3`
+
+**Phase 4.4: Hybrid Policies**
+- Intelligent combination of queue + metric + schedule policies
+- Policy priority: Schedule > Queue+Metric > Manual
+- Combination strategy: max() for both scale-up (aggressive) and scale-down (conservative)
+- Detailed logging of hybrid scaling decisions
+- All policies can coexist and work together
+
+**CLI Commands**
+- `spawn autoscale launch` - Create autoscale group
+- `spawn autoscale update` - Adjust capacity
+- `spawn autoscale status` - View group status
+- `spawn autoscale health` - Check instance health
+- `spawn autoscale set-policy` - Configure queue policy
+- `spawn autoscale set-metric-policy` - Configure metric policy
+- `spawn autoscale add-schedule` - Add scheduled action
+- `spawn autoscale remove-schedule` - Remove scheduled action
+- `spawn autoscale list-schedules` - List all schedules
+- `spawn autoscale scaling-activity` - View scaling history
+- `spawn autoscale metric-activity` - View metric decisions
+- `spawn autoscale pause` - Pause reconciliation
+- `spawn autoscale resume` - Resume reconciliation
+- `spawn autoscale terminate` - Delete group and instances
+
+**Documentation**
+- Comprehensive auto-scaling guide: `docs/AUTOSCALING.md`
+- E2E test documentation: `PHASE_4_COMPLETION.md`
+- Test plan: `SCHEDULED_SCALING_TEST.md`
+
+### Fixed
+
+**Scale-Down Logic** (commit a8376b1)
+- Fixed capacity planner to correctly terminate excess instances when scaling down
+- Added logic to select oldest healthy instances for termination
+- Previously only handled scale-up and unhealthy instance replacement
+- Now properly scales down when current > desired capacity
+
+### Infrastructure
+
+**Lambda Function**
+- `spawn-autoscale-orchestrator-production` runs every 1 minute via EventBridge
+- Reconciles all active autoscale groups
+- Cross-account role assumption for EC2 operations
+- Performance: 70-230ms cold start, 7-500ms warm, 1.4-1.6s for scale operations
+- Memory usage: 37-42 MB / 512 MB allocated
+
+**Dependencies**
+- Added `github.com/robfig/cron/v3` for cron expression parsing
+
+### Performance
+
+- Lambda execution: ~200-500ms per group reconciliation
+- Scale operations: 1.4-1.6s including EC2 API calls
+- Queue depth queries: <100ms
+- CloudWatch metric queries: <200ms
+- 100% success rate in E2E testing
+
+### Breaking Changes
+
+None. All features are backward compatible.
+
+---
+
 ## [0.14.0] - 2026-01-28
 
 **NIST Compliance Framework** - Complete implementation of NIST 800-171 Rev 3 and NIST 800-53 Rev 5 compliance controls, enabling spawn usage in government and regulated environments.

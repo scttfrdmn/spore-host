@@ -67,6 +67,40 @@ spawn --instance-type m7i.large --region us-east-1 --ttl 8h
 - **📦 Data Staging**: Efficient multi-region data distribution with 90-99% cost savings ([docs](DATA_STAGING_GUIDE.md))
 - **⏰ Scheduled Executions**: Schedule parameter sweeps for future execution via EventBridge Scheduler ([docs](SCHEDULED_EXECUTIONS_GUIDE.md))
 - **🔄 Batch Queue Mode**: Sequential job execution with dependency management, retry logic, and state persistence ([docs](BATCH_QUEUE_GUIDE.md))
+- **📈 Auto-Scaling Job Arrays**: Maintain target capacity with queue-based, metric-based, and scheduled scaling. Multi-queue support with weighted priorities and hybrid policies ([docs](docs/AUTOSCALING.md))
+
+### Auto-Scaling Example
+
+Launch a self-managing fleet that scales based on queue depth:
+
+```bash
+# Launch autoscale group
+spawn autoscale launch \
+  --name batch-workers \
+  --min-capacity 0 \
+  --max-capacity 20 \
+  --desired-capacity 3 \
+  --instance-type c5.large \
+  --ami ami-xxx
+
+# Add queue-based scaling
+spawn autoscale set-policy batch-workers \
+  --scaling-policy queue-depth \
+  --queue https://sqs.us-east-1.amazonaws.com/.../jobs \
+  --target-messages-per-instance 10
+
+# Add business hours schedule
+spawn autoscale add-schedule batch-workers \
+  --name peak-hours \
+  --schedule "0 0 9-17 * * MON-FRI" \
+  --desired-capacity 15 \
+  --timezone America/New_York
+
+# Monitor status
+spawn autoscale status batch-workers
+```
+
+See [Auto-Scaling Guide](docs/AUTOSCALING.md) for comprehensive documentation.
 
 ## 📦 Installation
 
