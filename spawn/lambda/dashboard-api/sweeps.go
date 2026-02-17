@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -20,18 +21,19 @@ const (
 )
 
 // handleListSweeps handles GET /api/sweeps
-func handleListSweeps(ctx context.Context, cfg aws.Config, userID string) (events.APIGatewayProxyResponse, error) {
+func handleListSweeps(ctx context.Context, cfg aws.Config, cliIamArn string) (events.APIGatewayProxyResponse, error) {
+	fmt.Printf("handleListSweeps called for user: %s\n", cliIamArn)
 	startTime := time.Now()
 
 	// Query DynamoDB for user's sweeps
 	dynamodbClient := dynamodb.NewFromConfig(cfg)
 
-	// Scan table (TODO: Add GSI on user_id for better performance)
+	// Scan table with per-user filtering
 	scanInput := &dynamodb.ScanInput{
 		TableName:        aws.String(dynamoSweepTable),
 		FilterExpression: aws.String("user_id = :user_id"),
 		ExpressionAttributeValues: map[string]types.AttributeValue{
-			":user_id": &types.AttributeValueMemberS{Value: userID},
+			":user_id": &types.AttributeValueMemberS{Value: cliIamArn},
 		},
 	}
 
@@ -87,7 +89,7 @@ func handleListSweeps(ctx context.Context, cfg aws.Config, userID string) (event
 }
 
 // handleGetSweep handles GET /api/sweeps/{id}
-func handleGetSweep(ctx context.Context, cfg aws.Config, sweepID, userID string) (events.APIGatewayProxyResponse, error) {
+func handleGetSweep(ctx context.Context, cfg aws.Config, sweepID, cliIamArn string) (events.APIGatewayProxyResponse, error) {
 	// Query DynamoDB for sweep
 	dynamodbClient := dynamodb.NewFromConfig(cfg)
 
@@ -112,8 +114,8 @@ func handleGetSweep(ctx context.Context, cfg aws.Config, sweepID, userID string)
 		return errorResponse(500, fmt.Sprintf("Failed to unmarshal sweep: %v", err)), nil
 	}
 
-	// Verify user owns this sweep
-	if sweep.UserID != userID {
+	// Verify sweep belongs to this user
+	if sweep.UserID != cliIamArn {
 		return errorResponse(403, "Access denied"), nil
 	}
 
@@ -174,7 +176,7 @@ func handleGetSweep(ctx context.Context, cfg aws.Config, sweepID, userID string)
 }
 
 // handleCancelSweep handles POST /api/sweeps/{id}/cancel
-func handleCancelSweep(ctx context.Context, cfg aws.Config, sweepID, userID string) (events.APIGatewayProxyResponse, error) {
+func handleCancelSweep(ctx context.Context, cfg aws.Config, sweepID, cliIamArn string) (events.APIGatewayProxyResponse, error) {
 	// Get sweep details
 	dynamodbClient := dynamodb.NewFromConfig(cfg)
 
@@ -199,8 +201,8 @@ func handleCancelSweep(ctx context.Context, cfg aws.Config, sweepID, userID stri
 		return errorResponse(500, fmt.Sprintf("Failed to unmarshal sweep: %v", err)), nil
 	}
 
-	// Verify user owns this sweep
-	if sweep.UserID != userID {
+	// Verify sweep belongs to this user
+	if sweep.UserID != cliIamArn {
 		return errorResponse(403, "Access denied"), nil
 	}
 
@@ -256,6 +258,94 @@ func handleCancelSweep(ctx context.Context, cfg aws.Config, sweepID, userID stri
 		Success:             true,
 		Message:             "Sweep cancelled successfully",
 		InstancesTerminated: len(instanceIDs),
+	}
+
+	return successResponse(response)
+}
+
+// handleCleanupSweeps handles POST /api/sweeps/cleanup
+func handleCleanupSweeps(ctx context.Context, cfg aws.Config, body string, cliIamArn string) (events.APIGatewayProxyResponse, error) {
+	// Parse request body
+	var request struct {
+		SweepIDs []string `json:"sweep_ids"`
+	}
+	if err := json.Unmarshal([]byte(body), &request); err != nil {
+		return errorResponse(400, "Invalid request body"), nil
+	}
+
+	if len(request.SweepIDs) == 0 {
+		return errorResponse(400, "No sweep IDs provided"), nil
+	}
+
+	dynamodbClient := dynamodb.NewFromConfig(cfg)
+	deletedCount := 0
+
+	// Delete each sweep
+	for _, sweepID := range request.SweepIDs {
+		// First, get the sweep to verify it belongs to this user
+		getInput := &dynamodb.GetItemInput{
+			TableName: aws.String(dynamoSweepTable),
+			Key: map[string]types.AttributeValue{
+				"sweep_id": &types.AttributeValueMemberS{Value: sweepID},
+			},
+		}
+
+		result, err := dynamodbClient.GetItem(ctx, getInput)
+		if err != nil {
+			fmt.Printf("Warning: Failed to get sweep %s: %v\n", sweepID, err)
+			continue
+		}
+
+		if result.Item == nil {
+			fmt.Printf("Warning: Sweep %s not found\n", sweepID)
+			continue
+		}
+
+		var sweep SweepRecord
+		if err := attributevalue.UnmarshalMap(result.Item, &sweep); err != nil {
+			fmt.Printf("Warning: Failed to unmarshal sweep %s: %v\n", sweepID, err)
+			continue
+		}
+
+		// Verify sweep belongs to this user
+		if sweep.UserID != cliIamArn {
+			fmt.Printf("Warning: Sweep %s not owned by user\n", sweepID)
+			continue
+		}
+
+		// Only delete if completed, cancelled, or failed
+		if sweep.Status != "COMPLETED" && sweep.Status != "CANCELLED" && sweep.Status != "FAILED" {
+			fmt.Printf("Warning: Sweep %s is %s, skipping\n", sweepID, sweep.Status)
+			continue
+		}
+
+		// Delete the sweep
+		deleteInput := &dynamodb.DeleteItemInput{
+			TableName: aws.String(dynamoSweepTable),
+			Key: map[string]types.AttributeValue{
+				"sweep_id": &types.AttributeValueMemberS{Value: sweepID},
+			},
+		}
+
+		_, err = dynamodbClient.DeleteItem(ctx, deleteInput)
+		if err != nil {
+			fmt.Printf("Warning: Failed to delete sweep %s: %v\n", sweepID, err)
+			continue
+		}
+
+		deletedCount++
+		fmt.Printf("Deleted sweep: %s\n", sweepID)
+	}
+
+	// Build response
+	response := struct {
+		Success      bool   `json:"success"`
+		Message      string `json:"message"`
+		DeletedCount int    `json:"deleted_count"`
+	}{
+		Success:      true,
+		Message:      fmt.Sprintf("Successfully deleted %d sweep(s)", deletedCount),
+		DeletedCount: deletedCount,
 	}
 
 	return successResponse(response)

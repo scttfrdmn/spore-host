@@ -13,18 +13,17 @@ import (
 
 // handler is the main Lambda handler
 func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	// Load AWS config
-	cfg, err := config.LoadDefaultConfig(ctx)
-	if err != nil {
-		return errorResponse(500, "Failed to load AWS config"), nil
-	}
-
 	// Extract path and method
 	path := request.Path
 	method := request.HTTPMethod
 
+	// Log request for debugging
+	fmt.Printf("Request: method=%s path=%s\n", method, path)
+	fmt.Printf("Headers: %+v\n", request.Headers)
+
 	// Handle OPTIONS for CORS preflight
 	if method == "OPTIONS" {
+		fmt.Println("Handling OPTIONS request")
 		return events.APIGatewayProxyResponse{
 			StatusCode: 200,
 			Headers:    corsHeaders,
@@ -32,16 +31,26 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		}, nil
 	}
 
-	// Extract user identity and account info
-	userID, accountID, accountBase36, err := getUserFromRequest(ctx, cfg, request)
+	// Load AWS config
+	cfg, err := config.LoadDefaultConfig(ctx)
 	if err != nil {
+		return errorResponse(500, "Failed to load AWS config"), nil
+	}
+
+	// Extract user identity and account info
+	userID, cliIamArn, accountBase36, err := getUserFromRequest(ctx, cfg, request)
+	if err != nil {
+		fmt.Printf("Authentication failed: %v\n", err)
 		return errorResponse(401, fmt.Sprintf("Authentication failed: %v", err)), nil
 	}
+
+	fmt.Printf("✓ Authentication successful: userID=%s cliIamArn=%s accountBase36=%s\n", userID, cliIamArn, accountBase36)
+	fmt.Printf("Routing request: path=%s method=%s\n", path, method)
 
 	// Route to appropriate handler
 	switch {
 	case path == "/api/instances" && method == "GET":
-		return handleListInstances(ctx, cfg, accountBase36, userID)
+		return handleListInstances(ctx, cfg, cliIamArn)
 
 	case path == "/api/instances/" && method == "GET":
 		// Extract instance ID from path
@@ -49,10 +58,10 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		if instanceID == "" {
 			return errorResponse(400, "Instance ID is required"), nil
 		}
-		return handleGetInstance(ctx, cfg, instanceID, accountBase36, userID)
+		return handleGetInstance(ctx, cfg, instanceID, cliIamArn)
 
 	case path == "/api/sweeps" && method == "GET":
-		return handleListSweeps(ctx, cfg, userID)
+		return handleListSweeps(ctx, cfg, cliIamArn)
 
 	case path == "/api/sweeps/" && method == "GET":
 		// Extract sweep ID from path
@@ -60,7 +69,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		if sweepID == "" {
 			return errorResponse(400, "Sweep ID is required"), nil
 		}
-		return handleGetSweep(ctx, cfg, sweepID, userID)
+		return handleGetSweep(ctx, cfg, sweepID, cliIamArn)
 
 	case path == "/api/sweeps//cancel" && method == "POST":
 		// Extract sweep ID from path
@@ -68,10 +77,13 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		if sweepID == "" {
 			return errorResponse(400, "Sweep ID is required"), nil
 		}
-		return handleCancelSweep(ctx, cfg, sweepID, userID)
+		return handleCancelSweep(ctx, cfg, sweepID, cliIamArn)
+
+	case path == "/api/sweeps/cleanup" && method == "POST":
+		return handleCleanupSweeps(ctx, cfg, request.Body, cliIamArn)
 
 	case path == "/api/autoscale-groups" && method == "GET":
-		return handleListAutoscaleGroups(ctx, cfg, userID)
+		return handleListAutoscaleGroups(ctx, cfg, cliIamArn)
 
 	case path == "/api/autoscale-groups/" && method == "GET":
 		// Extract group ID from path
@@ -79,13 +91,13 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		if groupID == "" {
 			return errorResponse(400, "Autoscale group ID is required"), nil
 		}
-		return handleGetAutoscaleGroup(ctx, cfg, groupID, userID)
+		return handleGetAutoscaleGroup(ctx, cfg, groupID, cliIamArn)
 
 	case path == "/api/cost-summary" && method == "GET":
-		return handleGetCostSummary(ctx, cfg, userID)
+		return handleGetCostSummary(ctx, cfg, cliIamArn)
 
 	case path == "/api/user/profile" && method == "GET":
-		return handleGetUserProfile(ctx, cfg, userID, accountID, accountBase36)
+		return handleGetUserProfile(ctx, cfg, userID, cliIamArn, accountBase36)
 
 	default:
 		return errorResponse(404, "Endpoint not found"), nil
@@ -93,11 +105,11 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 }
 
 // handleListInstances handles GET /api/instances
-func handleListInstances(ctx context.Context, cfg aws.Config, accountBase36 string, userID string) (events.APIGatewayProxyResponse, error) {
+func handleListInstances(ctx context.Context, cfg aws.Config, cliIamArn string) (events.APIGatewayProxyResponse, error) {
 	startTime := time.Now()
 
 	// Query all regions in parallel (filtered by IAM user for per-user isolation)
-	instances, err := listInstances(ctx, cfg, accountBase36, userID)
+	instances, err := listInstances(ctx, cfg, cliIamArn)
 	if err != nil {
 		return errorResponse(500, fmt.Sprintf("Failed to list instances: %v", err)), nil
 	}
@@ -108,7 +120,6 @@ func handleListInstances(ctx context.Context, cfg aws.Config, accountBase36 stri
 	// Build response
 	response := APIResponse{
 		Success:        true,
-		AccountBase36:  accountBase36,
 		RegionsQueried: awsRegions,
 		TotalInstances: len(instances),
 		Instances:      instances,
@@ -118,25 +129,24 @@ func handleListInstances(ctx context.Context, cfg aws.Config, accountBase36 stri
 }
 
 // handleGetInstance handles GET /api/instances/{id}
-func handleGetInstance(ctx context.Context, cfg aws.Config, instanceID, accountBase36, userID string) (events.APIGatewayProxyResponse, error) {
+func handleGetInstance(ctx context.Context, cfg aws.Config, instanceID, cliIamArn string) (events.APIGatewayProxyResponse, error) {
 	// Get single instance (with per-user isolation check)
-	instance, err := getInstance(ctx, cfg, instanceID, accountBase36, userID)
+	instance, err := getInstance(ctx, cfg, instanceID, cliIamArn)
 	if err != nil {
 		return errorResponse(404, fmt.Sprintf("Instance not found: %v", err)), nil
 	}
 
 	// Build response
 	response := APIResponse{
-		Success:       true,
-		AccountBase36: accountBase36,
-		Instance:      instance,
+		Success:  true,
+		Instance: instance,
 	}
 
 	return successResponse(response)
 }
 
 // handleGetUserProfile handles GET /api/user/profile
-func handleGetUserProfile(ctx context.Context, cfg aws.Config, userID, accountID, accountBase36 string) (events.APIGatewayProxyResponse, error) {
+func handleGetUserProfile(ctx context.Context, cfg aws.Config, userID, cliIamArn, accountBase36 string) (events.APIGatewayProxyResponse, error) {
 	// Get user profile from DynamoDB
 	cached, err := getUserAccount(ctx, cfg, userID)
 	if err != nil {
@@ -160,7 +170,7 @@ func handleGetUserProfile(ctx context.Context, cfg aws.Config, userID, accountID
 		// No cache entry, return detected info
 		profile = UserProfile{
 			UserID:        userID,
-			AWSAccountID:  accountID,
+			AWSAccountID:  cliIamArn,
 			AccountBase36: accountBase36,
 			CreatedAt:     time.Now(),
 			LastAccess:    time.Now(),

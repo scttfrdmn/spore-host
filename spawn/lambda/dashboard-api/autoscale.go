@@ -39,6 +39,12 @@ type AutoScaleGroup struct {
 	} `dynamodbav:"schedule_config,omitempty"`
 }
 
+// AutoScaleGroupWithUserID extends AutoScaleGroup with user_id for access control
+type AutoScaleGroupWithUserID struct {
+	AutoScaleGroup
+	UserID string `dynamodbav:"user_id"`
+}
+
 const (
 	dynamoAutoscaleGroupsTable = "spawn-autoscale-groups-production"
 	dynamoRegistryTable        = "spawn-registry-production"
@@ -72,54 +78,80 @@ var instancePricing = map[string]float64{
 }
 
 // handleListAutoscaleGroups handles GET /api/autoscale-groups
-func handleListAutoscaleGroups(ctx context.Context, cfg aws.Config, userID string) (events.APIGatewayProxyResponse, error) {
+func handleListAutoscaleGroups(ctx context.Context, cfg aws.Config, cliIamArn string) (events.APIGatewayProxyResponse, error) {
 	startTime := time.Now()
 
-	// Get autoscale group IDs for this user (via EC2 instances)
-	groupIDs, err := getUserAutoscaleGroupIDs(ctx, cfg, userID)
-	if err != nil {
-		return errorResponse(500, fmt.Sprintf("Failed to get user groups: %v", err)), nil
+	// Query DynamoDB for user's autoscale groups
+	dynamodbClient := dynamodb.NewFromConfig(cfg)
+
+	queryInput := &dynamodb.QueryInput{
+		TableName:              aws.String(dynamoAutoscaleGroupsTable),
+		IndexName:              aws.String("user_id-index"),
+		KeyConditionExpression: aws.String("user_id = :user_id"),
+		ExpressionAttributeValues: map[string]ddbTypes.AttributeValue{
+			":user_id": &ddbTypes.AttributeValueMemberS{Value: cliIamArn},
+		},
 	}
 
-	if len(groupIDs) == 0 {
-		// User has no autoscale groups
-		response := AutoScaleGroupsAPIResponse{
-			Success:         true,
-			TotalGroups:     0,
-			AutoScaleGroups: []AutoScaleGroupInfo{},
+	result, err := dynamodbClient.Query(ctx, queryInput)
+	if err != nil {
+		return errorResponse(500, fmt.Sprintf("Failed to query autoscale groups: %v", err)), nil
+	}
+
+	// Unmarshal and convert groups
+	var groupInfos []AutoScaleGroupInfo
+	for _, item := range result.Items {
+		var group AutoScaleGroup
+		if err := attributevalue.UnmarshalMap(item, &group); err != nil {
+			continue
 		}
-		return successResponse(response)
-	}
 
-	// Query DynamoDB for these groups
-	groups, err := getGroupsFromDynamoDB(ctx, cfg, groupIDs)
-	if err != nil {
-		return errorResponse(500, fmt.Sprintf("Failed to get groups: %v", err)), nil
-	}
-
-	// Get current instance counts for each group
-	for i := range groups {
-		count, err := getCurrentCapacity(ctx, cfg, groups[i].AutoScaleGroupID, userID)
+		// Get current instance count for this group
+		count, err := getCurrentCapacity(ctx, cfg, group.AutoScaleGroupID, cliIamArn)
 		if err != nil {
-			fmt.Printf("Warning: Failed to get capacity for group %s: %v\n", groups[i].AutoScaleGroupID, err)
+			fmt.Printf("Warning: Failed to get capacity for group %s: %v\n", group.AutoScaleGroupID, err)
 		}
-		groups[i].CurrentCapacity = count
+
+		// Determine policy type
+		policyType := "none"
+		if group.ScalingPolicy != nil {
+			policyType = "queue"
+		} else if group.MetricPolicy != nil {
+			policyType = "metric"
+		} else if group.ScheduleConfig != nil {
+			policyType = "schedule"
+		}
+
+		groupInfo := AutoScaleGroupInfo{
+			AutoScaleGroupID: group.AutoScaleGroupID,
+			GroupName:        group.GroupName,
+			Status:           group.Status,
+			DesiredCapacity:  group.DesiredCapacity,
+			CurrentCapacity:  count,
+			MinCapacity:      group.MinCapacity,
+			MaxCapacity:      group.MaxCapacity,
+			PolicyType:       policyType,
+			LastScaleEvent:   group.LastScaleEvent,
+			CreatedAt:        group.CreatedAt,
+		}
+
+		groupInfos = append(groupInfos, groupInfo)
 	}
 
 	elapsed := time.Since(startTime)
-	fmt.Printf("Listed %d autoscale groups in %v\n", len(groups), elapsed)
+	fmt.Printf("Listed %d autoscale groups in %v\n", len(groupInfos), elapsed)
 
 	response := AutoScaleGroupsAPIResponse{
 		Success:         true,
-		TotalGroups:     len(groups),
-		AutoScaleGroups: groups,
+		TotalGroups:     len(groupInfos),
+		AutoScaleGroups: groupInfos,
 	}
 
 	return successResponse(response)
 }
 
 // handleGetAutoscaleGroup handles GET /api/autoscale-groups/{id}
-func handleGetAutoscaleGroup(ctx context.Context, cfg aws.Config, groupID, userID string) (events.APIGatewayProxyResponse, error) {
+func handleGetAutoscaleGroup(ctx context.Context, cfg aws.Config, groupID, cliIamArn string) (events.APIGatewayProxyResponse, error) {
 	// Get group from DynamoDB
 	dynamodbClient := dynamodb.NewFromConfig(cfg)
 
@@ -140,13 +172,18 @@ func handleGetAutoscaleGroup(ctx context.Context, cfg aws.Config, groupID, userI
 	}
 
 	// Unmarshal group
-	var group AutoScaleGroup
+	var group AutoScaleGroupWithUserID
 	if err := attributevalue.UnmarshalMap(result.Item, &group); err != nil {
 		return errorResponse(500, fmt.Sprintf("Failed to unmarshal group: %v", err)), nil
 	}
 
+	// Verify group belongs to this user
+	if group.UserID != cliIamArn {
+		return errorResponse(403, "Access denied"), nil
+	}
+
 	// Enrich with health details
-	detail, err := enrichGroupWithHealth(ctx, cfg, &group, userID)
+	detail, err := enrichGroupWithHealth(ctx, cfg, &group.AutoScaleGroup, cliIamArn)
 	if err != nil {
 		return errorResponse(500, fmt.Sprintf("Failed to enrich group: %v", err)), nil
 	}
@@ -160,8 +197,8 @@ func handleGetAutoscaleGroup(ctx context.Context, cfg aws.Config, groupID, userI
 }
 
 // handleGetCostSummary handles GET /api/cost-summary
-func handleGetCostSummary(ctx context.Context, cfg aws.Config, userID string) (events.APIGatewayProxyResponse, error) {
-	cost, err := calculateInstanceCosts(ctx, cfg, userID)
+func handleGetCostSummary(ctx context.Context, cfg aws.Config, cliIamArn string) (events.APIGatewayProxyResponse, error) {
+	cost, err := calculateInstanceCosts(ctx, cfg, cliIamArn)
 	if err != nil {
 		return errorResponse(500, fmt.Sprintf("Failed to calculate costs: %v", err)), nil
 	}
@@ -176,7 +213,7 @@ func handleGetCostSummary(ctx context.Context, cfg aws.Config, userID string) (e
 
 // getUserAutoscaleGroupIDs queries EC2 for instances with spawn:iam-user tag
 // and extracts unique spawn:autoscale-group tag values
-func getUserAutoscaleGroupIDs(ctx context.Context, cfg aws.Config, userID string) ([]string, error) {
+func getUserAutoscaleGroupIDs(ctx context.Context, cfg aws.Config, accountBase36 string) ([]string, error) {
 	groupIDSet := make(map[string]bool)
 
 	var wg sync.WaitGroup
@@ -194,11 +231,11 @@ func getUserAutoscaleGroupIDs(ctx context.Context, cfg aws.Config, userID string
 				return
 			}
 
-			// Query for instances with spawn:iam-user and spawn:autoscale-group tags
+			// Query for instances with spawn:account-base36 and spawn:autoscale-group tags
 			filters := []ec2Types.Filter{
 				{
-					Name:   aws.String("tag:spawn:iam-user"),
-					Values: []string{userID},
+					Name:   aws.String("tag:spawn:account-base36"),
+					Values: []string{accountBase36},
 				},
 				{
 					Name:   aws.String("tag-key"),
@@ -329,7 +366,7 @@ func getGroupsFromDynamoDB(ctx context.Context, cfg aws.Config, groupIDs []strin
 }
 
 // getCurrentCapacity counts running/pending instances for a group
-func getCurrentCapacity(ctx context.Context, cfg aws.Config, groupID, userID string) (int, error) {
+func getCurrentCapacity(ctx context.Context, cfg aws.Config, groupID, cliIamArn string) (int, error) {
 	count := 0
 
 	for _, region := range awsRegions {
@@ -345,7 +382,7 @@ func getCurrentCapacity(ctx context.Context, cfg aws.Config, groupID, userID str
 			},
 			{
 				Name:   aws.String("tag:spawn:iam-user"),
-				Values: []string{userID},
+				Values: []string{cliIamArn},
 			},
 			{
 				Name:   aws.String("instance-state-name"),
@@ -369,9 +406,9 @@ func getCurrentCapacity(ctx context.Context, cfg aws.Config, groupID, userID str
 }
 
 // enrichGroupWithHealth adds health information to a group
-func enrichGroupWithHealth(ctx context.Context, cfg aws.Config, group *AutoScaleGroup, userID string) (*GroupDetailInfo, error) {
+func enrichGroupWithHealth(ctx context.Context, cfg aws.Config, group *AutoScaleGroup, cliIamArn string) (*GroupDetailInfo, error) {
 	// Get instances for this group
-	instances, err := getGroupInstances(ctx, cfg, group.AutoScaleGroupID, userID)
+	instances, err := getGroupInstances(ctx, cfg, group.AutoScaleGroupID, cliIamArn)
 	if err != nil {
 		return nil, fmt.Errorf("get instances: %w", err)
 	}
@@ -432,7 +469,7 @@ func enrichGroupWithHealth(ctx context.Context, cfg aws.Config, group *AutoScale
 }
 
 // getGroupInstances gets all instances for a group across all regions
-func getGroupInstances(ctx context.Context, cfg aws.Config, groupID, userID string) ([]GroupInstanceInfo, error) {
+func getGroupInstances(ctx context.Context, cfg aws.Config, groupID, cliIamArn string) ([]GroupInstanceInfo, error) {
 	var wg sync.WaitGroup
 	instancesChan := make(chan []GroupInstanceInfo, len(awsRegions))
 
@@ -453,7 +490,7 @@ func getGroupInstances(ctx context.Context, cfg aws.Config, groupID, userID stri
 				},
 				{
 					Name:   aws.String("tag:spawn:iam-user"),
-					Values: []string{userID},
+					Values: []string{cliIamArn},
 				},
 			}
 
@@ -517,7 +554,7 @@ func getGroupInstances(ctx context.Context, cfg aws.Config, groupID, userID stri
 }
 
 // calculateInstanceCosts calculates current hourly and monthly costs
-func calculateInstanceCosts(ctx context.Context, cfg aws.Config, userID string) (*CostSummary, error) {
+func calculateInstanceCosts(ctx context.Context, cfg aws.Config, cliIamArn string) (*CostSummary, error) {
 	breakdown := make(map[string]TypeCost)
 	totalHourly := 0.0
 	totalCount := 0
@@ -531,7 +568,7 @@ func calculateInstanceCosts(ctx context.Context, cfg aws.Config, userID string) 
 		filters := []ec2Types.Filter{
 			{
 				Name:   aws.String("tag:spawn:iam-user"),
-				Values: []string{userID},
+				Values: []string{cliIamArn},
 			},
 			{
 				Name:   aws.String("instance-state-name"),

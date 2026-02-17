@@ -323,7 +323,7 @@ tar -xzf spawn_*_$(uname -s)_$(uname -m).tar.gz
 
                 <!-- Sweep Filters -->
                 <div class="table-controls" style="margin-bottom: 1rem; padding: 1rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;">
-                    <div style="display: grid; grid-template-columns: 1fr auto auto; gap: 1rem; align-items: center;">
+                    <div style="display: grid; grid-template-columns: 1fr auto auto auto; gap: 1rem; align-items: center;">
                         <input type="text" id="sweep-search-input" placeholder="🔍 Search by name or ID..." style="padding: 0.6rem 1rem; background: var(--bg-dark); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); font-size: 0.9rem;" oninput="applySweepFilters()">
 
                         <select id="sweep-status-filter" style="padding: 0.6rem 1rem; background: var(--bg-dark); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); font-size: 0.9rem; cursor: pointer;" onchange="applySweepFilters()">
@@ -333,6 +333,10 @@ tar -xzf spawn_*_$(uname -s)_$(uname -m).tar.gz
                             <option value="FAILED">Failed</option>
                             <option value="CANCELLED">Cancelled</option>
                         </select>
+
+                        <button onclick="deleteCompletedSweeps()" style="padding: 0.6rem 1rem; background: var(--bg-dark); border: 1px solid var(--accent-red); border-radius: 6px; color: var(--accent-red); font-size: 0.9rem; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,100,100,0.1)'" onmouseout="this.style.background='var(--bg-dark)'" title="Delete completed and cancelled sweeps">
+                            🗑️ Cleanup
+                        </button>
 
                         <button onclick="clearSweepFilters()" style="padding: 0.6rem 1rem; background: var(--bg-dark); border: 1px solid var(--border); border-radius: 6px; color: var(--text-secondary); font-size: 0.9rem; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--accent-blue)'" onmouseout="this.style.borderColor='var(--border)'">
                             Clear Filters

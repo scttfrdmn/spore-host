@@ -612,6 +612,8 @@ footer {
 
 .table-container {
     overflow-x: auto;
+    overflow-y: auto;
+    max-height: 600px;
     background: var(--bg-card);
     border-radius: 12px;
     border: 1px solid var(--border);

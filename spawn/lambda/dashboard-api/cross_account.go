@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	crossAccountRoleARN = "arn:aws:iam::942542972736:role/SpawnDashboardCrossAccountRole"
+	crossAccountRoleARN = "arn:aws:iam::435415984226:role/SpawnDashboardCrossAccountReadRole"
 )
 
 // getEC2ClientForRegion creates an EC2 client for the specified region using the cross-account role

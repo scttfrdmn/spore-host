@@ -157,6 +157,31 @@ if (navigator.clipboard) {
 // Dashboard - Client-Side EC2 Queries
 // ═══════════════════════════════════════════════════════════════
 
+// Helper function to create API request headers with AWS credentials
+function getAPIHeaders() {
+    const headers = {
+        'Content-Type': 'application/json'
+    };
+
+    // Add AWS credentials for authentication
+    if (AWS && AWS.config && AWS.config.credentials) {
+        const creds = {
+            accessKeyId: AWS.config.credentials.accessKeyId,
+            secretAccessKey: AWS.config.credentials.secretAccessKey,
+            sessionToken: AWS.config.credentials.sessionToken
+        };
+        headers['X-AWS-Credentials'] = btoa(JSON.stringify(creds));
+        console.log('✓ Added AWS credentials to request headers');
+    } else {
+        console.warn('⚠ AWS credentials not available - request will fail');
+        console.log('AWS:', typeof AWS);
+        console.log('AWS.config:', typeof AWS?.config);
+        console.log('AWS.config.credentials:', AWS?.config?.credentials);
+    }
+
+    return headers;
+}
+
 // AWS regions to query
 const AWS_REGIONS = [
     'us-east-1', 'us-east-2', 'us-west-1', 'us-west-2',
@@ -1159,21 +1184,14 @@ async function loadSweeps() {
 
         const response = await fetch(apiEndpoint, {
             method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                // Authentication will be added by auth.js interceptor
-            },
+            headers: getAPIHeaders(),
             credentials: 'include'
         });
-
         if (!response.ok) {
             throw new Error(`API returned ${response.status}: ${response.statusText}`);
         }
-
         const data = await response.json();
-
         if (loadingDiv) loadingDiv.style.display = 'none';
-
         if (data.success && data.sweeps && data.sweeps.length > 0) {
             allSweepsCache = data.sweeps;
             applySweepFilters();
@@ -1205,15 +1223,12 @@ async function loadSweeps() {
         }
     } catch (error) {
         console.error('Failed to load sweeps:', error);
-
         if (loadingDiv) loadingDiv.style.display = 'none';
-
         if (errorDiv) {
             errorDiv.style.display = 'block';
             const errorMessage = error.message || 'Unknown error';
             errorDiv.innerHTML = `<strong>Error:</strong> ${errorMessage}`;
         }
-
         if (tbody) {
             tbody.innerHTML = `
                 <tr>
@@ -1225,12 +1240,10 @@ async function loadSweeps() {
         }
     }
 }
-
 // Render sweeps table
 function renderSweepsTable(sweeps) {
     const tbody = document.getElementById('sweeps-tbody');
     if (!tbody) return;
-
     if (sweeps.length === 0) {
         tbody.innerHTML = `
             <tr>
@@ -1241,7 +1254,6 @@ function renderSweepsTable(sweeps) {
         `;
         return;
     }
-
     tbody.innerHTML = sweeps.map(sweep => {
         const statusIcon = getSweepStatusIcon(sweep.status);
         const progress = `${sweep.launched}/${sweep.total_params}`;
@@ -1249,12 +1261,10 @@ function renderSweepsTable(sweeps) {
         const failedText = sweep.failed > 0 ? ` (${sweep.failed} failed)` : '';
         const createdTime = formatRelativeTime(new Date(sweep.created_at));
         const costText = sweep.estimated_cost > 0 ? `$${sweep.estimated_cost.toFixed(2)}` : 'N/A';
-
         // Region display: show count for multi-region, single region otherwise
         const regionInfo = sweep.multi_region && sweep.region_status
             ? `${Object.keys(sweep.region_status).length} regions`
             : sweep.region;
-
         // Action buttons
         let actionButtons = '';
         if (sweep.status === 'RUNNING') {
@@ -1269,7 +1279,6 @@ function renderSweepsTable(sweeps) {
         } else {
             actionButtons = `<span style="color: var(--text-muted); font-size: 0.85rem;">—</span>`;
         }
-
         return `
             <tr data-sweep-id="${sweep.sweep_id}">
                 <td>
@@ -1296,7 +1305,6 @@ function renderSweepsTable(sweeps) {
         `;
     }).join('');
 }
-
 // Get status icon
 function getSweepStatusIcon(status) {
     switch (status.toUpperCase()) {
@@ -1313,7 +1321,6 @@ function getSweepStatusIcon(status) {
             return '❓';
     }
 }
-
 // Format relative time
 function formatRelativeTime(date) {
     const now = new Date();
@@ -1322,22 +1329,18 @@ function formatRelativeTime(date) {
     const minutes = Math.floor(seconds / 60);
     const hours = Math.floor(minutes / 60);
     const days = Math.floor(hours / 24);
-
     if (seconds < 60) return 'just now';
     if (minutes < 60) return `${minutes}m ago`;
     if (hours < 24) return `${hours}h ago`;
     if (days < 7) return `${days}d ago`;
     return date.toLocaleDateString();
 }
-
 // Apply sweep filters
 function applySweepFilters() {
     const searchInput = document.getElementById('sweep-search-input');
     const statusFilter = document.getElementById('sweep-status-filter');
-
     const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
     const statusValue = statusFilter ? statusFilter.value : '';
-
     let filtered = allSweepsCache.filter(sweep => {
         // Search filter
         if (searchTerm) {
@@ -1347,28 +1350,22 @@ function applySweepFilters() {
                 return false;
             }
         }
-
         // Status filter
         if (statusValue && sweep.status !== statusValue) {
             return false;
         }
-
         return true;
     });
-
     // Apply sorting
     if (sweepSortState.column) {
         filtered = sortSweeps(filtered, sweepSortState.column, sweepSortState.direction);
     }
-
     renderSweepsTable(filtered);
 }
-
 // Sort sweeps
 function sortSweeps(sweeps, column, direction) {
     return sweeps.sort((a, b) => {
         let aVal, bVal;
-
         switch (column) {
             case 'name':
                 aVal = (a.sweep_name || a.sweep_id).toLowerCase();
@@ -1397,24 +1394,19 @@ function sortSweeps(sweeps, column, direction) {
             default:
                 return 0;
         }
-
         if (aVal < bVal) return direction === 'asc' ? -1 : 1;
         if (aVal > bVal) return direction === 'asc' ? 1 : -1;
         return 0;
     });
 }
-
 // Clear sweep filters
 function clearSweepFilters() {
     const searchInput = document.getElementById('sweep-search-input');
     const statusFilter = document.getElementById('sweep-status-filter');
-
     if (searchInput) searchInput.value = '';
     if (statusFilter) statusFilter.value = '';
-
     applySweepFilters();
 }
-
 // Sort sweeps table
 function sortSweepsTable(column) {
     // Update sort state
@@ -1424,7 +1416,6 @@ function sortSweepsTable(column) {
         sweepSortState.column = column;
         sweepSortState.direction = 'asc';
     }
-
     // Update sort indicators
     ['name', 'status', 'progress', 'region', 'created', 'cost'].forEach(col => {
         const indicator = document.getElementById(`sweep-sort-${col}`);
@@ -1436,25 +1427,19 @@ function sortSweepsTable(column) {
             }
         }
     });
-
     // Sort filtered results
     applySweepFilters();
 }
-
 // Cancel sweep
 async function cancelSweep(sweepId) {
     if (!confirm('Are you sure you want to cancel this sweep? Running instances will be terminated.')) {
         return;
     }
-
     try {
         const apiEndpoint = `https://api.spore.host/api/sweeps/${sweepId}/cancel`;
-
         const response = await fetch(apiEndpoint, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: getAPIHeaders(),
             credentials: 'include'
         });
 
@@ -1473,6 +1458,63 @@ async function cancelSweep(sweepId) {
     } catch (error) {
         console.error('Failed to cancel sweep:', error);
         alert(`Failed to cancel sweep: ${error.message}`);
+    }
+}
+
+async function deleteCompletedSweeps() {
+    console.log('deleteCompletedSweeps called');
+    console.log('allSweepsCache:', allSweepsCache);
+
+    // Count completed/cancelled sweeps
+    const sweepsToDelete = allSweepsCache.filter(s =>
+        s.status === 'COMPLETED' || s.status === 'CANCELLED' || s.status === 'FAILED'
+    );
+
+    console.log('Sweeps to delete:', sweepsToDelete.length, sweepsToDelete);
+
+    if (sweepsToDelete.length === 0) {
+        alert('No completed, cancelled, or failed sweeps to delete.');
+        return;
+    }
+
+    if (!confirm(`Delete ${sweepsToDelete.length} completed/cancelled/failed sweep(s)? This cannot be undone.`)) {
+        console.log('User cancelled deletion');
+        return;
+    }
+
+    try {
+        console.log('Calling cleanup API...');
+        const apiEndpoint = 'https://api.spore.host/api/sweeps/cleanup';
+        const payload = {
+            sweep_ids: sweepsToDelete.map(s => s.sweep_id)
+        };
+        console.log('Payload:', payload);
+
+        const response = await fetch(apiEndpoint, {
+            method: 'POST',
+            headers: getAPIHeaders(),
+            credentials: 'include',
+            body: JSON.stringify(payload)
+        });
+
+        console.log('Response status:', response.status);
+
+        if (!response.ok) {
+            throw new Error(`API returned ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log('Response data:', data);
+
+        if (data.success) {
+            alert(`Successfully deleted ${data.deleted_count} sweep(s).`);
+            await loadSweeps();
+        } else {
+            throw new Error(data.error || 'Failed to delete sweeps');
+        }
+    } catch (error) {
+        console.error('Failed to delete sweeps:', error);
+        alert(`Failed to delete sweeps: ${error.message}`);
     }
 }
 
@@ -1497,9 +1539,7 @@ async function loadAutoscaleGroups() {
 
         const response = await fetch(apiEndpoint, {
             method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: getAPIHeaders(),
             credentials: 'include'
         });
 
@@ -1558,9 +1598,7 @@ async function loadCostSummary() {
 
         const response = await fetch(apiEndpoint, {
             method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: getAPIHeaders(),
             credentials: 'include'
         });
 
@@ -1688,9 +1726,7 @@ async function toggleGroupDetails(groupId) {
 
         const response = await fetch(apiEndpoint, {
             method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: getAPIHeaders(),
             credentials: 'include'
         });
 

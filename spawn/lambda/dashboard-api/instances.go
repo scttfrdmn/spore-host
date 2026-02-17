@@ -28,7 +28,7 @@ var awsRegions = []string{
 
 // listInstances queries all regions in parallel and returns spawn-managed instances
 // Filters by spawn:iam-user tag to enforce per-user isolation
-func listInstances(ctx context.Context, cfg aws.Config, accountBase36 string, userID string) ([]InstanceInfo, error) {
+func listInstances(ctx context.Context, cfg aws.Config, cliIamArn string) ([]InstanceInfo, error) {
 	var wg sync.WaitGroup
 	instancesChan := make(chan []InstanceInfo, len(awsRegions))
 	errorsChan := make(chan error, len(awsRegions))
@@ -54,7 +54,7 @@ func listInstances(ctx context.Context, cfg aws.Config, accountBase36 string, us
 				},
 				{
 					Name:   aws.String("tag:spawn:iam-user"),
-					Values: []string{userID},
+					Values: []string{cliIamArn},
 				},
 			}
 
@@ -68,7 +68,7 @@ func listInstances(ctx context.Context, cfg aws.Config, accountBase36 string, us
 			}
 
 			// Convert reservations to InstanceInfo
-			instances := convertReservationsToInstances(result.Reservations, r, accountBase36)
+			instances := convertReservationsToInstances(result.Reservations, r, "")
 			if len(instances) > 0 {
 				instancesChan <- instances
 			}
@@ -102,7 +102,7 @@ func listInstances(ctx context.Context, cfg aws.Config, accountBase36 string, us
 }
 
 // getInstance gets a single instance by ID
-func getInstance(ctx context.Context, cfg aws.Config, instanceID, accountBase36, userID string) (*InstanceInfo, error) {
+func getInstance(ctx context.Context, cfg aws.Config, instanceID, cliIamArn string) (*InstanceInfo, error) {
 	// Try all regions in parallel until we find the instance
 	var wg sync.WaitGroup
 	instanceChan := make(chan *InstanceInfo, 1)
@@ -145,13 +145,13 @@ func getInstance(ctx context.Context, cfg aws.Config, instanceID, accountBase36,
 			instance := result.Reservations[0].Instances[0]
 			instanceUserID := getTagValue(instance.Tags, "spawn:iam-user")
 
-			if instanceUserID != userID {
+			if instanceUserID != cliIamArn {
 				// Instance exists but doesn't belong to this user
 				return
 			}
 
 			// Convert to InstanceInfo
-			instances := convertReservationsToInstances(result.Reservations, r, accountBase36)
+			instances := convertReservationsToInstances(result.Reservations, r, "")
 			if len(instances) > 0 {
 				foundMutex.Lock()
 				if !found {

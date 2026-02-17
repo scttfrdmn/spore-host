@@ -130,9 +130,12 @@ type SweepInstanceInfo struct {
 // UserAccountRecord represents a record in the spawn-user-accounts DynamoDB table
 type UserAccountRecord struct {
 	UserID        string `dynamodbav:"user_id"`
+	CliIamArn     string `dynamodbav:"cli_iam_arn,omitempty"`
+	IdentityType  string `dynamodbav:"identity_type,omitempty"`
 	AWSAccountID  string `dynamodbav:"aws_account_id"`
 	AccountBase36 string `dynamodbav:"account_base36"`
 	Email         string `dynamodbav:"email,omitempty"`
+	LinkedAt      string `dynamodbav:"linked_at,omitempty"`
 	CreatedAt     string `dynamodbav:"created_at"`
 	LastAccess    string `dynamodbav:"last_access"`
 }
@@ -191,19 +194,19 @@ type SweepInstance struct {
 
 // AutoScaleGroupsAPIResponse is the response for /api/autoscale-groups
 type AutoScaleGroupsAPIResponse struct {
-	Success            bool                  `json:"success"`
-	Message            string                `json:"message,omitempty"`
-	Error              string                `json:"error,omitempty"`
-	TotalGroups        int                   `json:"total_groups"`
-	AutoScaleGroups    []AutoScaleGroupInfo  `json:"autoscale_groups"`
+	Success         bool                 `json:"success"`
+	Message         string               `json:"message,omitempty"`
+	Error           string               `json:"error,omitempty"`
+	TotalGroups     int                  `json:"total_groups"`
+	AutoScaleGroups []AutoScaleGroupInfo `json:"autoscale_groups"`
 }
 
 // AutoScaleGroupDetailAPIResponse is the response for /api/autoscale-groups/{id}
 type AutoScaleGroupDetailAPIResponse struct {
-	Success bool               `json:"success"`
-	Message string             `json:"message,omitempty"`
-	Error   string             `json:"error,omitempty"`
-	Group   GroupDetailInfo    `json:"group"`
+	Success bool            `json:"success"`
+	Message string          `json:"message,omitempty"`
+	Error   string          `json:"error,omitempty"`
+	Group   GroupDetailInfo `json:"group"`
 }
 
 // CostSummaryAPIResponse is the response for /api/cost-summary
@@ -242,20 +245,20 @@ type GroupDetailInfo struct {
 
 // GroupInstanceInfo represents instance info within an autoscale group
 type GroupInstanceInfo struct {
-	InstanceID       string  `json:"instance_id"`
-	State            string  `json:"state"`
-	HealthStatus     string  `json:"health_status"`
-	HeartbeatAge     float64 `json:"heartbeat_age_seconds"`
-	SpotInterruption bool    `json:"spot_interruption"`
+	InstanceID       string    `json:"instance_id"`
+	State            string    `json:"state"`
+	HealthStatus     string    `json:"health_status"`
+	HeartbeatAge     float64   `json:"heartbeat_age_seconds"`
+	SpotInterruption bool      `json:"spot_interruption"`
 	LaunchedAt       time.Time `json:"launched_at"`
 }
 
 // CostSummary represents current cost information
 type CostSummary struct {
-	TotalHourlyCost      float64                `json:"total_hourly_cost"`
-	EstimatedMonthlyCost float64                `json:"estimated_monthly_cost"`
-	InstanceCount        int                    `json:"instance_count"`
-	BreakdownByType      map[string]TypeCost    `json:"breakdown_by_type"`
+	TotalHourlyCost      float64             `json:"total_hourly_cost"`
+	EstimatedMonthlyCost float64             `json:"estimated_monthly_cost"`
+	InstanceCount        int                 `json:"instance_count"`
+	BreakdownByType      map[string]TypeCost `json:"breakdown_by_type"`
 }
 
 // TypeCost represents cost breakdown by instance type
