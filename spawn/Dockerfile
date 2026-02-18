@@ -1,29 +1,33 @@
-# Multi-stage build for spawn CLI tool
-# Produces minimal container with spawn binary and AWS tools
+# Multi-stage build for spawn and truffle CLI tools
+# Produces minimal container with spawn, truffle binaries and AWS tools
 
 FROM golang:1.24-alpine AS builder
 
 WORKDIR /build
 
-# Copy go mod files and i18n dependency
-COPY spawn/go.mod spawn/go.sum spawn/
+# Copy shared i18n dependency
 COPY pkg/i18n pkg/i18n/
 
-# Download dependencies
+# Build spawn
+COPY spawn/go.mod spawn/go.sum spawn/
 WORKDIR /build/spawn
 RUN go mod download
-
-# Copy spawn source code
 COPY spawn/ .
-
-# Build static binary
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o spawn main.go
+
+# Build truffle
+WORKDIR /build
+COPY truffle/go.mod truffle/go.sum truffle/
+WORKDIR /build/truffle
+RUN go mod download
+COPY truffle/ .
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o truffle main.go
 
 # Final stage - minimal runtime image
 FROM alpine:latest
 
 LABEL maintainer="Scott Friedman <scott@example.com>"
-LABEL description="spawn - AWS EC2 instance launcher with parameter sweep support"
+LABEL description="spawn and truffle - AWS EC2 management and discovery tools"
 LABEL version="0.12.0"
 
 # Install runtime dependencies
@@ -35,11 +39,13 @@ RUN apk --no-cache add \
     jq \
     curl
 
-# Copy spawn binary from builder
+# Copy binaries from builder
 COPY --from=builder /build/spawn/spawn /usr/local/bin/spawn
+COPY --from=builder /build/truffle/truffle /usr/local/bin/truffle
 
-# Verify binary works
+# Verify binaries work
 RUN spawn --version || spawn --help
+RUN truffle --version || truffle --help
 
 # AWS credentials will be mounted at runtime
 ENV AWS_SHARED_CREDENTIALS_FILE=/root/.aws/credentials
