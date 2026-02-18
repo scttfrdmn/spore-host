@@ -2,7 +2,11 @@ package config
 
 import (
 	"fmt"
+	"io"
+	"net"
+	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"gopkg.in/yaml.v3"
@@ -160,6 +164,16 @@ func applyDefaults(config *LocalConfig) {
 		config.AccountID = "local"
 	}
 
+	// Resolve public IP if set to "auto"
+	if config.PublicIP == "auto" {
+		if ip := detectPublicIP(); ip != "" {
+			config.PublicIP = ip
+		} else {
+			// Fallback to first non-loopback IP
+			config.PublicIP = detectLocalIP()
+		}
+	}
+
 	if config.IdleCPUPercent == 0 {
 		config.IdleCPUPercent = 5.0
 	}
@@ -187,4 +201,57 @@ func ParseDuration(s string) time.Duration {
 		return 0
 	}
 	return d
+}
+
+// detectPublicIP attempts to detect the public IP address
+func detectPublicIP() string {
+	// Try common IP detection services with short timeout
+	services := []string{
+		"https://api.ipify.org",
+		"https://icanhazip.com",
+		"https://ifconfig.me",
+	}
+
+	client := &http.Client{
+		Timeout: 2 * time.Second,
+	}
+
+	for _, service := range services {
+		resp, err := client.Get(service)
+		if err != nil {
+			continue
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode == http.StatusOK {
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				continue
+			}
+			ip := strings.TrimSpace(string(body))
+			if net.ParseIP(ip) != nil {
+				return ip
+			}
+		}
+	}
+
+	return ""
+}
+
+// detectLocalIP returns the first non-loopback IP address
+func detectLocalIP() string {
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		return "127.0.0.1"
+	}
+
+	for _, addr := range addrs {
+		if ipnet, ok := addr.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+			if ipnet.IP.To4() != nil {
+				return ipnet.IP.String()
+			}
+		}
+	}
+
+	return "127.0.0.1"
 }
