@@ -57,7 +57,8 @@ jobs:
         if: steps.meta.outputs.is_release == 'true'
         uses: docker/build-push-action@v5
         with:
-          context: ./spawn
+          context: .
+          file: ./spawn/Dockerfile
           push: true
           tags: |
             scttfrdmn/spawn:${{ steps.meta.outputs.version }}
@@ -70,7 +71,8 @@ jobs:
         if: steps.meta.outputs.is_release == 'false' && github.event.inputs.push_latest == 'true'
         uses: docker/build-push-action@v5
         with:
-          context: ./spawn
+          context: .
+          file: ./spawn/Dockerfile
           push: true
           tags: |
             scttfrdmn/spawn:${{ steps.meta.outputs.version }}
@@ -83,7 +85,8 @@ jobs:
         if: steps.meta.outputs.is_release == 'false' && github.event.inputs.push_latest != 'true'
         uses: docker/build-push-action@v5
         with:
-          context: ./spawn
+          context: .
+          file: ./spawn/Dockerfile
           push: false
           tags: scttfrdmn/spawn:${{ steps.meta.outputs.version }}
           platforms: linux/amd64

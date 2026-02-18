@@ -5,12 +5,16 @@ FROM golang:1.24-alpine AS builder
 
 WORKDIR /build
 
-# Copy go mod files
-COPY go.mod go.sum ./
+# Copy go mod files and i18n dependency
+COPY spawn/go.mod spawn/go.sum spawn/
+COPY pkg/i18n pkg/i18n/
+
+# Download dependencies
+WORKDIR /build/spawn
 RUN go mod download
 
-# Copy source code
-COPY . .
+# Copy spawn source code
+COPY spawn/ .
 
 # Build static binary
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o spawn main.go
@@ -32,7 +36,7 @@ RUN apk --no-cache add \
     curl
 
 # Copy spawn binary from builder
-COPY --from=builder /build/spawn /usr/local/bin/spawn
+COPY --from=builder /build/spawn/spawn /usr/local/bin/spawn
 
 # Verify binary works
 RUN spawn --version || spawn --help
