@@ -1415,6 +1415,10 @@ other = "経過時間"
 [spawn.list.header.ttl]
 other = "TTL"
 
+[spawn.list.header.iam_role]
+description = "IAM role column header"
+other = "IAMロール"
+
 # Spawn進行状況インジケーター
 [spawn.progress.error]
 other = "エラー"

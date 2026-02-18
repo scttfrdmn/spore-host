@@ -808,6 +808,10 @@ other = "Edad"
 [spawn.list.header.ttl]
 other = "TTL"
 
+[spawn.list.header.iam_role]
+description = "IAM role column header"
+other = "Rol IAM"
+
 # Due to length, I'll continue with the remaining critical sections...
 # This shows the pattern for complete translations
 

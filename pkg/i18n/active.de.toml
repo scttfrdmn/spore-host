@@ -712,6 +712,10 @@ other = "Alter"
 [spawn.list.header.ttl]
 other = "TTL"
 
+[spawn.list.header.iam_role]
+description = "IAM role column header"
+other = "IAM-Rolle"
+
 [spawn.dns.use]
 other = "dns"
 

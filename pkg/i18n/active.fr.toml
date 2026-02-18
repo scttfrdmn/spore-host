@@ -712,6 +712,10 @@ other = "Âge"
 [spawn.list.header.ttl]
 other = "TTL"
 
+[spawn.list.header.iam_role]
+description = "IAM role column header"
+other = "Rôle IAM"
+
 [spawn.dns.use]
 other = "dns"
 

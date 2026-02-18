@@ -1415,6 +1415,10 @@ other = "Idade"
 [spawn.list.header.ttl]
 other = "TTL"
 
+[spawn.list.header.iam_role]
+description = "IAM role column header"
+other = "Função IAM"
+
 # Indicadores de progresso Spawn
 [spawn.progress.error]
 other = "Erro"
