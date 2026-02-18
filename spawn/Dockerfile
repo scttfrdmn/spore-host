@@ -3,6 +3,9 @@
 
 FROM golang:1.24-alpine AS builder
 
+# Use Docker's automatic platform ARGs for multi-platform builds
+ARG TARGETARCH
+
 WORKDIR /build
 
 # Copy shared i18n dependency
@@ -13,7 +16,7 @@ COPY spawn/go.mod spawn/go.sum spawn/
 WORKDIR /build/spawn
 RUN go mod download
 COPY spawn/ .
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o spawn main.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH} go build -ldflags="-w -s" -o spawn main.go
 
 # Build truffle
 WORKDIR /build
@@ -21,7 +24,7 @@ COPY truffle/go.mod truffle/go.sum truffle/
 WORKDIR /build/truffle
 RUN go mod download
 COPY truffle/ .
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o truffle main.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH} go build -ldflags="-w -s" -o truffle main.go
 
 # Final stage - minimal runtime image
 FROM alpine:latest
