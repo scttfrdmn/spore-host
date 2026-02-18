@@ -52,3 +52,6 @@ checksums.txt
 
 # Configuration (credentials)
 /config/
+
+# Local archive (not pushed to GitHub)
+.local-archive/
