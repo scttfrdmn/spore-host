@@ -61,8 +61,8 @@ jobs:
           file: ./spawn/Dockerfile
           push: true
           tags: |
-            scttfrdmn/spawn:${{ steps.meta.outputs.version }}
-            scttfrdmn/spawn:latest
+            sporedothost/spawn:${{ steps.meta.outputs.version }}
+            sporedothost/spawn:latest
           platforms: linux/amd64,linux/arm64
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -75,8 +75,8 @@ jobs:
           file: ./spawn/Dockerfile
           push: true
           tags: |
-            scttfrdmn/spawn:${{ steps.meta.outputs.version }}
-            scttfrdmn/spawn:dev
+            sporedothost/spawn:${{ steps.meta.outputs.version }}
+            sporedothost/spawn:dev
           platforms: linux/amd64,linux/arm64
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -88,7 +88,7 @@ jobs:
           context: .
           file: ./spawn/Dockerfile
           push: false
-          tags: scttfrdmn/spawn:${{ steps.meta.outputs.version }}
+          tags: sporedothost/spawn:${{ steps.meta.outputs.version }}
           platforms: linux/amd64
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -96,17 +96,17 @@ jobs:
       - name: Test image
         if: steps.meta.outputs.is_release == 'true' || github.event.inputs.push_latest == 'true'
         run: |
-          docker run --rm scttfrdmn/spawn:${{ steps.meta.outputs.version }} --version || \
-          docker run --rm scttfrdmn/spawn:${{ steps.meta.outputs.version }} --help
+          docker run --rm sporedothost/spawn:${{ steps.meta.outputs.version }} --version || \
+          docker run --rm sporedothost/spawn:${{ steps.meta.outputs.version }} --help
 
       - name: Generate release notes
         if: steps.meta.outputs.is_release == 'true'
         run: |
           echo "## Docker Image" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Published: \`scttfrdmn/spawn:${{ steps.meta.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "Published: \`sporedothost/spawn:${{ steps.meta.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "Pull command:" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
-          echo "docker pull scttfrdmn/spawn:${{ steps.meta.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "docker pull sporedothost/spawn:${{ steps.meta.outputs.version }}" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
