@@ -1,19 +1,17 @@
 # Spore.host Web Interface
 
-Landing page and future web dashboard for managing Mycelium spores (EC2 instances).
+Landing page and future web dashboard for managing spores (EC2 instances).
 
 ## 📁 Structure
 
 ```
 web/
 ├── index.html          # Landing page
+├── dashboard.html      # Dashboard page
 ├── css/
-│   └── style.css      # Mycelium-themed styling
+│   └── style.css      # Spore-themed styling
 ├── js/
-│   └── main.js        # Interactive features & future API client
-├── assets/
-│   ├── logo-light.png # Logo for light theme
-│   └── logo-dark.png  # Logo for dark theme
+│   └── main.js        # Interactive features & API client
 └── README.md          # This file
 ```
 
@@ -29,7 +27,7 @@ web/
 
 ### Design
 - Dark theme with bioluminescent glow effects
-- Mycelium-inspired color palette (blues and greens)
+- Spore-inspired color palette (blues and greens)
 - Responsive design for mobile/tablet/desktop
 - Smooth animations and transitions
 - OS-aware default installation tab
@@ -279,7 +277,7 @@ Consider adding:
 When adding features to the web interface:
 
 1. Keep mobile-first responsive design
-2. Maintain mycelium theme (dark + glow)
+2. Maintain spore theme (dark + glow)
 3. Add loading states for all async operations
 4. Include error handling and user feedback
 5. Test across browsers (Chrome, Firefox, Safari, Edge)

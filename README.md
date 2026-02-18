@@ -1,13 +1,8 @@
-<p align="center">
-  <img src="assets/logo-light.png#gh-light-mode-only" alt="Mycelium Logo" width="600">
-  <img src="assets/logo-dark.png#gh-dark-mode-only" alt="Mycelium Logo" width="600">
-</p>
+<h1 align="center">🍄 spore.host</h1>
 
-<h1 align="center">mycelium</h1>
+<p align="center"><em>Launch EC2 in 2 minutes. Auto-terminate. Zero surprise bills.</em></p>
 
-<p align="center"><em>The underground network for AWS compute</em></p>
-
-**mycelium** is a suite of tools that makes AWS EC2 accessible to everyone - from complete beginners to ML engineers.
+**spore.host** is a suite of tools that makes AWS EC2 accessible to everyone - from complete beginners to ML engineers.
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -26,8 +21,8 @@ Making AWS accessible to everyone.
 ### Installation
 
 ```bash
-# Extract the archive (you already did this!)
-cd mycelium
+# Clone or extract the archive
+cd spore
 
 # Build all tools
 make build-all

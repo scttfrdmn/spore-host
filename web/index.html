@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mycelium - Launch Ephemeral AWS EC2 Instances</title>
+    <title>Spore - Launch Ephemeral AWS EC2 Instances</title>
     <meta name="description" content="Free, open-source CLI tools for launching ephemeral AWS EC2 instances with automatic termination, cost control, and hibernation support.">
     <link rel="stylesheet" href="css/style.css">
     <link rel="icon" type="image/png" href="assets/favicon.png">
@@ -20,7 +20,7 @@
             <div class="nav-links">
                 <a href="#install">Install</a>
                 <a href="#examples">Examples</a>
-                <a href="#dashboard" onclick="scrollToDashboard(event)">Dashboard</a>
+                <a href="/dashboard.html">Dashboard</a>
                 <a href="https://github.com/scttfrdmn/mycelium" target="_blank">GitHub</a>
                 <button id="theme-toggle" onclick="toggleTheme()" style="background: none; border: 1px solid var(--border); border-radius: 6px; padding: 0.5rem 0.75rem; cursor: pointer; color: var(--text-primary); font-size: 1.2rem; transition: all 0.3s ease;" title="Toggle theme">
                     <span id="theme-icon">🌙</span>
@@ -30,39 +30,19 @@
     </nav>
 
     <div class="container">
-        <!-- Welcome Banner for First-Time Visitors -->
-        <div id="welcome-banner" style="display: none; margin: 2rem 0; padding: 1.5rem; background: linear-gradient(135deg, rgba(79, 195, 247, 0.1), rgba(102, 187, 106, 0.1)); border: 1px solid var(--accent-blue); border-radius: 12px;">
-            <div style="display: flex; justify-content: space-between; align-items: start;">
-                <div style="flex: 1;">
-                    <h3 style="color: var(--accent-blue); margin-bottom: 0.5rem;">👋 Welcome to Mycelium!</h3>
-                    <p style="color: var(--text-secondary); margin-bottom: 1rem; line-height: 1.6;">
-                        Launch and manage <strong>ephemeral AWS EC2 instances</strong> with automatic termination (TTL), cost control, and hibernation support. Perfect for dev/test workloads.
-                    </p>
-                    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-                        <span style="padding: 0.5rem 1rem; background: rgba(79, 195, 247, 0.15); border-radius: 6px; font-size: 0.9rem;">✅ Free & Open Source</span>
-                        <span style="padding: 0.5rem 1rem; background: rgba(79, 195, 247, 0.15); border-radius: 6px; font-size: 0.9rem;">⚡ 2-Minute Setup</span>
-                        <span style="padding: 0.5rem 1rem; background: rgba(79, 195, 247, 0.15); border-radius: 6px; font-size: 0.9rem;">💰 ~$0.01/hr Instances</span>
-                    </div>
-                </div>
-                <button onclick="dismissWelcomeBanner()" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.5rem; padding: 0 0.5rem; transition: color 0.2s;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-muted)'" title="Dismiss">×</button>
-            </div>
-        </div>
-
         <!-- Hero Section -->
         <header class="hero">
-            <div class="logo-container">
-                <img src="assets/logo-light.png" alt="Mycelium Logo" class="logo logo-light">
-                <img src="assets/logo-dark.png" alt="Mycelium Logo" class="logo logo-dark">
-            </div>
-            <h1 class="glow">Mycelium</h1>
-            <p class="tagline">Launch <span data-tooltip="Temporary instances that terminate automatically">ephemeral</span> AWS EC2 instances in 2 minutes</p>
-            <p class="hero-subtitle">Free, open-source CLI tools for developers who value simplicity and cost control</p>
+            <div style="font-size: 4rem; margin-bottom: 1rem;">🍄</div>
+            <h1>Launch EC2 in 2 Minutes</h1>
+            <p class="tagline">Auto-terminate. Zero surprise bills.</p>
             <div class="hero-buttons">
-                <a href="#install" class="btn btn-primary">Install CLI</a>
-                <a href="https://github.com/scttfrdmn/mycelium" class="btn btn-secondary" target="_blank">View on GitHub</a>
+                <a href="#install" class="btn btn-primary">Get Started</a>
+                <a href="#examples" class="btn btn-secondary">See Examples</a>
             </div>
-            <div class="hero-note">
-                <p>✅ <strong>100% Free & Open Source</strong> • You only pay AWS for compute time (~$0.01/hr for small instances)</p>
+            <div class="hero-stats">
+                <span>✓ Free & Open Source</span>
+                <span>✓ ~$0.01/hr</span>
+                <span>✓ Mac, Windows, Linux</span>
             </div>
         </header>
 
@@ -128,7 +108,7 @@ tar -xzf spawn_*_$(uname -s)_$(uname -m).tar.gz
 
         <!-- Key Features -->
         <section class="key-features">
-            <h2>Why Mycelium?</h2>
+            <h2>Why Spore?</h2>
             <div class="features-grid">
                 <div class="feature-item">
                     <span class="check">✓</span>
@@ -153,307 +133,6 @@ tar -xzf spawn_*_$(uname -s)_$(uname -m).tar.gz
                 <div class="feature-item">
                     <span class="check">✓</span>
                     <strong>Multilingual</strong> - 6 languages supported
-                </div>
-            </div>
-        </section>
-
-        <!-- Dashboard Intro -->
-        <section class="dashboard-intro">
-            <h2>📊 Also Available: Web Dashboard</h2>
-            <p class="section-subtitle">Prefer a GUI? Monitor your instances from any browser</p>
-            <div class="dashboard-features">
-                <div class="dashboard-feature">
-                    <span class="feature-icon">📡</span>
-                    <h4>Real-Time Monitoring</h4>
-                    <p>View all your instances across regions</p>
-                </div>
-                <div class="dashboard-feature">
-                    <span class="feature-icon">⏱️</span>
-                    <h4>TTL Tracking</h4>
-                    <p>See exactly when instances will terminate</p>
-                </div>
-                <div class="dashboard-feature">
-                    <span class="feature-icon">🔐</span>
-                    <h4>Secure OAuth</h4>
-                    <p>Sign in with Google, GitHub, or Globus</p>
-                </div>
-            </div>
-            <div style="text-align: center; margin-top: 2rem;">
-                <button onclick="scrollToDashboard(event)" class="btn btn-primary">Open Dashboard</button>
-            </div>
-        </section>
-
-        <!-- Login Section -->
-        <section id="login-section" class="login-section" style="display: none;">
-            <h2>🔐 Sign In to Dashboard</h2>
-            <p class="login-subtitle">Choose your authentication provider to access your instances</p>
-
-            <div id="auth-error" style="display: none; padding: 1rem; margin: 2rem auto; max-width: 600px; background: rgba(255, 100, 100, 0.1); border: 1px solid rgba(255, 100, 100, 0.3); border-radius: 8px; color: var(--accent-red);"></div>
-
-            <div class="login-providers">
-                <button onclick="authManager.login('globus')" class="login-btn login-btn-globus">
-                    <span class="login-icon">🌐</span>
-                    <div class="login-text">
-                        <strong>Sign in with Globus Auth</strong>
-                        <small>Research & academic users</small>
-                    </div>
-                </button>
-
-                <button onclick="authManager.login('google')" class="login-btn login-btn-google">
-                    <span class="login-icon">🔵</span>
-                    <div class="login-text">
-                        <strong>Sign in with Google</strong>
-                        <small>Use your Google account</small>
-                    </div>
-                </button>
-
-                <button onclick="authManager.login('github')" class="login-btn login-btn-github">
-                    <span class="login-icon">⚫</span>
-                    <div class="login-text">
-                        <strong>Sign in with GitHub</strong>
-                        <small>Use your GitHub account</small>
-                    </div>
-                </button>
-            </div>
-
-            <div class="login-info">
-                <p><strong>🔒 Privacy & Security:</strong></p>
-                <ul>
-                    <li>✓ No passwords stored - uses OAuth 2.0 / OIDC</li>
-                    <li>✓ Temporary AWS credentials (expire in 1 hour)</li>
-                    <li>✓ Only you can see your instances</li>
-                    <li>✓ Open source - audit the code on <a href="https://github.com/scttfrdmn/mycelium" target="_blank">GitHub</a></li>
-                </ul>
-            </div>
-        </section>
-
-        <!-- Web Dashboard -->
-        <section id="dashboard" class="dashboard" style="display: none;">
-            <div id="connection-status" class="status-disconnected" title="Disconnected"></div>
-            <div id="user-display" class="user-display"></div>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                <h2 style="margin: 0;">🍄 Your Spores</h2>
-                <div style="display: flex; align-items: center; gap: 1rem;">
-                    <span id="last-updated" style="font-size: 0.85rem; color: var(--text-muted);"></span>
-                    <button onclick="refreshDashboard()" id="refresh-btn" class="btn-refresh" style="padding: 0.5rem 1rem; background: var(--accent-blue); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem; transition: opacity 0.2s; min-width: 130px;">
-                        🔄 Refresh
-                    </button>
-                </div>
-            </div>
-
-            <!-- Dashboard Tabs -->
-            <div class="dashboard-tabs" style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 2px solid var(--border);">
-                <button onclick="switchDashboardTab('instances')" id="tab-instances" class="dashboard-tab active" style="padding: 0.75rem 1.5rem; background: none; border: none; border-bottom: 3px solid var(--accent-blue); color: var(--accent-blue); cursor: pointer; font-size: 1rem; font-weight: 600; transition: all 0.2s;">
-                    🖥️ Instances
-                </button>
-                <button onclick="switchDashboardTab('sweeps')" id="tab-sweeps" class="dashboard-tab" style="padding: 0.75rem 1.5rem; background: none; border: none; border-bottom: 3px solid transparent; color: var(--text-muted); cursor: pointer; font-size: 1rem; font-weight: 600; transition: all 0.2s;">
-                    📊 Sweeps
-                </button>
-                <button onclick="switchDashboardTab('autoscale')" id="tab-autoscale" class="dashboard-tab" style="padding: 0.75rem 1.5rem; background: none; border: none; border-bottom: 3px solid transparent; color: var(--text-muted); cursor: pointer; font-size: 1rem; font-weight: 600; transition: all 0.2s;">
-                    ⚙️ Autoscale Groups
-                </button>
-            </div>
-
-            <!-- Instances Tab Content -->
-            <div id="instances-tab-content" class="dashboard-tab-content">
-                <p class="dashboard-subtitle">View and monitor your spawned instances across all regions</p>
-
-            <!-- Table Controls -->
-            <div class="table-controls" style="margin-bottom: 1rem; padding: 1rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;">
-                <div style="display: grid; grid-template-columns: 1fr auto auto auto; gap: 1rem; align-items: center;">
-                    <input type="text" id="search-input" placeholder="🔍 Search by name, ID, or tag..." style="padding: 0.6rem 1rem; background: var(--bg-dark); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); font-size: 0.9rem;" oninput="applyTableFilters()">
-
-                    <select id="state-filter" style="padding: 0.6rem 1rem; background: var(--bg-dark); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); font-size: 0.9rem; cursor: pointer;" onchange="applyTableFilters()">
-                        <option value="">All States</option>
-                        <option value="running">Running</option>
-                        <option value="pending">Pending</option>
-                        <option value="stopped">Stopped</option>
-                        <option value="terminated">Terminated</option>
-                    </select>
-
-                    <select id="region-filter" style="padding: 0.6rem 1rem; background: var(--bg-dark); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); font-size: 0.9rem; cursor: pointer;" onchange="applyTableFilters()">
-                        <option value="">All Regions</option>
-                    </select>
-
-                    <button onclick="clearTableFilters()" style="padding: 0.6rem 1rem; background: var(--bg-dark); border: 1px solid var(--border); border-radius: 6px; color: var(--text-secondary); font-size: 0.9rem; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--accent-blue)'" onmouseout="this.style.borderColor='var(--border)'">
-                        Clear Filters
-                    </button>
-                </div>
-            </div>
-
-            <div id="dashboard-loading" style="display: none; text-align: center; padding: 2rem; color: var(--text-muted);">
-                Loading spores...
-            </div>
-
-            <div id="dashboard-error" style="display: none; padding: 1rem; margin: 1rem 0; background: rgba(255, 100, 100, 0.1); border: 1px solid rgba(255, 100, 100, 0.3); border-radius: 8px; color: var(--accent-red);"></div>
-
-            <div class="table-container">
-                <table class="instances-table">
-                    <thead>
-                        <tr>
-                            <th onclick="sortTable('name')" style="cursor: pointer; user-select: none;">Name <span id="sort-name" style="color: var(--text-muted); font-size: 0.8rem;"></span></th>
-                            <th onclick="sortTable('type')" style="cursor: pointer; user-select: none;">Type <span id="sort-type" style="color: var(--text-muted); font-size: 0.8rem;"></span></th>
-                            <th onclick="sortTable('state')" style="cursor: pointer; user-select: none;">State <span id="sort-state" style="color: var(--text-muted); font-size: 0.8rem;"></span></th>
-                            <th onclick="sortTable('region')" style="cursor: pointer; user-select: none;">Region <span id="sort-region" style="color: var(--text-muted); font-size: 0.8rem;"></span></th>
-                            <th onclick="sortTable('ip')" style="cursor: pointer; user-select: none;">Public IP <span id="sort-ip" style="color: var(--text-muted); font-size: 0.8rem;"></span></th>
-                            <th onclick="sortTable('dns')" style="cursor: pointer; user-select: none;">DNS Name <span id="sort-dns" style="color: var(--text-muted); font-size: 0.8rem;"></span></th>
-                            <th onclick="sortTable('ttl')" style="cursor: pointer; user-select: none;">TTL <span id="sort-ttl" style="color: var(--text-muted); font-size: 0.8rem;"></span></th>
-                        </tr>
-                    </thead>
-                    <tbody id="instances-tbody">
-                        <tr>
-                            <td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-muted);">
-                                Loading spores...
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(100, 150, 255, 0.05); border: 1px solid rgba(100, 150, 255, 0.2); border-radius: 8px;">
-                <p style="margin: 0; color: var(--text-muted); font-size: 0.9rem;">
-                    <strong>💡 Tip:</strong> Spores refresh automatically. Launch with <code>spawn launch</code> and they'll appear here within 30 seconds.
-                </p>
-            </div>
-            </div>
-
-            <!-- Sweeps Tab Content -->
-            <div id="sweeps-tab-content" class="dashboard-tab-content" style="display: none;">
-                <p class="dashboard-subtitle">View and monitor your parameter sweeps</p>
-
-                <!-- Sweep Filters -->
-                <div class="table-controls" style="margin-bottom: 1rem; padding: 1rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;">
-                    <div style="display: grid; grid-template-columns: 1fr auto auto auto; gap: 1rem; align-items: center;">
-                        <input type="text" id="sweep-search-input" placeholder="🔍 Search by name or ID..." style="padding: 0.6rem 1rem; background: var(--bg-dark); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); font-size: 0.9rem;" oninput="applySweepFilters()">
-
-                        <select id="sweep-status-filter" style="padding: 0.6rem 1rem; background: var(--bg-dark); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); font-size: 0.9rem; cursor: pointer;" onchange="applySweepFilters()">
-                            <option value="">All Statuses</option>
-                            <option value="RUNNING">Running</option>
-                            <option value="COMPLETED">Completed</option>
-                            <option value="FAILED">Failed</option>
-                            <option value="CANCELLED">Cancelled</option>
-                        </select>
-
-                        <button onclick="deleteCompletedSweeps()" style="padding: 0.6rem 1rem; background: var(--bg-dark); border: 1px solid var(--accent-red); border-radius: 6px; color: var(--accent-red); font-size: 0.9rem; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,100,100,0.1)'" onmouseout="this.style.background='var(--bg-dark)'" title="Delete completed and cancelled sweeps">
-                            🗑️ Cleanup
-                        </button>
-
-                        <button onclick="clearSweepFilters()" style="padding: 0.6rem 1rem; background: var(--bg-dark); border: 1px solid var(--border); border-radius: 6px; color: var(--text-secondary); font-size: 0.9rem; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--accent-blue)'" onmouseout="this.style.borderColor='var(--border)'">
-                            Clear Filters
-                        </button>
-                    </div>
-                </div>
-
-                <div id="sweeps-loading" style="display: none; text-align: center; padding: 2rem; color: var(--text-muted);">
-                    Loading sweeps...
-                </div>
-
-                <div id="sweeps-error" style="display: none; padding: 1rem; margin: 1rem 0; background: rgba(255, 100, 100, 0.1); border: 1px solid rgba(255, 100, 100, 0.3); border-radius: 8px; color: var(--accent-red);"></div>
-
-                <div class="table-container">
-                    <table class="sweeps-table">
-                        <thead>
-                            <tr>
-                                <th onclick="sortSweepsTable('name')" style="cursor: pointer; user-select: none;">Name <span id="sweep-sort-name" style="color: var(--text-muted); font-size: 0.8rem;"></span></th>
-                                <th onclick="sortSweepsTable('status')" style="cursor: pointer; user-select: none;">Status <span id="sweep-sort-status" style="color: var(--text-muted); font-size: 0.8rem;"></span></th>
-                                <th onclick="sortSweepsTable('progress')" style="cursor: pointer; user-select: none;">Progress <span id="sweep-sort-progress" style="color: var(--text-muted); font-size: 0.8rem;"></span></th>
-                                <th onclick="sortSweepsTable('region')" style="cursor: pointer; user-select: none;">Region <span id="sweep-sort-region" style="color: var(--text-muted); font-size: 0.8rem;"></span></th>
-                                <th onclick="sortSweepsTable('created')" style="cursor: pointer; user-select: none;">Created <span id="sweep-sort-created" style="color: var(--text-muted); font-size: 0.8rem;"></span></th>
-                                <th onclick="sortSweepsTable('cost')" style="cursor: pointer; user-select: none;">Est. Cost <span id="sweep-sort-cost" style="color: var(--text-muted); font-size: 0.8rem;"></span></th>
-                                <th style="width: 100px;">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="sweeps-tbody">
-                            <tr>
-                                <td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-muted);">
-                                    Loading sweeps...
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(100, 150, 255, 0.05); border: 1px solid rgba(100, 150, 255, 0.2); border-radius: 8px;">
-                    <p style="margin: 0; color: var(--text-muted); font-size: 0.9rem;">
-                        <strong>💡 Tip:</strong> Launch sweeps with <code>spawn sweep --detach</code> to run them in Lambda. Use <code>spawn list-sweeps</code> to view from CLI.
-                    </p>
-                </div>
-            </div>
-
-            <!-- Autoscale Groups Tab Content -->
-            <div id="autoscale-tab-content" class="dashboard-tab-content" style="display: none;">
-                <p class="dashboard-subtitle">Monitor auto-scaling job arrays and capacity</p>
-
-                <!-- Cost Summary Widget -->
-                <div id="cost-summary-widget" style="margin-bottom: 1.5rem; padding: 1.5rem; background: linear-gradient(135deg, rgba(102, 187, 106, 0.1), rgba(79, 195, 247, 0.1)); border: 1px solid var(--accent-green); border-radius: 12px;">
-                    <h3 style="color: var(--accent-green); margin-bottom: 1rem; font-size: 1.1rem;">💰 Current Costs</h3>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
-                        <div style="background: rgba(0, 0, 0, 0.2); padding: 1rem; border-radius: 8px;">
-                            <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem;">Hourly Cost</div>
-                            <div id="cost-hourly" style="font-size: 1.8rem; font-weight: bold; color: var(--accent-green);">$0.00</div>
-                        </div>
-                        <div style="background: rgba(0, 0, 0, 0.2); padding: 1rem; border-radius: 8px;">
-                            <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem;">Estimated Monthly</div>
-                            <div id="cost-monthly" style="font-size: 1.8rem; font-weight: bold; color: var(--accent-blue);">$0.00</div>
-                        </div>
-                        <div style="background: rgba(0, 0, 0, 0.2); padding: 1rem; border-radius: 8px;">
-                            <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem;">Running Instances</div>
-                            <div id="cost-instance-count" style="font-size: 1.8rem; font-weight: bold; color: var(--text-primary);">0</div>
-                        </div>
-                    </div>
-                    <div id="cost-breakdown" style="margin-top: 1rem; font-size: 0.85rem; color: var(--text-muted);"></div>
-                </div>
-
-                <!-- Autoscale Group Filters -->
-                <div class="table-controls" style="margin-bottom: 1rem; padding: 1rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;">
-                    <div style="display: grid; grid-template-columns: 1fr auto auto; gap: 1rem; align-items: center;">
-                        <input type="text" id="autoscale-search-input" placeholder="🔍 Search by name or ID..." style="padding: 0.6rem 1rem; background: var(--bg-dark); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); font-size: 0.9rem;" oninput="applyAutoscaleFilters()">
-
-                        <select id="autoscale-status-filter" style="padding: 0.6rem 1rem; background: var(--bg-dark); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); font-size: 0.9rem; cursor: pointer;" onchange="applyAutoscaleFilters()">
-                            <option value="">All Statuses</option>
-                            <option value="active">Active</option>
-                            <option value="paused">Paused</option>
-                            <option value="terminated">Terminated</option>
-                        </select>
-
-                        <button onclick="clearAutoscaleFilters()" style="padding: 0.6rem 1rem; background: var(--bg-dark); border: 1px solid var(--border); border-radius: 6px; color: var(--text-secondary); font-size: 0.9rem; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--accent-blue)'" onmouseout="this.style.borderColor='var(--border)'">
-                            Clear Filters
-                        </button>
-                    </div>
-                </div>
-
-                <div id="autoscale-loading" style="display: none; text-align: center; padding: 2rem; color: var(--text-muted);">
-                    Loading autoscale groups...
-                </div>
-
-                <div id="autoscale-error" style="display: none; padding: 1rem; margin: 1rem 0; background: rgba(255, 100, 100, 0.1); border: 1px solid rgba(255, 100, 100, 0.3); border-radius: 8px; color: var(--accent-red);"></div>
-
-                <div class="table-container">
-                    <table class="autoscale-table">
-                        <thead>
-                            <tr>
-                                <th style="cursor: pointer; user-select: none;">Name</th>
-                                <th style="cursor: pointer; user-select: none;">Status</th>
-                                <th style="cursor: pointer; user-select: none;">Capacity</th>
-                                <th style="cursor: pointer; user-select: none;">Min/Max</th>
-                                <th style="cursor: pointer; user-select: none;">Policy</th>
-                                <th style="cursor: pointer; user-select: none;">Last Event</th>
-                            </tr>
-                        </thead>
-                        <tbody id="autoscale-tbody">
-                            <tr>
-                                <td colspan="6" style="text-align: center; padding: 2rem; color: var(--text-muted);">
-                                    Loading autoscale groups...
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(100, 150, 255, 0.05); border: 1px solid rgba(100, 150, 255, 0.2); border-radius: 8px;">
-                    <p style="margin: 0; color: var(--text-muted); font-size: 0.9rem;">
-                        <strong>💡 Tip:</strong> Create autoscale groups with <code>spawn autoscale launch</code>. Click any row to view instance health and details.
-                    </p>
                 </div>
             </div>
         </section>
@@ -512,25 +191,6 @@ spawn --lang fr    # French</code></pre>
     <script src="js/websocket.js?v=1"></script>
     <script src="js/main.js?v=2"></script>
     <script>
-    function scrollToDashboard(event) {
-        event.preventDefault();
-        const dashboardSection = document.getElementById('dashboard');
-        const loginSection = document.getElementById('login-section');
-
-        // Check if user is authenticated
-        if (typeof authManager !== 'undefined' && authManager.isAuthenticated()) {
-            // Already logged in, show dashboard
-            dashboardSection.style.display = 'block';
-            loginSection.style.display = 'none';
-            dashboardSection.scrollIntoView({ behavior: 'smooth' });
-        } else {
-            // Show login section
-            loginSection.style.display = 'block';
-            dashboardSection.style.display = 'none';
-            loginSection.scrollIntoView({ behavior: 'smooth' });
-        }
-    }
-
     // Theme toggle functionality
     function toggleTheme() {
         const html = document.documentElement;

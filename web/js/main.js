@@ -1,4 +1,4 @@
-// Mycelium Landing Page - Interactive Features
+// Spore Landing Page - Interactive Features
 
 // Tab Switching for Install Instructions
 function showTab(tabName, event) {
