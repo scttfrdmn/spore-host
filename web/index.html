@@ -256,32 +256,17 @@ Cost: $1.006/hr active, $0.01/hr hibernated</code></pre>
     <script>
     // Initialize asciinema player
     document.addEventListener('DOMContentLoaded', function() {
-        console.log('DOM loaded, initializing player...');
-
         const target = document.getElementById('demo');
-        if (!target) {
-            console.error('Target element #demo not found');
-            return;
+        if (target && typeof AsciinemaPlayer !== 'undefined') {
+            AsciinemaPlayer.create('/assets/demo.cast', target, {
+                cols: 80,
+                rows: 24,
+                autoPlay: false,
+                loop: true,
+                speed: 1.5,
+                fit: 'width'
+            });
         }
-
-        if (typeof AsciinemaPlayer === 'undefined') {
-            console.error('AsciinemaPlayer not loaded');
-            return;
-        }
-
-        console.log('Creating player...');
-        AsciinemaPlayer.create('/assets/demo.cast', target, {
-            cols: 80,
-            rows: 24,
-            autoPlay: false,
-            loop: true,
-            speed: 1.5,
-            fit: 'width'
-        }).then(function(player) {
-            console.log('Player created successfully:', player);
-        }).catch(function(error) {
-            console.error('Error creating player:', error);
-        });
     });
     </script>
     <script src="js/auth.js?v=2"></script>
