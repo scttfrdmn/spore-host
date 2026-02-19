@@ -259,13 +259,10 @@ Cost: $1.006/hr active, $0.01/hr hibernated</code></pre>
         const target = document.getElementById('demo');
         if (target && typeof AsciinemaPlayer !== 'undefined') {
             AsciinemaPlayer.create('/assets/demo.cast', target, {
-                cols: 80,
-                rows: 24,
                 autoPlay: true,
                 loop: true,
-                speed: 1.5,
-                fit: 'width',
-                idleTimeLimit: 2
+                speed: 2,
+                fit: 'width'
             });
         }
     });
