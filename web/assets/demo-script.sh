@@ -87,7 +87,61 @@ echo -e "${GREEN}✓ Auto-terminates in 3h 59m${RESET}"
 echo
 pause 2
 
-# Demo 3: Quick command tip
+# Demo 3: SSH into instance
+echo -e "${BOLD}# SSH into the instance${RESET}"
+pause 1
+type_command "ssh ec2-user@3.84.123.45"
+pause 0.5
+
+echo
+echo -e "${CYAN}Connected to instance i-0abc1234def5678${RESET}"
+pause 0.5
+echo -e "${CYAN}Amazon Linux 2023${RESET}"
+pause 0.5
+echo
+type_command "uptime"
+pause 0.3
+echo " 16:42:15 up 2 min,  1 user,  load average: 0.00, 0.00, 0.00"
+pause 0.5
+type_command "exit"
+pause 0.3
+echo
+echo -e "${CYAN}Connection to 3.84.123.45 closed.${RESET}"
+echo
+pause 1.5
+
+# Demo 4: List and terminate
+echo -e "${BOLD}# List running instances${RESET}"
+pause 1
+type_command "spawn list"
+pause 0.5
+
+echo
+echo -e "${BOLD}Instance ID           Type      Region      Status    TTL Remaining${RESET}"
+echo "─────────────────────────────────────────────────────────────────────"
+pause 0.3
+echo "i-0abc1234def5678    t3.nano   us-east-1   running   3h 57m"
+pause 0.5
+echo
+echo -e "${GREEN}✓ 1 instance running${RESET}"
+echo
+pause 1.5
+
+echo -e "${BOLD}# Terminate instance${RESET}"
+pause 1
+type_command "spawn terminate i-0abc1234def5678"
+pause 0.5
+
+echo
+echo -e "${YELLOW}⏳ Terminating instance...${RESET}"
+pause 1
+echo -e "${GREEN}✓ Instance i-0abc1234def5678 terminated${RESET}"
+echo -e "${GREEN}✓ Total runtime: 4 minutes${RESET}"
+echo -e "${GREEN}✓ Total cost: \$0.0001${RESET}"
+echo
+pause 2
+
+# Demo 5: Quick command tip
 echo -e "${BOLD}# Pro tip: Launch with one command${RESET}"
 pause 1
 type_command "spawn --type t3.micro --region us-west-2 --ttl 8h"
