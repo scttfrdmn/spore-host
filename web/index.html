@@ -257,18 +257,26 @@ Cost: $1.006/hr active, $0.01/hr hibernated</code></pre>
     <script src="js/websocket.js?v=1"></script>
     <script src="js/main.js?v=2"></script>
     <script>
-    // Initialize asciinema player
-    if (typeof AsciinemaPlayer !== 'undefined') {
-        AsciinemaPlayer.create('assets/demo.cast', document.getElementById('demo-player'), {
-            cols: 80,
-            rows: 24,
-            autoPlay: false,
-            loop: true,
-            theme: 'asciinema',
-            fit: 'width',
-            terminalFontSize: '14px'
-        });
-    }
+    // Initialize asciinema player on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof AsciinemaPlayer !== 'undefined') {
+            const playerElement = document.getElementById('demo-player');
+            if (playerElement) {
+                AsciinemaPlayer.create('/assets/demo.cast', playerElement, {
+                    cols: 80,
+                    rows: 24,
+                    autoPlay: false,
+                    loop: true,
+                    theme: 'asciinema',
+                    fit: 'width',
+                    terminalFontSize: 'small',
+                    speed: 1.5
+                });
+            }
+        } else {
+            console.error('AsciinemaPlayer not loaded');
+        }
+    });
     </script>
     <script>
     // Theme toggle functionality
