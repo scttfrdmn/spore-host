@@ -244,14 +244,12 @@ h1.glow {
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
 }
 
-#demo-player {
+asciinema-player {
+    display: block;
     border-radius: 8px;
     overflow: hidden;
     max-height: 500px;
-}
-
-#demo-player .asciinema-player-wrapper {
-    max-height: 500px;
+    width: 100%;
 }
 
 /* Features Grid */

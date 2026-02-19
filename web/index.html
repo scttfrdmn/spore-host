@@ -51,7 +51,17 @@
         <section class="demo-video">
             <h2>See It In Action</h2>
             <div class="demo-container">
-                <div id="demo-player"></div>
+                <asciinema-player
+                    src="/assets/demo.cast"
+                    cols="80"
+                    rows="24"
+                    autoplay="false"
+                    loop="true"
+                    theme="asciinema"
+                    fit="width"
+                    terminal-font-size="small"
+                    speed="1.5">
+                </asciinema-player>
             </div>
             <p style="text-align: center; color: var(--text-muted); margin-top: 1rem; font-size: 0.9rem;">
                 Watch how spore.host finds the cheapest EC2 instances and launches them in seconds
@@ -256,28 +266,6 @@ Cost: $1.006/hr active, $0.01/hr hibernated</code></pre>
     <script src="js/auth.js?v=2"></script>
     <script src="js/websocket.js?v=1"></script>
     <script src="js/main.js?v=2"></script>
-    <script>
-    // Initialize asciinema player on page load
-    document.addEventListener('DOMContentLoaded', function() {
-        if (typeof AsciinemaPlayer !== 'undefined') {
-            const playerElement = document.getElementById('demo-player');
-            if (playerElement) {
-                AsciinemaPlayer.create('/assets/demo.cast', playerElement, {
-                    cols: 80,
-                    rows: 24,
-                    autoPlay: false,
-                    loop: true,
-                    theme: 'asciinema',
-                    fit: 'width',
-                    terminalFontSize: 'small',
-                    speed: 1.5
-                });
-            }
-        } else {
-            console.error('AsciinemaPlayer not loaded');
-        }
-    });
-    </script>
     <script>
     // Theme toggle functionality
     function toggleTheme() {
