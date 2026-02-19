@@ -35,12 +35,7 @@ type_command "truffle spot \"t3.*\" --sort-by-price --limit 5"
 pause 0.5
 
 echo
-echo -e "${BOLD}${CYAN}┌─────────────────────────────────────────────────────────────┐${RESET}"
-echo -e "${BOLD}${CYAN}│ 🔍 Truffle - EC2 Spot Instance Search                      │${RESET}"
-echo -e "${BOLD}${CYAN}└─────────────────────────────────────────────────────────────┘${RESET}"
-echo
-pause 0.3
-
+pause 0.5
 echo -e "${BOLD}Instance Type    vCPUs  Memory   Spot Price   Region      Savings${RESET}"
 echo "─────────────────────────────────────────────────────────────────"
 pause 0.2
