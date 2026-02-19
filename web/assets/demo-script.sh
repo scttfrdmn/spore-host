@@ -28,14 +28,6 @@ pause() {
 
 clear
 
-# Show header
-echo -e "${BOLD}${BLUE}╔════════════════════════════════════════════════════════════╗${RESET}"
-echo -e "${BOLD}${BLUE}║                   spore.host Demo                          ║${RESET}"
-echo -e "${BOLD}${BLUE}║      Launch EC2 in 2 minutes. Auto-terminate. Free.       ║${RESET}"
-echo -e "${BOLD}${BLUE}╚════════════════════════════════════════════════════════════╝${RESET}"
-echo
-pause 2
-
 # Demo 1: truffle spot search
 echo -e "${BOLD}# Find the cheapest spot instances${RESET}"
 pause 1
@@ -107,14 +99,5 @@ pause 0.8
 echo -e "${GREEN}✓ Launched in 32 seconds${RESET}"
 echo -e "${GREEN}✓ IP: 54.184.89.123${RESET}"
 echo -e "${GREEN}✓ Cost: \$0.0031/hr${RESET}"
-echo
-pause 2
-
-# Closing
-echo
-echo -e "${BOLD}${BLUE}════════════════════════════════════════════════════════════${RESET}"
-echo -e "${BOLD}${CYAN}  Get started: https://spore.host${RESET}"
-echo -e "${BOLD}${CYAN}  Free & open source • Auto-terminate • Zero surprise bills${RESET}"
-echo -e "${BOLD}${BLUE}════════════════════════════════════════════════════════════${RESET}"
 echo
 pause 2
