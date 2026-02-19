@@ -7,8 +7,8 @@
     <meta name="description" content="Free, open-source CLI tools for launching ephemeral AWS EC2 instances with automatic termination, cost control, and hibernation support.">
     <link rel="stylesheet" href="css/style.css">
     <link rel="icon" type="image/png" href="assets/favicon.png">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/asciinema-player@3.7.0/dist/bundle/asciinema-player.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/asciinema-player@3.7.0/dist/bundle/asciinema-player.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/asciinema-player@3.8.0/dist/bundle/asciinema-player.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/asciinema-player@3.8.0/dist/bundle/asciinema-player.min.js"></script>
     <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1564.0.min.js"></script>
 </head>
 <body>
@@ -255,30 +255,33 @@ Cost: $1.006/hr active, $0.01/hr hibernated</code></pre>
 
     <script>
     // Initialize asciinema player
-    window.addEventListener('load', function() {
-        console.log('Initializing asciinema player...');
-        console.log('AsciinemaPlayer available:', typeof AsciinemaPlayer);
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM loaded, initializing player...');
 
         const target = document.getElementById('demo');
-        console.log('Target element:', target);
-
-        if (typeof AsciinemaPlayer !== 'undefined' && target) {
-            try {
-                const player = AsciinemaPlayer.create('/assets/demo.cast', target, {
-                    cols: 80,
-                    rows: 24,
-                    autoPlay: false,
-                    loop: true,
-                    fit: 'width',
-                    speed: 1.5
-                });
-                console.log('Player created:', player);
-            } catch (e) {
-                console.error('Error creating player:', e);
-            }
-        } else {
-            console.error('AsciinemaPlayer not available or target element not found');
+        if (!target) {
+            console.error('Target element #demo not found');
+            return;
         }
+
+        if (typeof AsciinemaPlayer === 'undefined') {
+            console.error('AsciinemaPlayer not loaded');
+            return;
+        }
+
+        console.log('Creating player...');
+        AsciinemaPlayer.create('/assets/demo.cast', target, {
+            cols: 80,
+            rows: 24,
+            autoPlay: false,
+            loop: true,
+            speed: 1.5,
+            fit: 'width'
+        }).then(function(player) {
+            console.log('Player created successfully:', player);
+        }).catch(function(error) {
+            console.error('Error creating player:', error);
+        });
     });
     </script>
     <script src="js/auth.js?v=2"></script>
