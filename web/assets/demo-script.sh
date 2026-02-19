@@ -36,47 +36,57 @@ pause 0.5
 
 echo
 pause 0.5
-echo -e "${BOLD}Instance Type    vCPUs  Memory   Spot Price   Region      Savings${RESET}"
-echo "─────────────────────────────────────────────────────────────────"
+echo "+---------------+-----------+-------------------+---------------+"
+echo "| INSTANCE TYPE |  REGION   | AVAILABILITY ZONE | SPOT PRICE/HR |"
+echo "+---------------+-----------+-------------------+---------------+"
 pause 0.2
-echo "t3.nano          2      0.5 GB   \$0.0016/hr   us-east-1   95%"
+echo "| t3.nano       | us-east-1 | us-east-1b        | \$0.0015       |"
 pause 0.2
-echo "t3.micro         2      1.0 GB   \$0.0031/hr   us-east-1   94%"
+echo "| t3.micro      | us-east-1 | us-east-1a        | \$0.0029       |"
 pause 0.2
-echo "t3.small         2      2.0 GB   \$0.0063/hr   us-east-1   93%"
+echo "| t3.small      | us-east-1 | us-east-1c        | \$0.0062       |"
 pause 0.2
-echo "t3.medium        2      4.0 GB   \$0.0125/hr   us-east-2   92%"
+echo "| t3.medium     | us-east-2 | us-east-2a        | \$0.0124       |"
 pause 0.2
-echo "t3.large         2      8.0 GB   \$0.0250/hr   us-west-2   91%"
+echo "| t3.large      | us-west-2 | us-west-2b        | \$0.0248       |"
+echo "+---------------+-----------+-------------------+---------------+"
 echo
 pause 0.3
-echo -e "${GREEN}✓ Found 5 instances with spot capacity available${RESET}"
+echo "💰 Spot Instance Summary:"
+pause 0.2
+echo "   Instance Types: 5"
+pause 0.2
+echo "   Average Spot Price: \$0.0096 per hour"
 echo
 pause 2
 
-# Demo 2: spawn launch with TTL
-echo -e "${BOLD}# Launch the cheapest instance with 4-hour TTL${RESET}"
+# Demo 2: spawn launch with TTL and name
+echo -e "${BOLD}# Launch instance with name and idle detection${RESET}"
 pause 1
-type_command "truffle spot \"t3.*\" --sort-by-price --pick-first | spawn --ttl 4h"
+type_command "spawn launch --name dev-box --idle-timeout 30m --ttl 4h us-east-1b t3.nano"
 pause 0.5
 
 echo
-echo -e "${BOLD}🍄 Launching instance...${RESET}"
+echo -e "${BOLD}🍄 Launching spore 'dev-box'...${RESET}"
 pause 0.8
 echo -e "   ${CYAN}Type:${RESET} t3.nano (2 vCPUs, 0.5 GB RAM)"
 pause 0.3
-echo -e "   ${CYAN}Region:${RESET} us-east-1"
+echo -e "   ${CYAN}Region:${RESET} us-east-1b"
 pause 0.3
-echo -e "   ${CYAN}Cost:${RESET} \$0.0016/hr (~\$0.01/day)"
+echo -e "   ${CYAN}Cost:${RESET} \$0.0015/hr"
 pause 0.3
 echo -e "   ${CYAN}TTL:${RESET} 4h (auto-terminates)"
+pause 0.3
+echo -e "   ${CYAN}Idle Detection:${RESET} Hibernates after 30m idle"
 pause 0.8
 echo
 echo -e "${YELLOW}⏳ Waiting for instance to start...${RESET}"
 pause 1.5
-echo -e "${GREEN}✓ Instance i-0abc1234def5678 running${RESET}"
+echo -e "${GREEN}✓ Spore 'dev-box' running (i-0abc1234def5678)${RESET}"
 pause 0.5
 echo -e "${GREEN}✓ SSH: ssh ec2-user@3.84.123.45${RESET}"
+pause 0.5
+echo -e "${GREEN}✓ Idle detection active${RESET}"
 pause 0.5
 echo -e "${GREEN}✓ Auto-terminates in 3h 59m${RESET}"
 echo
@@ -106,31 +116,31 @@ echo
 pause 1.5
 
 # Demo 4: List and terminate
-echo -e "${BOLD}# List running instances${RESET}"
+echo -e "${BOLD}# List running spores${RESET}"
 pause 1
 type_command "spawn list"
 pause 0.5
 
 echo
-echo -e "${BOLD}Instance ID           Type      Region      Status    TTL Remaining${RESET}"
-echo "─────────────────────────────────────────────────────────────────────"
+echo -e "${BOLD}Name       Instance ID          Type      Region      Status    TTL${RESET}"
+echo "──────────────────────────────────────────────────────────────────────────"
 pause 0.3
-echo "i-0abc1234def5678    t3.nano   us-east-1   running   3h 57m"
+echo "dev-box    i-0abc1234def5678    t3.nano   us-east-1b  running   3h 57m"
 pause 0.5
 echo
-echo -e "${GREEN}✓ 1 instance running${RESET}"
+echo -e "${GREEN}✓ 1 spore running${RESET}"
 echo
 pause 1.5
 
-echo -e "${BOLD}# Terminate instance${RESET}"
+echo -e "${BOLD}# Terminate by name${RESET}"
 pause 1
-type_command "spawn terminate i-0abc1234def5678"
+type_command "spawn terminate dev-box"
 pause 0.5
 
 echo
-echo -e "${YELLOW}⏳ Terminating instance...${RESET}"
+echo -e "${YELLOW}⏳ Terminating spore 'dev-box'...${RESET}"
 pause 1
-echo -e "${GREEN}✓ Instance i-0abc1234def5678 terminated${RESET}"
+echo -e "${GREEN}✓ Spore 'dev-box' (i-0abc1234def5678) terminated${RESET}"
 echo -e "${GREEN}✓ Total runtime: 4 minutes${RESET}"
 echo -e "${GREEN}✓ Total cost: \$0.0001${RESET}"
 echo
