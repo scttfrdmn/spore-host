@@ -228,6 +228,27 @@ h1.glow {
     transform: translateY(-2px);
 }
 
+/* Demo Video */
+.demo-video {
+    margin: 4rem 0;
+    text-align: center;
+}
+
+.demo-container {
+    max-width: 900px;
+    margin: 2rem auto;
+    background: var(--bg-card);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    padding: 1.5rem;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+#demo-player {
+    border-radius: 8px;
+    overflow: hidden;
+}
+
 /* Features Grid */
 .features {
     display: grid;

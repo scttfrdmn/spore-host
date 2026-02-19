@@ -7,6 +7,7 @@
     <meta name="description" content="Free, open-source CLI tools for launching ephemeral AWS EC2 instances with automatic termination, cost control, and hibernation support.">
     <link rel="stylesheet" href="css/style.css">
     <link rel="icon" type="image/png" href="assets/favicon.png">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/asciinema-player@3.7.0/dist/bundle/asciinema-player.min.css">
     <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1564.0.min.js"></script>
 </head>
 <body>
@@ -45,6 +46,17 @@
                 <span>✓ Mac, Windows, Linux</span>
             </div>
         </header>
+
+        <!-- Demo Video -->
+        <section class="demo-video">
+            <h2>See It In Action</h2>
+            <div class="demo-container">
+                <div id="demo-player"></div>
+            </div>
+            <p style="text-align: center; color: var(--text-muted); margin-top: 1rem; font-size: 0.9rem;">
+                Watch how spore.host finds the cheapest EC2 instances and launches them in seconds
+            </p>
+        </section>
 
         <!-- Features Grid -->
         <section class="features">
@@ -240,9 +252,24 @@ Cost: $1.006/hr active, $0.01/hr hibernated</code></pre>
         </footer>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/asciinema-player@3.7.0/dist/bundle/asciinema-player.min.js"></script>
     <script src="js/auth.js?v=2"></script>
     <script src="js/websocket.js?v=1"></script>
     <script src="js/main.js?v=2"></script>
+    <script>
+    // Initialize asciinema player
+    if (typeof AsciinemaPlayer !== 'undefined') {
+        AsciinemaPlayer.create('assets/demo.cast', document.getElementById('demo-player'), {
+            cols: 80,
+            rows: 24,
+            autoPlay: false,
+            loop: true,
+            theme: 'asciinema',
+            fit: 'width',
+            terminalFontSize: '14px'
+        });
+    }
+    </script>
     <script>
     // Theme toggle functionality
     function toggleTheme() {
