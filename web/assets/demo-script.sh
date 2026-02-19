@@ -60,48 +60,47 @@ echo "   Average Spot Price: \$0.0096 per hour"
 echo
 pause 2
 
-# Demo 2: spawn launch with TTL and name
-echo -e "${BOLD}# Launch instance with name and idle detection${RESET}"
+# Demo 2: pipe truffle to spawn for cheapest spot
+echo -e "${BOLD}# Launch cheapest spot instance${RESET}"
 pause 1
-type_command "spawn launch --name dev-box --idle-timeout 30m --ttl 4h us-east-1b t3.nano"
+type_command "truffle spot t3.nano --sort-by-price --regions us-east-1 | spawn launch --name dev-box --idle-timeout 30m --ttl 4h --spot"
 pause 0.5
 
 echo
-echo -e "${BOLD}🍄 Launching spore 'dev-box'...${RESET}"
-pause 0.8
-echo -e "   ${CYAN}Type:${RESET} t3.nano (2 vCPUs, 0.5 GB RAM)"
-pause 0.3
-echo -e "   ${CYAN}Region:${RESET} us-east-1b"
-pause 0.3
-echo -e "   ${CYAN}Cost:${RESET} \$0.0015/hr"
-pause 0.3
-echo -e "   ${CYAN}TTL:${RESET} 4h (auto-terminates)"
-pause 0.3
-echo -e "   ${CYAN}Idle Detection:${RESET} Hibernates after 30m idle"
+echo -e "${BOLD}🚀 Spawning Instance...${RESET}"
 pause 0.8
 echo
-echo -e "${YELLOW}⏳ Waiting for instance to start...${RESET}"
-pause 1.5
-echo -e "${GREEN}✓ Spore 'dev-box' running (i-0abc1234def5678)${RESET}"
+echo -e "${CYAN}  Instance:${RESET}      t3.nano"
+pause 0.3
+echo -e "${CYAN}  Region/AZ:${RESET}     us-east-1b"
+pause 0.3
+echo -e "${CYAN}  Spot Price:${RESET}    \$0.0015/hr"
+pause 0.3
+echo -e "${CYAN}  Effective Cost:${RESET} \$0.0015/hr"
+pause 0.3
+echo -e "${CYAN}  TTL:${RESET}           4h"
+pause 0.3
+echo -e "${CYAN}  Idle Timeout:${RESET}  30m (hibernate)"
+pause 0.8
+echo
+echo -e "${GREEN}✓ Instance running: i-0abc1234def5678${RESET}"
 pause 0.5
-echo -e "${GREEN}✓ SSH: ssh ec2-user@3.84.123.45${RESET}"
+echo -e "${GREEN}✓ Name: dev-box${RESET}"
 pause 0.5
-echo -e "${GREEN}✓ Idle detection active${RESET}"
-pause 0.5
-echo -e "${GREEN}✓ Auto-terminates in 3h 59m${RESET}"
+echo -e "${GREEN}✓ Connect: spawn connect dev-box${RESET}"
 echo
 pause 2
 
-# Demo 3: SSH into instance
-echo -e "${BOLD}# SSH into the instance${RESET}"
+# Demo 3: Connect via spawn
+echo -e "${BOLD}# Connect to the instance${RESET}"
 pause 1
-type_command "ssh ec2-user@3.84.123.45"
+type_command "spawn connect dev-box"
 pause 0.5
 
 echo
-echo -e "${CYAN}Connected to instance i-0abc1234def5678${RESET}"
+echo -e "${CYAN}🔌 Connecting to dev-box (i-0abc1234def5678)...${RESET}"
 pause 0.5
-echo -e "${CYAN}Amazon Linux 2023${RESET}"
+echo -e "${GREEN}✓ Connected${RESET}"
 pause 0.5
 echo
 type_command "uptime"
@@ -111,7 +110,7 @@ pause 0.5
 type_command "exit"
 pause 0.3
 echo
-echo -e "${CYAN}Connection to 3.84.123.45 closed.${RESET}"
+echo -e "${CYAN}Connection closed.${RESET}"
 echo
 pause 1.5
 
@@ -122,72 +121,69 @@ type_command "spawn status dev-box"
 pause 0.5
 
 echo
-echo -e "${CYAN}Spore:${RESET} dev-box (i-0abc1234def5678)"
+echo -e "${CYAN}Name:${RESET}             dev-box"
 pause 0.3
-echo -e "${CYAN}Status:${RESET} hibernated"
+echo -e "${CYAN}Instance ID:${RESET}      i-0abc1234def5678"
 pause 0.3
-echo -e "${CYAN}Idle Time:${RESET} 31 minutes"
+echo -e "${CYAN}State:${RESET}            hibernated"
 pause 0.3
-echo -e "${CYAN}Cost Savings:${RESET} \$0.015/hr → \$0.001/hr (93% reduction)"
+echo -e "${CYAN}Idle Time:${RESET}        31 minutes"
+pause 0.3
+echo -e "${CYAN}Effective Cost:${RESET}   \$0.001/hr (was \$0.0015/hr)"
 pause 0.5
 echo
-echo -e "${YELLOW}💤 Instance hibernated automatically after 30m idle${RESET}"
+echo -e "${YELLOW}💤 Auto-hibernated after 30m idle${RESET}"
 echo
 pause 2
 
-echo -e "${BOLD}# Wake and connect using spawn ssh${RESET}"
+echo -e "${BOLD}# Wake and connect${RESET}"
 pause 1
-type_command "spawn ssh dev-box"
+type_command "spawn connect dev-box"
 pause 0.5
 
 echo
-echo -e "${YELLOW}⏳ Waking spore 'dev-box' from hibernation...${RESET}"
+echo -e "${YELLOW}⏳ Waking from hibernation...${RESET}"
 pause 1.5
-echo -e "${GREEN}✓ Spore resumed in 45 seconds${RESET}"
+echo -e "${GREEN}✓ Resumed in 45 seconds${RESET}"
 pause 0.5
-echo -e "${GREEN}✓ Connecting via SSH...${RESET}"
-pause 0.5
-echo
-echo -e "${CYAN}Connected to dev-box (i-0abc1234def5678)${RESET}"
-pause 0.5
-echo -e "${CYAN}Resumed from hibernation - session restored${RESET}"
+echo -e "${GREEN}✓ Connected to dev-box${RESET}"
 pause 0.5
 echo
 type_command "exit"
 pause 0.3
 echo
-echo -e "${CYAN}Connection to dev-box closed.${RESET}"
+echo -e "${CYAN}Connection closed.${RESET}"
 echo
 pause 2
 
-# Demo 5: List and terminate
-echo -e "${BOLD}# List running spores${RESET}"
+# Demo 5: List and stop
+echo -e "${BOLD}# List running instances${RESET}"
 pause 1
 type_command "spawn list"
 pause 0.5
 
 echo
-echo -e "${BOLD}Name       Instance ID          Type      Region      Status    TTL${RESET}"
-echo "──────────────────────────────────────────────────────────────────────────"
+echo -e "${BOLD}Name       Instance ID          Type      Region/AZ     State      TTL${RESET}"
+echo "────────────────────────────────────────────────────────────────────────────"
 pause 0.3
-echo "dev-box    i-0abc1234def5678    t3.nano   us-east-1b  running   3h 57m"
+echo "dev-box    i-0abc1234def5678    t3.nano   us-east-1b    running    3h 57m"
 pause 0.5
 echo
-echo -e "${GREEN}✓ 1 spore running${RESET}"
 echo
 pause 1.5
 
-echo -e "${BOLD}# Terminate by name${RESET}"
+echo -e "${BOLD}# Stop instance${RESET}"
 pause 1
-type_command "spawn terminate dev-box"
+type_command "spawn stop dev-box"
 pause 0.5
 
 echo
-echo -e "${YELLOW}⏳ Terminating spore 'dev-box'...${RESET}"
+echo -e "${YELLOW}⏳ Stopping dev-box...${RESET}"
 pause 1
-echo -e "${GREEN}✓ Spore 'dev-box' (i-0abc1234def5678) terminated${RESET}"
-echo -e "${GREEN}✓ Total runtime: 4 minutes${RESET}"
-echo -e "${GREEN}✓ Total cost: \$0.0001${RESET}"
+echo -e "${GREEN}✓ Instance stopped (i-0abc1234def5678)${RESET}"
+echo -e "${GREEN}✓ Runtime: 35 minutes${RESET}"
+echo -e "${GREEN}✓ Total cost: \$0.0009${RESET}"
+echo -e "${CYAN}ℹ  Instance will auto-terminate at TTL (3h 25m remaining)${RESET}"
 echo
 pause 2
 
