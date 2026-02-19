@@ -115,7 +115,52 @@ echo -e "${CYAN}Connection to 3.84.123.45 closed.${RESET}"
 echo
 pause 1.5
 
-# Demo 4: List and terminate
+# Demo 4: Idle detection and hibernation
+echo -e "${BOLD}# Check status after 30 minutes idle${RESET}"
+pause 1
+type_command "spawn status dev-box"
+pause 0.5
+
+echo
+echo -e "${CYAN}Spore:${RESET} dev-box (i-0abc1234def5678)"
+pause 0.3
+echo -e "${CYAN}Status:${RESET} hibernated"
+pause 0.3
+echo -e "${CYAN}Idle Time:${RESET} 31 minutes"
+pause 0.3
+echo -e "${CYAN}Cost Savings:${RESET} \$0.015/hr → \$0.001/hr (93% reduction)"
+pause 0.5
+echo
+echo -e "${YELLOW}💤 Instance hibernated automatically after 30m idle${RESET}"
+echo
+pause 2
+
+echo -e "${BOLD}# Wake and connect using spawn ssh${RESET}"
+pause 1
+type_command "spawn ssh dev-box"
+pause 0.5
+
+echo
+echo -e "${YELLOW}⏳ Waking spore 'dev-box' from hibernation...${RESET}"
+pause 1.5
+echo -e "${GREEN}✓ Spore resumed in 45 seconds${RESET}"
+pause 0.5
+echo -e "${GREEN}✓ Connecting via SSH...${RESET}"
+pause 0.5
+echo
+echo -e "${CYAN}Connected to dev-box (i-0abc1234def5678)${RESET}"
+pause 0.5
+echo -e "${CYAN}Resumed from hibernation - session restored${RESET}"
+pause 0.5
+echo
+type_command "exit"
+pause 0.3
+echo
+echo -e "${CYAN}Connection to dev-box closed.${RESET}"
+echo
+pause 2
+
+# Demo 5: List and terminate
 echo -e "${BOLD}# List running spores${RESET}"
 pause 1
 type_command "spawn list"
@@ -146,7 +191,7 @@ echo -e "${GREEN}✓ Total cost: \$0.0001${RESET}"
 echo
 pause 2
 
-# Demo 5: Quick command tip
+# Demo 6: Quick command tip
 echo -e "${BOLD}# Pro tip: Launch with one command${RESET}"
 pause 1
 type_command "spawn --type t3.micro --region us-west-2 --ttl 8h"
