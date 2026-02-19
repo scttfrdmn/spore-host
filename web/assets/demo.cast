@@ -1,4 +1,4 @@
-{"version":3,"term":{"cols":80,"rows":24,"type":"xterm-256color"},"timestamp":1771460050,"idle_time_limit":2.0,"command":"./demo-script.sh","title":"spore.host - Launch EC2 in 2 minutes","env":{"SHELL":"/bin/zsh"}}
+{"version":3,"width":80,"height":24,"timestamp":1771460050,"idle_time_limit":2.0,"title":"spore.host - Launch EC2 in 2 minutes","env":{"SHELL":"/bin/zsh","TERM":"xterm-256color"}}
 [0.162, "o", "\u001b[3J\u001b[H\u001b[2J"]
 [0.000, "o", "\u001b[1m\u001b[0;34m╔════════════════════════════════════════════════════════════╗\u001b[0m\r\n\u001b[1m\u001b[0;34m║                   spore.host Demo                          ║\u001b[0m\r\n"]
 [0.000, "o", "\u001b[1m\u001b[0;34m║      Launch EC2 in 2 minutes. Auto-terminate. Free.       ║\u001b[0m\r\n\u001b[1m\u001b[0;34m╚════════════════════════════════════════════════════════════╝\u001b[0m\r\n\r\n"]

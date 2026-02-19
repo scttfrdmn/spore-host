@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Player</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/asciinema-player@3.14.0/dist/bundle/asciinema-player.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/asciinema-player@3.14.0/dist/bundle/asciinema-player.min.js"></script>
+    <style>
+        body {
+            font-family: sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        #player {
+            margin: 20px 0;
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+    <h1>Asciinema Player Test</h1>
+    <div id="player"></div>
+    <div id="status"></div>
+
+    <script>
+        const status = document.getElementById('status');
+
+        status.innerHTML = 'Loading player...';
+        console.log('Starting player initialization...');
+        console.log('AsciinemaPlayer:', typeof AsciinemaPlayer);
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const target = document.getElementById('player');
+
+            if (typeof AsciinemaPlayer === 'undefined') {
+                status.innerHTML = 'ERROR: AsciinemaPlayer not loaded';
+                console.error('AsciinemaPlayer not available');
+                return;
+            }
+
+            console.log('Creating player...');
+            status.innerHTML = 'Creating player...';
+
+            AsciinemaPlayer.create('/assets/demo.cast', target, {
+                cols: 80,
+                rows: 24,
+                autoPlay: true,
+                loop: true
+            }).then(function(player) {
+                console.log('SUCCESS: Player created', player);
+                status.innerHTML = 'SUCCESS: Player created!';
+                status.style.color = 'green';
+            }).catch(function(error) {
+                console.error('ERROR creating player:', error);
+                status.innerHTML = 'ERROR: ' + error.message;
+                status.style.color = 'red';
+            });
+        });
+    </script>
+</body>
+</html>
