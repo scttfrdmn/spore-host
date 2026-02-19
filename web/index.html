@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Spore - Launch Ephemeral AWS EC2 Instances</title>
+    <title>spore.host - Launch Ephemeral AWS EC2 Instances</title>
     <meta name="description" content="Free, open-source CLI tools for launching ephemeral AWS EC2 instances with automatic termination, cost control, and hibernation support.">
     <link rel="stylesheet" href="css/style.css">
     <link rel="icon" type="image/png" href="assets/favicon.png">
@@ -108,7 +108,7 @@ tar -xzf spawn_*_$(uname -s)_$(uname -m).tar.gz
 
         <!-- Key Features -->
         <section class="key-features">
-            <h2>Why Spore?</h2>
+            <h2>Why spore.host?</h2>
             <div class="features-grid">
                 <div class="feature-item">
                     <span class="check">✓</span>
@@ -140,21 +140,74 @@ tar -xzf spawn_*_$(uname -s)_$(uname -m).tar.gz
         <!-- Examples -->
         <section id="examples" class="examples">
             <h2>Common Use Cases</h2>
+
             <div class="example">
-                <h4>💰 Cheapest Dev Box</h4>
-                <pre><code>truffle <span data-tooltip="Spare EC2 capacity at up to 90% discount, may be interrupted">spot</span> "t3.*" --sort-by-price --pick-first | spawn --ttl 8h
-# Cost: ~$0.01/hr • Auto-terminates after 8h</code></pre>
+                <h4>🔍 Finding Available Instances</h4>
+                <pre><code>$ truffle spot "t3.*" --sort-by-price
+
+┌─────────────────────────────────────────────────────────────┐
+│ 🔍 Truffle - EC2 Spot Instance Search                      │
+└─────────────────────────────────────────────────────────────┘
+
+Instance Type    vCPUs  Memory   Spot Price   Region      Savings
+─────────────────────────────────────────────────────────────────
+t3.nano          2      0.5 GB   $0.0016/hr   us-east-1   95%
+t3.micro         2      1.0 GB   $0.0031/hr   us-east-1   94%
+t3.small         2      2.0 GB   $0.0063/hr   us-east-1   93%
+t3.medium        2      4.0 GB   $0.0125/hr   us-east-2   92%
+t3.large         2      8.0 GB   $0.0250/hr   us-west-2   91%
+
+✓ Found 5 instances with spot capacity available</code></pre>
             </div>
+
             <div class="example">
-                <h4>🎮 GPU Training</h4>
-                <pre><code>truffle capacity --instance-types g5.xlarge | spawn --ttl 24h --hibernate-on-idle
-# Auto-hibernates when idle • Saves 99% cost</code></pre>
+                <h4>💰 Launch Cheapest Dev Box</h4>
+                <pre><code>$ truffle spot "t3.*" --sort-by-price --pick-first | spawn --ttl 8h
+
+🍄 Launching instance...
+   Type: t3.nano (2 vCPUs, 0.5 GB RAM)
+   Region: us-east-1
+   Cost: $0.0016/hr (~$0.01/day)
+   TTL: 8h (auto-terminates)
+
+✓ Instance i-0abc123 running
+✓ SSH: ssh ec2-user@3.84.123.45
+✓ Auto-terminates in 8h 0m
+
+Cost: ~$0.01/hr • Auto-terminates after 8h</code></pre>
             </div>
+
             <div class="example">
-                <h4>🌍 Multi-Language Support</h4>
-                <pre><code>spawn --lang es    # Spanish
-spawn --lang ja    # Japanese
-spawn --lang fr    # French</code></pre>
+                <h4>🚀 Interactive Launch</h4>
+                <pre><code>$ spawn
+
+🍄 Welcome to spawn - Launch EC2 instances in 2 minutes
+
+? Instance type: t3.small
+? Region: us-east-1
+? TTL (auto-terminate): 4h
+? SSH key: my-key
+? Launch? Yes
+
+🚀 Launching...
+✓ Instance i-0def456 running in 45s
+✓ IP: 18.234.56.78
+✓ SSH: ssh ec2-user@18.234.56.78
+
+Your instance will auto-terminate in 3h 59m</code></pre>
+            </div>
+
+            <div class="example">
+                <h4>🎮 GPU Training with Hibernation</h4>
+                <pre><code>$ truffle capacity --instance-types g5.xlarge | spawn --ttl 24h --hibernate-on-idle
+
+✓ g5.xlarge available in us-west-2
+🍄 Launching GPU instance...
+✓ Instance running with NVIDIA A10G GPU
+✓ Hibernation enabled (saves 99% cost when idle)
+✓ Auto-terminates in 24h if not extended
+
+Cost: $1.006/hr active, $0.01/hr hibernated</code></pre>
             </div>
         </section>
 

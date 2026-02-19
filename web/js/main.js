@@ -1,4 +1,4 @@
-// Spore Landing Page - Interactive Features
+// spore.host Landing Page - Interactive Features
 
 // Tab Switching for Install Instructions
 function showTab(tabName, event) {
