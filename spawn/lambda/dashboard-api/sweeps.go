@@ -21,14 +21,14 @@ const (
 )
 
 // handleListSweeps handles GET /api/sweeps
-func handleListSweeps(ctx context.Context, cfg aws.Config, cliIamArn string) (events.APIGatewayProxyResponse, error) {
-	fmt.Printf("handleListSweeps called for user: %s\n", cliIamArn)
+// When teamID is non-empty, team sweeps are merged with personal sweeps.
+func handleListSweeps(ctx context.Context, cfg aws.Config, cliIamArn, teamID string) (events.APIGatewayProxyResponse, error) {
+	fmt.Printf("handleListSweeps called for user: %s teamID: %s\n", cliIamArn, teamID)
 	startTime := time.Now()
 
-	// Query DynamoDB for user's sweeps
 	dynamodbClient := dynamodb.NewFromConfig(cfg)
 
-	// Scan table with per-user filtering
+	// Personal sweeps via scan with user_id filter
 	scanInput := &dynamodb.ScanInput{
 		TableName:        aws.String(dynamoSweepTable),
 		FilterExpression: aws.String("user_id = :user_id"),
@@ -36,49 +36,75 @@ func handleListSweeps(ctx context.Context, cfg aws.Config, cliIamArn string) (ev
 			":user_id": &types.AttributeValueMemberS{Value: cliIamArn},
 		},
 	}
-
 	result, err := dynamodbClient.Scan(ctx, scanInput)
 	if err != nil {
 		return errorResponse(500, fmt.Sprintf("Failed to query sweeps: %v", err)), nil
 	}
 
-	// Unmarshal sweeps
+	seen := make(map[string]struct{})
 	var sweeps []SweepInfo
-	for _, item := range result.Items {
-		var sweep SweepRecord
-		if err := attributevalue.UnmarshalMap(item, &sweep); err != nil {
-			continue
+
+	appendSweepRecords := func(items []map[string]types.AttributeValue) {
+		for _, item := range items {
+			var sweep SweepRecord
+			if err := attributevalue.UnmarshalMap(item, &sweep); err != nil {
+				continue
+			}
+			if _, dup := seen[sweep.SweepID]; dup {
+				continue
+			}
+			seen[sweep.SweepID] = struct{}{}
+
+			createdAt, _ := time.Parse(time.RFC3339, sweep.CreatedAt)
+			updatedAt, _ := time.Parse(time.RFC3339, sweep.UpdatedAt)
+			completedAt, _ := time.Parse(time.RFC3339, sweep.CompletedAt)
+
+			sweepInfo := SweepInfo{
+				SweepID:       sweep.SweepID,
+				SweepName:     sweep.SweepName,
+				Status:        sweep.Status,
+				TotalParams:   sweep.TotalParams,
+				Launched:      sweep.Launched,
+				Failed:        sweep.Failed,
+				Region:        sweep.Region,
+				CreatedAt:     createdAt,
+				UpdatedAt:     updatedAt,
+				EstimatedCost: sweep.EstimatedCost,
+			}
+			if !completedAt.IsZero() {
+				sweepInfo.CompletedAt = &completedAt
+				sweepInfo.DurationSeconds = int(completedAt.Sub(createdAt).Seconds())
+			}
+			sweeps = append(sweeps, sweepInfo)
 		}
+	}
 
-		createdAt, _ := time.Parse(time.RFC3339, sweep.CreatedAt)
-		updatedAt, _ := time.Parse(time.RFC3339, sweep.UpdatedAt)
-		completedAt, _ := time.Parse(time.RFC3339, sweep.CompletedAt)
+	appendSweepRecords(result.Items)
 
-		sweepInfo := SweepInfo{
-			SweepID:       sweep.SweepID,
-			SweepName:     sweep.SweepName,
-			Status:        sweep.Status,
-			TotalParams:   sweep.TotalParams,
-			Launched:      sweep.Launched,
-			Failed:        sweep.Failed,
-			Region:        sweep.Region,
-			CreatedAt:     createdAt,
-			UpdatedAt:     updatedAt,
-			EstimatedCost: sweep.EstimatedCost,
+	// Team sweeps via team_id-index GSI
+	if teamID != "" {
+		teamResult, err := dynamodbClient.Query(ctx, &dynamodb.QueryInput{
+			TableName:              aws.String(dynamoSweepTable),
+			IndexName:              aws.String("team_id-index"),
+			KeyConditionExpression: aws.String("team_id = :tid"),
+			ExpressionAttributeValues: map[string]types.AttributeValue{
+				":tid": &types.AttributeValueMemberS{Value: teamID},
+			},
+		})
+		if err != nil {
+			fmt.Printf("Warning: failed to query team sweeps: %v\n", err)
+		} else {
+			appendSweepRecords(teamResult.Items)
 		}
-
-		if !completedAt.IsZero() {
-			sweepInfo.CompletedAt = &completedAt
-			sweepInfo.DurationSeconds = int(completedAt.Sub(createdAt).Seconds())
-		}
-
-		sweeps = append(sweeps, sweepInfo)
 	}
 
 	elapsed := time.Since(startTime)
 	fmt.Printf("Listed %d sweeps in %v\n", len(sweeps), elapsed)
 
-	// Build response
+	if sweeps == nil {
+		sweeps = []SweepInfo{}
+	}
+
 	response := SweepAPIResponse{
 		Success:     true,
 		TotalSweeps: len(sweeps),

@@ -48,10 +48,47 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	fmt.Printf("✓ Authentication successful: userID=%s cliIamArn=%s accountBase36=%s\n", userID, cliIamArn, accountBase36)
 	fmt.Printf("Routing request: path=%s method=%s\n", path, method)
 
+	// Extract optional team context
+	teamID := request.Headers["X-Team-ID"]
+	if teamID == "" {
+		teamID = request.Headers["x-team-id"]
+	}
+
 	// Route to appropriate handler
 	switch {
+	// Team endpoints
+	case path == "/teams" && method == "POST":
+		return handleCreateTeam(ctx, cfg, request.Body, cliIamArn)
+	case path == "/teams" && method == "GET":
+		return handleListMyTeams(ctx, cfg, cliIamArn)
+	case path == "/teams/" && method == "GET":
+		tid := request.PathParameters["team_id"]
+		if tid == "" {
+			return errorResponse(400, "team_id is required"), nil
+		}
+		return handleGetTeam(ctx, cfg, tid, cliIamArn)
+	case path == "/teams//members" && method == "POST":
+		tid := request.PathParameters["team_id"]
+		if tid == "" {
+			return errorResponse(400, "team_id is required"), nil
+		}
+		return handleAddMember(ctx, cfg, tid, cliIamArn, request.Body)
+	case path == "/teams//members/" && method == "DELETE":
+		tid := request.PathParameters["team_id"]
+		mArn := request.PathParameters["member_arn"]
+		if tid == "" || mArn == "" {
+			return errorResponse(400, "team_id and member_arn are required"), nil
+		}
+		return handleRemoveMember(ctx, cfg, tid, cliIamArn, mArn)
+	case path == "/teams/" && method == "DELETE":
+		tid := request.PathParameters["team_id"]
+		if tid == "" {
+			return errorResponse(400, "team_id is required"), nil
+		}
+		return handleDeleteTeam(ctx, cfg, tid, cliIamArn)
+
 	case path == "/api/instances" && method == "GET":
-		return handleListInstances(ctx, cfg, cliIamArn)
+		return handleListInstances(ctx, cfg, cliIamArn, teamID)
 
 	case path == "/api/instances/" && method == "GET":
 		// Extract instance ID from path
@@ -62,7 +99,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		return handleGetInstance(ctx, cfg, instanceID, cliIamArn)
 
 	case path == "/api/sweeps" && method == "GET":
-		return handleListSweeps(ctx, cfg, cliIamArn)
+		return handleListSweeps(ctx, cfg, cliIamArn, teamID)
 
 	case path == "/api/sweeps/" && method == "GET":
 		// Extract sweep ID from path
@@ -84,7 +121,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		return handleCleanupSweeps(ctx, cfg, request.Body, cliIamArn)
 
 	case path == "/api/autoscale-groups" && method == "GET":
-		return handleListAutoscaleGroups(ctx, cfg, cliIamArn)
+		return handleListAutoscaleGroups(ctx, cfg, cliIamArn, teamID)
 
 	case path == "/api/autoscale-groups/" && method == "GET":
 		// Extract group ID from path
@@ -149,11 +186,11 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 }
 
 // handleListInstances handles GET /api/instances
-func handleListInstances(ctx context.Context, cfg aws.Config, cliIamArn string) (events.APIGatewayProxyResponse, error) {
+func handleListInstances(ctx context.Context, cfg aws.Config, cliIamArn, teamID string) (events.APIGatewayProxyResponse, error) {
 	startTime := time.Now()
 
 	// Query all regions in parallel (filtered by IAM user for per-user isolation)
-	instances, err := listInstances(ctx, cfg, cliIamArn)
+	instances, err := listInstances(ctx, cfg, cliIamArn, teamID)
 	if err != nil {
 		return errorResponse(500, fmt.Sprintf("Failed to list instances: %v", err)), nil
 	}

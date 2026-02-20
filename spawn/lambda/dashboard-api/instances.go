@@ -27,12 +27,18 @@ var awsRegions = []string{
 	"ap-northeast-1",
 }
 
-// listInstances queries all regions in parallel and returns spawn-managed instances
-// Filters by spawn:iam-user tag to enforce per-user isolation
-func listInstances(ctx context.Context, cfg aws.Config, cliIamArn string) ([]InstanceInfo, error) {
+// listInstances queries all regions in parallel and returns spawn-managed instances.
+// When teamID is non-empty, instances tagged with spawn:team-id=teamID are merged with
+// the caller's personal instances (deduplicated by instance ID).
+func listInstances(ctx context.Context, cfg aws.Config, cliIamArn, teamID string) ([]InstanceInfo, error) {
 	var wg sync.WaitGroup
-	instancesChan := make(chan []InstanceInfo, len(awsRegions))
-	errorsChan := make(chan error, len(awsRegions))
+	// Buffer twice the regions to hold both personal and team results per region
+	bufSize := len(awsRegions)
+	if teamID != "" {
+		bufSize *= 2
+	}
+	instancesChan := make(chan []InstanceInfo, bufSize)
+	errorsChan := make(chan error, bufSize)
 
 	// Query all regions in parallel
 	for _, region := range awsRegions {
@@ -47,31 +53,38 @@ func listInstances(ctx context.Context, cfg aws.Config, cliIamArn string) ([]Ins
 				return
 			}
 
-			// Filter by spawn:managed and spawn:iam-user tags (per-user isolation)
-			filters := []types.Filter{
-				{
-					Name:   aws.String("tag:spawn:managed"),
-					Values: []string{"true"},
-				},
-				{
-					Name:   aws.String("tag:spawn:iam-user"),
-					Values: []string{cliIamArn},
-				},
+			// Personal instances: filter by spawn:managed and spawn:iam-user
+			personalFilters := []types.Filter{
+				{Name: aws.String("tag:spawn:managed"), Values: []string{"true"}},
+				{Name: aws.String("tag:spawn:iam-user"), Values: []string{cliIamArn}},
 			}
-
-			// Query EC2
 			result, err := ec2Client.DescribeInstances(ctx, &ec2.DescribeInstancesInput{
-				Filters: filters,
+				Filters: personalFilters,
 			})
 			if err != nil {
 				errorsChan <- fmt.Errorf("region %s: %w", r, err)
 				return
 			}
-
-			// Convert reservations to InstanceInfo
 			instances := convertReservationsToInstances(result.Reservations, r, "")
 			if len(instances) > 0 {
 				instancesChan <- instances
+			}
+
+			// Team instances: additionally filter by spawn:team-id
+			if teamID != "" {
+				teamFilters := []types.Filter{
+					{Name: aws.String("tag:spawn:managed"), Values: []string{"true"}},
+					{Name: aws.String("tag:spawn:team-id"), Values: []string{teamID}},
+				}
+				teamResult, err := ec2Client.DescribeInstances(ctx, &ec2.DescribeInstancesInput{
+					Filters: teamFilters,
+				})
+				if err == nil {
+					teamInstances := convertReservationsToInstances(teamResult.Reservations, r, "")
+					if len(teamInstances) > 0 {
+						instancesChan <- teamInstances
+					}
+				}
 			}
 		}(region)
 	}
@@ -83,10 +96,17 @@ func listInstances(ctx context.Context, cfg aws.Config, cliIamArn string) ([]Ins
 		close(errorsChan)
 	}()
 
-	// Collect results
+	// Collect results, deduplicating by instance ID
+	seen := make(map[string]struct{})
 	var allInstances []InstanceInfo
 	for instances := range instancesChan {
-		allInstances = append(allInstances, instances...)
+		for _, inst := range instances {
+			if _, dup := seen[inst.InstanceID]; dup {
+				continue
+			}
+			seen[inst.InstanceID] = struct{}{}
+			allInstances = append(allInstances, inst)
+		}
 	}
 
 	// Collect errors (don't fail on region errors, just log)

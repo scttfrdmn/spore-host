@@ -1262,3 +1262,209 @@ footer {
     50% { opacity: 0.4; }
 }
 
+
+/* ─── Team selector & management ─────────────────────────────── */
+#team-selector {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    padding: 0.45rem 0.75rem;
+    cursor: pointer;
+    transition: border-color 0.2s;
+}
+#team-selector:hover { border-color: var(--accent-blue); }
+
+.btn-manage-teams {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 0.85rem;
+    padding: 0.45rem 0.75rem;
+    transition: all 0.2s;
+}
+.btn-manage-teams:hover {
+    border-color: var(--accent-blue);
+    color: var(--accent-blue);
+}
+
+/* Modal backdrop */
+.team-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    z-index: 1000;
+}
+
+/* Modal container */
+.team-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1001;
+    width: min(90vw, 560px);
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.team-modal-content {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    max-height: 85vh;
+}
+
+.team-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+}
+.team-modal-header h3 { margin: 0; font-size: 1.1rem; }
+.team-modal-close {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 1.4rem;
+    line-height: 1;
+    padding: 0 0.25rem;
+    transition: color 0.2s;
+}
+.team-modal-close:hover { color: var(--text-primary); }
+
+.team-modal-body {
+    padding: 1.25rem 1.5rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.team-section h4 {
+    margin: 0 0 0.75rem;
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.team-form {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+.team-input {
+    flex: 1;
+    min-width: 120px;
+    background: var(--bg-dark);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    padding: 0.5rem 0.75rem;
+    transition: border-color 0.2s;
+}
+.team-input:focus {
+    outline: none;
+    border-color: var(--accent-blue);
+}
+
+.btn-team-action {
+    background: var(--accent-blue);
+    border: none;
+    border-radius: 6px;
+    color: white;
+    cursor: pointer;
+    font-size: 0.9rem;
+    padding: 0.5rem 1rem;
+    transition: opacity 0.2s;
+    white-space: nowrap;
+}
+.btn-team-action:hover { opacity: 0.85; }
+
+.team-error {
+    color: var(--accent-red, #ff6b6b);
+    font-size: 0.85rem;
+    margin-top: 0.5rem;
+}
+
+/* Team cards in modal */
+.team-card {
+    background: var(--bg-dark);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 0.75rem;
+    overflow: hidden;
+}
+.team-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.team-card-header:hover { background: var(--bg-hover, rgba(255,255,255,0.04)); }
+.team-card-title { font-weight: 600; font-size: 0.95rem; }
+.team-card-meta { font-size: 0.8rem; color: var(--text-muted); }
+.member-role-badge {
+    display: inline-block;
+    background: var(--accent-blue);
+    color: white;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    padding: 0.1rem 0.4rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-left: 0.4rem;
+}
+.member-role-badge.owner { background: var(--accent-green, #4caf50); }
+
+.team-card-body {
+    padding: 0 1rem 0.75rem;
+    border-top: 1px solid var(--border);
+}
+.member-list { margin: 0.5rem 0; }
+.member-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.3rem 0;
+    font-size: 0.85rem;
+    border-bottom: 1px solid var(--border);
+}
+.member-row:last-child { border-bottom: none; }
+.member-row-arn { color: var(--text-secondary); word-break: break-all; }
+
+.team-add-member-form {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.btn-danger {
+    background: transparent;
+    border: 1px solid var(--accent-red, #ff6b6b);
+    border-radius: 4px;
+    color: var(--accent-red, #ff6b6b);
+    cursor: pointer;
+    font-size: 0.75rem;
+    padding: 0.2rem 0.5rem;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+.btn-danger:hover {
+    background: var(--accent-red, #ff6b6b);
+    color: white;
+}

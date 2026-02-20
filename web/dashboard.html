@@ -53,6 +53,10 @@
                 <a href="/#install">Install</a>
                 <a href="/#examples">Examples</a>
                 <a href="https://github.com/scttfrdmn/mycelium" target="_blank">GitHub</a>
+                <select id="team-selector" style="display:none;" onchange="onTeamSelectorChange(this.value)" title="Switch team context">
+                    <option value="">Personal</option>
+                </select>
+                <button id="manage-teams-btn" style="display:none;" onclick="openTeamModal()" class="btn-manage-teams" title="Manage teams">Teams</button>
                 <button id="theme-toggle" onclick="toggleTheme()" style="background: none; border: 1px solid var(--border); border-radius: 6px; padding: 0.5rem 0.75rem; cursor: pointer; color: var(--text-primary); font-size: 1.2rem; transition: all 0.3s ease;" title="Toggle theme">
                     <span id="theme-icon">🌙</span>
                 </button>
@@ -411,6 +415,36 @@
             </div>
         </section>
     </div>
+
+    <!-- Team Management Modal -->
+    <div id="team-modal" class="team-modal" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="team-modal-title">
+        <div class="team-modal-content">
+            <div class="team-modal-header">
+                <h3 id="team-modal-title">Manage Teams</h3>
+                <button onclick="closeTeamModal()" class="team-modal-close" aria-label="Close">&times;</button>
+            </div>
+            <div class="team-modal-body">
+                <!-- Create team form -->
+                <div class="team-section">
+                    <h4>Create New Team</h4>
+                    <div class="team-form">
+                        <input type="text" id="new-team-name" placeholder="Team name" class="team-input">
+                        <input type="text" id="new-team-desc" placeholder="Description (optional)" class="team-input">
+                        <button onclick="createTeam()" class="btn-team-action">Create</button>
+                    </div>
+                    <div id="team-create-error" class="team-error" style="display:none;"></div>
+                </div>
+
+                <!-- Team list -->
+                <div class="team-section">
+                    <h4>Your Teams</h4>
+                    <div id="team-list-loading" style="color: var(--text-muted); font-size:0.9rem;">Loading...</div>
+                    <div id="team-list-container"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="team-modal-backdrop" class="team-modal-backdrop" style="display:none;" onclick="closeTeamModal()"></div>
 
     <script src="js/auth.js?v=2"></script>
     <script src="js/websocket.js?v=1"></script>

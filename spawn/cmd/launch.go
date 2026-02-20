@@ -158,6 +158,9 @@ var (
 	// Compliance (parsed from flags)
 	complianceMode   string
 	complianceStrict bool
+
+	// Team sharing
+	launchTeamID string
 )
 
 var launchCmd = &cobra.Command{
@@ -292,6 +295,9 @@ func init() {
 	launchCmd.Flags().BoolVar(&wait, "wait", false, "Wait for sweep/launch to complete (requires --detach)")
 	launchCmd.Flags().StringVar(&waitTimeout, "wait-timeout", "0", "Timeout for --wait (e.g., 2h, 30m, 0=no timeout)")
 
+	// Team sharing
+	launchCmd.Flags().StringVar(&launchTeamID, "team", "", "Team ID: tag instance with spawn:team-id for team-shared access")
+
 	// Register completions for flags
 	launchCmd.RegisterFlagCompletionFunc("region", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return completeRegion(cmd, args, toComplete)
@@ -371,6 +377,18 @@ func runLaunch(cmd *cobra.Command, args []string) error {
 		config, err = buildLaunchConfig(nil)
 		if err != nil {
 			return err
+		}
+	}
+
+	// Apply team tags if --team specified
+	if launchTeamID != "" {
+		if config.Tags == nil {
+			config.Tags = make(map[string]string)
+		}
+		config.Tags["spawn:team-id"] = launchTeamID
+		// Resolve team name from DynamoDB for the human-readable tag
+		if teamName, err := resolveTeamName(ctx, launchTeamID); err == nil && teamName != "" {
+			config.Tags["spawn:team-name"] = teamName
 		}
 	}
 

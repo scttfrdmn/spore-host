@@ -242,6 +242,12 @@ function getAPIHeaders() {
         }
     }
 
+    // Add team context if selected
+    const selectedTeamId = sessionStorage.getItem('selectedTeamId');
+    if (selectedTeamId) {
+        headers['X-Team-ID'] = selectedTeamId;
+    }
+
     return headers;
 }
 
@@ -2467,6 +2473,261 @@ setInterval(() => {
         }
     }, { passive: true });
 })();
+
+// ═══════════════════════════════════════════════════════════════
+// Team Management
+// ═══════════════════════════════════════════════════════════════
+
+const TEAMS_API = 'https://api.spore.host/teams';
+
+// Initialize team selector after authentication
+async function initTeamSelector() {
+    const selector = document.getElementById('team-selector');
+    const manageBtn = document.getElementById('manage-teams-btn');
+    if (!selector) return;
+
+    try {
+        const response = await fetch(TEAMS_API, {
+            headers: getAPIHeaders(),
+            credentials: 'include'
+        });
+        if (!response.ok) return;
+        const data = await response.json();
+        const teams = data.teams || [];
+
+        // Rebuild options
+        selector.innerHTML = '<option value="">Personal</option>';
+        teams.forEach(t => {
+            const opt = document.createElement('option');
+            opt.value = t.team_id;
+            opt.textContent = t.team_name + (t.role === 'owner' ? ' (owner)' : '');
+            selector.appendChild(opt);
+        });
+
+        // Restore previous selection
+        const saved = sessionStorage.getItem('selectedTeamId');
+        if (saved) selector.value = saved;
+
+        selector.style.display = '';
+        if (manageBtn) manageBtn.style.display = '';
+    } catch (e) {
+        console.warn('Could not load teams:', e);
+    }
+}
+
+// Called when user changes team selector
+function onTeamSelectorChange(teamId) {
+    if (teamId) {
+        sessionStorage.setItem('selectedTeamId', teamId);
+    } else {
+        sessionStorage.removeItem('selectedTeamId');
+    }
+    // Refresh current view with new team context
+    refreshCurrentDashboardView();
+}
+
+// ── Team modal ────────────────────────────────────────────────
+
+function openTeamModal() {
+    const modal = document.getElementById('team-modal');
+    const backdrop = document.getElementById('team-modal-backdrop');
+    if (modal) modal.style.display = '';
+    if (backdrop) backdrop.style.display = '';
+    loadTeamList();
+}
+
+function closeTeamModal() {
+    const modal = document.getElementById('team-modal');
+    const backdrop = document.getElementById('team-modal-backdrop');
+    if (modal) modal.style.display = 'none';
+    if (backdrop) backdrop.style.display = 'none';
+}
+
+async function createTeam() {
+    const nameEl = document.getElementById('new-team-name');
+    const descEl = document.getElementById('new-team-desc');
+    const errEl = document.getElementById('team-create-error');
+    const name = (nameEl && nameEl.value.trim()) || '';
+    if (!name) {
+        if (errEl) { errEl.textContent = 'Team name is required.'; errEl.style.display = ''; }
+        return;
+    }
+    if (errEl) errEl.style.display = 'none';
+    try {
+        const r = await fetch(TEAMS_API, {
+            method: 'POST',
+            headers: getAPIHeaders(),
+            credentials: 'include',
+            body: JSON.stringify({ team_name: name, description: descEl ? descEl.value.trim() : '' })
+        });
+        const data = await r.json();
+        if (!r.ok || !data.success) throw new Error(data.error || 'Create failed');
+        if (nameEl) nameEl.value = '';
+        if (descEl) descEl.value = '';
+        await loadTeamList();
+        await initTeamSelector();
+    } catch (e) {
+        if (errEl) { errEl.textContent = e.message; errEl.style.display = ''; }
+    }
+}
+
+async function loadTeamList() {
+    const container = document.getElementById('team-list-container');
+    const loading = document.getElementById('team-list-loading');
+    if (!container) return;
+    if (loading) loading.style.display = '';
+    container.innerHTML = '';
+    try {
+        const r = await fetch(TEAMS_API, { headers: getAPIHeaders(), credentials: 'include' });
+        const data = await r.json();
+        if (loading) loading.style.display = 'none';
+        const teams = data.teams || [];
+        if (teams.length === 0) {
+            container.innerHTML = '<p style="color:var(--text-muted);font-size:0.9rem;">No teams yet.</p>';
+            return;
+        }
+        teams.forEach(t => container.appendChild(renderTeamCard(t)));
+    } catch (e) {
+        if (loading) loading.style.display = 'none';
+        container.innerHTML = `<p style="color:var(--accent-red,#ff6b6b);">Failed to load teams: ${escapeHtml(String(e))}</p>`;
+    }
+}
+
+function renderTeamCard(team) {
+    const card = document.createElement('div');
+    card.className = 'team-card';
+    card.dataset.teamId = team.team_id;
+
+    const isOwner = team.role === 'owner';
+    const badge = `<span class="member-role-badge ${isOwner ? 'owner' : ''}">${team.role}</span>`;
+
+    card.innerHTML = `
+        <div class="team-card-header" onclick="toggleTeamCard('${team.team_id}')">
+            <div>
+                <span class="team-card-title">${escapeHtml(team.team_name)}</span>${badge}
+                <div class="team-card-meta">${escapeHtml(team.description || '')} &bull; ${team.member_count} member${team.member_count !== 1 ? 's' : ''}</div>
+            </div>
+            <div style="display:flex;gap:0.4rem;">
+                ${isOwner ? `<button class="btn-danger" onclick="event.stopPropagation();deleteTeam('${team.team_id}')">Delete</button>` : ''}
+            </div>
+        </div>
+        <div class="team-card-body" id="team-body-${team.team_id}" style="display:none;">
+            <div class="member-list" id="members-${team.team_id}">
+                <div style="color:var(--text-muted);font-size:0.85rem;">Loading members...</div>
+            </div>
+            ${isOwner ? `
+            <div class="team-add-member-form">
+                <input type="text" id="add-arn-${team.team_id}" placeholder="IAM ARN (arn:aws:iam::...)" class="team-input" style="flex:1;">
+                <button class="btn-team-action" onclick="addMember('${team.team_id}')">Add</button>
+            </div>
+            <div id="add-member-error-${team.team_id}" class="team-error" style="display:none;"></div>
+            ` : ''}
+        </div>
+    `;
+    return card;
+}
+
+function toggleTeamCard(teamId) {
+    const body = document.getElementById(`team-body-${teamId}`);
+    if (!body) return;
+    const isHidden = body.style.display === 'none';
+    body.style.display = isHidden ? '' : 'none';
+    if (isHidden) loadTeamMembers(teamId);
+}
+
+async function loadTeamMembers(teamId) {
+    const container = document.getElementById(`members-${teamId}`);
+    if (!container) return;
+    try {
+        const r = await fetch(`${TEAMS_API}/${teamId}`, { headers: getAPIHeaders(), credentials: 'include' });
+        const data = await r.json();
+        const members = data.members || [];
+        if (members.length === 0) {
+            container.innerHTML = '<div style="color:var(--text-muted);font-size:0.85rem;">No members.</div>';
+            return;
+        }
+        container.innerHTML = '';
+        members.forEach(m => {
+            const row = document.createElement('div');
+            row.className = 'member-row';
+            const isOwnerRole = m.role === 'owner';
+            row.innerHTML = `
+                <span class="member-row-arn">${escapeHtml(m.member_arn)}</span>
+                <div style="display:flex;align-items:center;gap:0.4rem;flex-shrink:0;">
+                    <span class="member-role-badge ${isOwnerRole ? 'owner' : ''}">${m.role}</span>
+                    ${!isOwnerRole ? `<button class="btn-danger" onclick="removeMember('${teamId}','${escapeHtml(m.member_arn)}')">Remove</button>` : ''}
+                </div>
+            `;
+            container.appendChild(row);
+        });
+    } catch (e) {
+        container.innerHTML = `<div style="color:var(--accent-red,#ff6b6b);font-size:0.85rem;">Failed: ${escapeHtml(String(e))}</div>`;
+    }
+}
+
+async function addMember(teamId) {
+    const input = document.getElementById(`add-arn-${teamId}`);
+    const errEl = document.getElementById(`add-member-error-${teamId}`);
+    const arn = (input && input.value.trim()) || '';
+    if (!arn) {
+        if (errEl) { errEl.textContent = 'ARN is required.'; errEl.style.display = ''; }
+        return;
+    }
+    if (errEl) errEl.style.display = 'none';
+    try {
+        const r = await fetch(`${TEAMS_API}/${teamId}/members`, {
+            method: 'POST',
+            headers: getAPIHeaders(),
+            credentials: 'include',
+            body: JSON.stringify({ member_arn: arn })
+        });
+        const data = await r.json();
+        if (!r.ok || !data.success) throw new Error(data.error || 'Add failed');
+        if (input) input.value = '';
+        loadTeamMembers(teamId);
+        initTeamSelector();
+    } catch (e) {
+        if (errEl) { errEl.textContent = e.message; errEl.style.display = ''; }
+    }
+}
+
+async function removeMember(teamId, memberArn) {
+    if (!confirm(`Remove ${memberArn} from team?`)) return;
+    try {
+        const r = await fetch(`${TEAMS_API}/${teamId}/members/${encodeURIComponent(memberArn)}`, {
+            method: 'DELETE',
+            headers: getAPIHeaders(),
+            credentials: 'include'
+        });
+        const data = await r.json();
+        if (!r.ok || !data.success) throw new Error(data.error || 'Remove failed');
+        loadTeamMembers(teamId);
+        initTeamSelector();
+    } catch (e) {
+        alert(`Failed to remove member: ${e.message}`);
+    }
+}
+
+async function deleteTeam(teamId) {
+    if (!confirm('Delete this team and all its memberships?')) return;
+    try {
+        const r = await fetch(`${TEAMS_API}/${teamId}`, {
+            method: 'DELETE',
+            headers: getAPIHeaders(),
+            credentials: 'include'
+        });
+        const data = await r.json();
+        if (!r.ok || !data.success) throw new Error(data.error || 'Delete failed');
+        // Clear selection if this was the selected team
+        if (sessionStorage.getItem('selectedTeamId') === teamId) {
+            sessionStorage.removeItem('selectedTeamId');
+        }
+        loadTeamList();
+        initTeamSelector();
+    } catch (e) {
+        alert(`Failed to delete team: ${e.message}`);
+    }
+}
 
 // Export for use in other scripts
 if (typeof module !== 'undefined' && module.exports) {

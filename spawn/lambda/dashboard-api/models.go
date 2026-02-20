@@ -140,6 +140,25 @@ type UserAccountRecord struct {
 	LastAccess    string `dynamodbav:"last_access"`
 }
 
+// TeamRecord represents a record in the spawn-teams DynamoDB table
+type TeamRecord struct {
+	TeamID      string `dynamodbav:"team_id" json:"team_id"`
+	TeamName    string `dynamodbav:"team_name" json:"team_name"`
+	OwnerARN    string `dynamodbav:"owner_arn" json:"owner_arn"`
+	Description string `dynamodbav:"description" json:"description,omitempty"`
+	CreatedAt   string `dynamodbav:"created_at" json:"created_at"`
+	MemberCount int    `dynamodbav:"member_count" json:"member_count"`
+}
+
+// TeamMemberRecord represents a record in the spawn-team-memberships DynamoDB table
+type TeamMemberRecord struct {
+	TeamID    string `dynamodbav:"team_id" json:"team_id"`
+	MemberARN string `dynamodbav:"member_arn" json:"member_arn"`
+	Role      string `dynamodbav:"role" json:"role"`
+	JoinedAt  string `dynamodbav:"joined_at" json:"joined_at"`
+	InvitedBy string `dynamodbav:"invited_by" json:"invited_by"`
+}
+
 // SweepRecord represents a record in the spawn-sweep-orchestration DynamoDB table
 type SweepRecord struct {
 	SweepID                string          `dynamodbav:"sweep_id"`
@@ -164,6 +183,9 @@ type SweepRecord struct {
 	Failed                 int             `dynamodbav:"failed"`
 	ErrorMessage           string          `dynamodbav:"error_message,omitempty"`
 	Instances              []SweepInstance `dynamodbav:"instances"`
+
+	// Team sharing
+	TeamID string `dynamodbav:"team_id" json:"team_id,omitempty"`
 
 	// Multi-region support
 	MultiRegion      bool                       `dynamodbav:"multi_region"`
@@ -229,6 +251,7 @@ type AutoScaleGroupInfo struct {
 	PolicyType       string    `json:"policy_type"`
 	LastScaleEvent   time.Time `json:"last_scale_event"`
 	CreatedAt        time.Time `json:"created_at"`
+	TeamID           string    `dynamodbav:"team_id" json:"team_id,omitempty"`
 }
 
 // GroupDetailInfo represents detailed autoscale group information

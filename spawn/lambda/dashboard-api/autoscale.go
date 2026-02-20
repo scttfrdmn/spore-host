@@ -84,68 +84,92 @@ var instancePricing = map[string]float64{
 }
 
 // handleListAutoscaleGroups handles GET /api/autoscale-groups
-func handleListAutoscaleGroups(ctx context.Context, cfg aws.Config, cliIamArn string) (events.APIGatewayProxyResponse, error) {
+// When teamID is non-empty, team groups are merged with personal groups.
+func handleListAutoscaleGroups(ctx context.Context, cfg aws.Config, cliIamArn, teamID string) (events.APIGatewayProxyResponse, error) {
 	startTime := time.Now()
 
-	// Query DynamoDB for user's autoscale groups
 	dynamodbClient := dynamodb.NewFromConfig(cfg)
 
-	queryInput := &dynamodb.QueryInput{
+	seen := make(map[string]struct{})
+	var groupInfos []AutoScaleGroupInfo
+
+	appendGroups := func(items []map[string]ddbTypes.AttributeValue) {
+		for _, item := range items {
+			var group AutoScaleGroup
+			if err := attributevalue.UnmarshalMap(item, &group); err != nil {
+				continue
+			}
+			if _, dup := seen[group.AutoScaleGroupID]; dup {
+				continue
+			}
+			seen[group.AutoScaleGroupID] = struct{}{}
+
+			count, err := getCurrentCapacity(ctx, cfg, group.AutoScaleGroupID, cliIamArn)
+			if err != nil {
+				fmt.Printf("Warning: Failed to get capacity for group %s: %v\n", group.AutoScaleGroupID, err)
+			}
+
+			policyType := "none"
+			if group.ScalingPolicy != nil {
+				policyType = "queue"
+			} else if group.MetricPolicy != nil {
+				policyType = "metric"
+			} else if group.ScheduleConfig != nil {
+				policyType = "schedule"
+			}
+
+			groupInfos = append(groupInfos, AutoScaleGroupInfo{
+				AutoScaleGroupID: group.AutoScaleGroupID,
+				GroupName:        group.GroupName,
+				Status:           group.Status,
+				DesiredCapacity:  group.DesiredCapacity,
+				CurrentCapacity:  count,
+				MinCapacity:      group.MinCapacity,
+				MaxCapacity:      group.MaxCapacity,
+				PolicyType:       policyType,
+				LastScaleEvent:   group.LastScaleEvent,
+				CreatedAt:        group.CreatedAt,
+			})
+		}
+	}
+
+	// Personal groups via user_id-index GSI
+	result, err := dynamodbClient.Query(ctx, &dynamodb.QueryInput{
 		TableName:              aws.String(dynamoAutoscaleGroupsTable),
 		IndexName:              aws.String("user_id-index"),
 		KeyConditionExpression: aws.String("user_id = :user_id"),
 		ExpressionAttributeValues: map[string]ddbTypes.AttributeValue{
 			":user_id": &ddbTypes.AttributeValueMemberS{Value: cliIamArn},
 		},
-	}
-
-	result, err := dynamodbClient.Query(ctx, queryInput)
+	})
 	if err != nil {
 		return errorResponse(500, fmt.Sprintf("Failed to query autoscale groups: %v", err)), nil
 	}
+	appendGroups(result.Items)
 
-	// Unmarshal and convert groups
-	var groupInfos []AutoScaleGroupInfo
-	for _, item := range result.Items {
-		var group AutoScaleGroup
-		if err := attributevalue.UnmarshalMap(item, &group); err != nil {
-			continue
-		}
-
-		// Get current instance count for this group
-		count, err := getCurrentCapacity(ctx, cfg, group.AutoScaleGroupID, cliIamArn)
+	// Team groups via team_id-index GSI
+	if teamID != "" {
+		teamResult, err := dynamodbClient.Query(ctx, &dynamodb.QueryInput{
+			TableName:              aws.String(dynamoAutoscaleGroupsTable),
+			IndexName:              aws.String("team_id-index"),
+			KeyConditionExpression: aws.String("team_id = :tid"),
+			ExpressionAttributeValues: map[string]ddbTypes.AttributeValue{
+				":tid": &ddbTypes.AttributeValueMemberS{Value: teamID},
+			},
+		})
 		if err != nil {
-			fmt.Printf("Warning: Failed to get capacity for group %s: %v\n", group.AutoScaleGroupID, err)
+			fmt.Printf("Warning: failed to query team autoscale groups: %v\n", err)
+		} else {
+			appendGroups(teamResult.Items)
 		}
-
-		// Determine policy type
-		policyType := "none"
-		if group.ScalingPolicy != nil {
-			policyType = "queue"
-		} else if group.MetricPolicy != nil {
-			policyType = "metric"
-		} else if group.ScheduleConfig != nil {
-			policyType = "schedule"
-		}
-
-		groupInfo := AutoScaleGroupInfo{
-			AutoScaleGroupID: group.AutoScaleGroupID,
-			GroupName:        group.GroupName,
-			Status:           group.Status,
-			DesiredCapacity:  group.DesiredCapacity,
-			CurrentCapacity:  count,
-			MinCapacity:      group.MinCapacity,
-			MaxCapacity:      group.MaxCapacity,
-			PolicyType:       policyType,
-			LastScaleEvent:   group.LastScaleEvent,
-			CreatedAt:        group.CreatedAt,
-		}
-
-		groupInfos = append(groupInfos, groupInfo)
 	}
 
 	elapsed := time.Since(startTime)
 	fmt.Printf("Listed %d autoscale groups in %v\n", len(groupInfos), elapsed)
+
+	if groupInfos == nil {
+		groupInfos = []AutoScaleGroupInfo{}
+	}
 
 	response := AutoScaleGroupsAPIResponse{
 		Success:         true,

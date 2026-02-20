@@ -481,6 +481,11 @@ function showDashboard() {
             `;
         }
     }
+
+    // Initialize team selector (non-blocking)
+    if (typeof initTeamSelector === 'function') {
+        initTeamSelector().catch(e => console.warn('Team selector init failed:', e));
+    }
 }
 
 function showError(message) {
