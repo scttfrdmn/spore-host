@@ -125,6 +125,68 @@ changelog:
     - title: Others
       order: 999
 
+# Linux Packages (DEB + RPM via nFPM)
+nfpms:
+  - id: truffle-pkg
+    package_name: truffle
+    ids:
+      - truffle
+    vendor: spore.host
+    homepage: https://spore.host
+    maintainer: "spore.host <hello@spore.host>"
+    description: "Find and discover AWS EC2 instance types"
+    license: MIT
+    formats:
+      - deb
+      - rpm
+    file_name_template: "{{ .PackageName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    contents:
+      - src: LICENSE
+        dst: /usr/share/doc/truffle/copyright
+        type: doc
+    rpm:
+      summary: "Find and discover AWS EC2 instance types"
+
+  - id: spawn-pkg
+    package_name: spawn
+    ids:
+      - spawn
+    vendor: spore.host
+    homepage: https://spore.host
+    maintainer: "spore.host <hello@spore.host>"
+    description: "Launch ephemeral AWS EC2 instances effortlessly"
+    license: MIT
+    formats:
+      - deb
+      - rpm
+    file_name_template: "{{ .PackageName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    contents:
+      - src: LICENSE
+        dst: /usr/share/doc/spawn/copyright
+        type: doc
+    rpm:
+      summary: "Launch ephemeral AWS EC2 instances effortlessly"
+
+  - id: spored-pkg
+    package_name: spored
+    ids:
+      - spored
+    vendor: spore.host
+    homepage: https://spore.host
+    maintainer: "spore.host <hello@spore.host>"
+    description: "Background monitoring daemon for spawn-managed EC2 instances"
+    license: MIT
+    formats:
+      - deb
+      - rpm
+    file_name_template: "{{ .PackageName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    contents:
+      - src: LICENSE
+        dst: /usr/share/doc/spored/copyright
+        type: doc
+    rpm:
+      summary: "Background monitoring daemon for spawn-managed EC2 instances"
+
 # Homebrew Tap
 brews:
   - name: truffle
@@ -224,6 +286,17 @@ release:
     scoop bucket add scttfrdmn https://github.com/scttfrdmn/scoop-bucket
     scoop install truffle
     scoop install spawn
+    ```
+
+    **Debian/Ubuntu (.deb):**
+    ```bash
+    curl -LO https://github.com/scttfrdmn/mycelium/releases/download/{{ .Tag }}/truffle_{{ .Version }}_linux_amd64.deb
+    sudo dpkg -i truffle_{{ .Version }}_linux_amd64.deb
+    ```
+
+    **RHEL/Fedora (.rpm):**
+    ```bash
+    sudo rpm -i https://github.com/scttfrdmn/mycelium/releases/download/{{ .Tag }}/truffle_{{ .Version }}_linux_amd64.rpm
     ```
 
     **Manual Download:**
