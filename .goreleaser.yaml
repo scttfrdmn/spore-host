@@ -26,9 +26,9 @@ builds:
       - arm64
     ldflags:
       - -s -w
-      - -X main.Version={{.Version}}
-      - -X main.Commit={{.Commit}}
-      - -X main.Date={{.Date}}
+      - -X github.com/yourusername/truffle/cmd.Version={{.Version}}
+      - -X github.com/yourusername/truffle/cmd.GitCommit={{.Commit}}
+      - -X github.com/yourusername/truffle/cmd.BuildDate={{.Date}}
     mod_timestamp: '{{ .CommitTimestamp }}'
 
   # spawn - EC2 instance launcher
@@ -47,9 +47,7 @@ builds:
       - arm64
     ldflags:
       - -s -w
-      - -X main.Version={{.Version}}
-      - -X main.Commit={{.Commit}}
-      - -X main.Date={{.Date}}
+      - -X github.com/scttfrdmn/mycelium/spawn/cmd.Version={{.Version}}
     mod_timestamp: '{{ .CommitTimestamp }}'
 
   # spored - Daemon (Linux only)
@@ -67,8 +65,6 @@ builds:
     ldflags:
       - -s -w
       - -X main.Version={{.Version}}
-      - -X main.Commit={{.Commit}}
-      - -X main.Date={{.Date}}
     mod_timestamp: '{{ .CommitTimestamp }}'
 
 # Archive configuration

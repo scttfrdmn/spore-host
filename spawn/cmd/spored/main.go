@@ -21,7 +21,7 @@ import (
 	"github.com/scttfrdmn/mycelium/spawn/pkg/provider"
 )
 
-const Version = "0.1.0"
+var Version = "0.1.0"
 
 func main() {
 	// Handle subcommands

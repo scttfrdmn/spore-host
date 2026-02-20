@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const Version = "0.20.0"
+var Version = "0.20.0"
 
 // Global flags for i18n and accessibility
 var (
