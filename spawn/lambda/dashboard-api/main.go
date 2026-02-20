@@ -3,7 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -55,33 +57,51 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	}
 
 	// Route to appropriate handler
+	// teamPathParts parses /teams[/{team_id}[/members[/{member_arn}]]]
+	// Returns (teamID, subpath) where subpath is "" | "members" | "members/{arn}"
+	teamPathParts := func() (string, string) {
+		if !strings.HasPrefix(path, "/teams/") {
+			return "", ""
+		}
+		rest := strings.TrimPrefix(path, "/teams/")
+		idx := strings.Index(rest, "/")
+		if idx < 0 {
+			return rest, ""
+		}
+		return rest[:idx], rest[idx+1:]
+	}
+
 	switch {
 	// Team endpoints
 	case path == "/teams" && method == "POST":
 		return handleCreateTeam(ctx, cfg, request.Body, cliIamArn)
 	case path == "/teams" && method == "GET":
 		return handleListMyTeams(ctx, cfg, cliIamArn)
-	case path == "/teams/" && method == "GET":
-		tid := request.PathParameters["team_id"]
+	case strings.HasPrefix(path, "/teams/") && method == "GET":
+		tid, sub := teamPathParts()
 		if tid == "" {
 			return errorResponse(400, "team_id is required"), nil
 		}
+		_ = sub
 		return handleGetTeam(ctx, cfg, tid, cliIamArn)
-	case path == "/teams//members" && method == "POST":
-		tid := request.PathParameters["team_id"]
+	case strings.HasPrefix(path, "/teams/") && strings.HasSuffix(path, "/members") && method == "POST":
+		tid, _ := teamPathParts()
 		if tid == "" {
 			return errorResponse(400, "team_id is required"), nil
 		}
 		return handleAddMember(ctx, cfg, tid, cliIamArn, request.Body)
-	case path == "/teams//members/" && method == "DELETE":
-		tid := request.PathParameters["team_id"]
-		mArn := request.PathParameters["member_arn"]
-		if tid == "" || mArn == "" {
-			return errorResponse(400, "team_id and member_arn are required"), nil
+	case strings.HasPrefix(path, "/teams/") && strings.Contains(path, "/members/") && method == "DELETE":
+		tid, sub := teamPathParts()
+		if tid == "" {
+			return errorResponse(400, "team_id is required"), nil
+		}
+		mArn, _ := url.PathUnescape(strings.TrimPrefix(sub, "members/"))
+		if mArn == "" {
+			return errorResponse(400, "member_arn is required"), nil
 		}
 		return handleRemoveMember(ctx, cfg, tid, cliIamArn, mArn)
-	case path == "/teams/" && method == "DELETE":
-		tid := request.PathParameters["team_id"]
+	case strings.HasPrefix(path, "/teams/") && method == "DELETE":
+		tid, _ := teamPathParts()
 		if tid == "" {
 			return errorResponse(400, "team_id is required"), nil
 		}
