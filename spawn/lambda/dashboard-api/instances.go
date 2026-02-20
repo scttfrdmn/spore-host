@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
@@ -236,6 +237,55 @@ func convertReservationsToInstances(reservations []types.Reservation, region, ac
 	}
 
 	return instances
+}
+
+// handleTerminateInstance handles DELETE /api/instances/{id}
+func handleTerminateInstance(ctx context.Context, cfg aws.Config, instanceID, cliIamArn string) (events.APIGatewayProxyResponse, error) {
+	// Find the instance across regions, verify ownership, then terminate
+	var foundRegion string
+	for _, region := range awsRegions {
+		ec2Client, err := getEC2ClientForRegion(ctx, cfg, region)
+		if err != nil {
+			continue
+		}
+
+		result, err := ec2Client.DescribeInstances(ctx, &ec2.DescribeInstancesInput{
+			InstanceIds: []string{instanceID},
+		})
+		if err != nil {
+			continue
+		}
+
+		if len(result.Reservations) == 0 || len(result.Reservations[0].Instances) == 0 {
+			continue
+		}
+
+		instance := result.Reservations[0].Instances[0]
+		ownerTag := getTagValue(instance.Tags, "spawn:iam-user")
+		if ownerTag != cliIamArn {
+			return errorResponse(403, "Access denied"), nil
+		}
+
+		foundRegion = region
+		_, err = ec2Client.TerminateInstances(ctx, &ec2.TerminateInstancesInput{
+			InstanceIds: []string{instanceID},
+		})
+		if err != nil {
+			return errorResponse(500, fmt.Sprintf("Failed to terminate instance: %v", err)), nil
+		}
+		break
+	}
+
+	if foundRegion == "" {
+		return errorResponse(404, "Instance not found or access denied"), nil
+	}
+
+	return successResponse(map[string]interface{}{
+		"success":     true,
+		"message":     fmt.Sprintf("Instance %s terminated", instanceID),
+		"instance_id": instanceID,
+		"region":      foundRegion,
+	})
 }
 
 // getTagValue extracts a tag value by key

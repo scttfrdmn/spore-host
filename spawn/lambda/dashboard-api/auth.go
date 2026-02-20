@@ -249,8 +249,20 @@ func getUserFromCredentialsHeader(ctx context.Context, cfg aws.Config, request e
 }
 
 // extractEmailFromRequest extracts email from API Gateway request
-// Tries multiple sources: Cognito claims, JWT claims, request context
+// Tries multiple sources: Custom header, Cognito claims, JWT claims, request context
 func extractEmailFromRequest(request events.APIGatewayProxyRequest) (string, error) {
+	// Try custom X-User-Email header first (set by frontend)
+	if email, ok := request.Headers["x-user-email"]; ok && email != "" {
+		return email, nil
+	}
+
+	// Try case-insensitive header lookup
+	for key, value := range request.Headers {
+		if strings.ToLower(key) == "x-user-email" && value != "" {
+			return value, nil
+		}
+	}
+
 	// Try to get email from Cognito claims in authorizer context
 	if claims, ok := request.RequestContext.Authorizer["claims"].(map[string]interface{}); ok {
 		if email, ok := claims["email"].(string); ok && email != "" {

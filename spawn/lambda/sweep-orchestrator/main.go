@@ -127,17 +127,41 @@ type RegionProgress struct {
 	EstimatedCost      float64 `dynamodbav:"estimated_cost,omitempty"`
 }
 
+// StateTransition records when an instance changed state
+type StateTransition struct {
+	Timestamp string `dynamodbav:"timestamp"`
+	State     string `dynamodbav:"state"` // "pending", "running", "stopped", "terminated"
+}
+
+// EBSVolume represents an attached EBS volume
+type EBSVolume struct {
+	VolumeID   string `dynamodbav:"volume_id"`
+	VolumeType string `dynamodbav:"volume_type"` // gp3, gp2, io2...
+	SizeGB     int    `dynamodbav:"size_gb"`
+	IOPS       int    `dynamodbav:"iops,omitempty"`
+	IsRoot     bool   `dynamodbav:"is_root"`
+}
+
+// InstanceResources tracks resources attached to an instance
+type InstanceResources struct {
+	EBSVolumes []EBSVolume `dynamodbav:"ebs_volumes"`
+	IPv4Count  int         `dynamodbav:"ipv4_count"`
+}
+
 // SweepInstance tracks individual instance state
 type SweepInstance struct {
-	Index         int    `dynamodbav:"index"`
-	Region        string `dynamodbav:"region"`
-	InstanceID    string `dynamodbav:"instance_id"`
-	RequestedType string `dynamodbav:"requested_type,omitempty"` // Pattern specified (e.g., "c5.*")
-	ActualType    string `dynamodbav:"actual_type,omitempty"`    // Type actually launched
-	State         string `dynamodbav:"state"`
-	LaunchedAt    string `dynamodbav:"launched_at"`
-	TerminatedAt  string `dynamodbav:"terminated_at,omitempty"`
-	ErrorMessage  string `dynamodbav:"error_message,omitempty"`
+	Index              int                `dynamodbav:"index"`
+	Region             string             `dynamodbav:"region"`
+	InstanceID         string             `dynamodbav:"instance_id"`
+	RequestedType      string             `dynamodbav:"requested_type,omitempty"` // Pattern specified (e.g., "c5.*")
+	ActualType         string             `dynamodbav:"actual_type,omitempty"`    // Type actually launched
+	State              string             `dynamodbav:"state"`
+	LaunchedAt         string             `dynamodbav:"launched_at"`
+	TerminatedAt       string             `dynamodbav:"terminated_at,omitempty"`
+	ErrorMessage       string             `dynamodbav:"error_message,omitempty"`
+	StateHistory       []StateTransition  `dynamodbav:"state_history,omitempty"`
+	Resources          *InstanceResources `dynamodbav:"resources,omitempty"`
+	HibernationEnabled bool               `dynamodbav:"hibernation_enabled,omitempty"`
 }
 
 // ParamFileFormat matches CLI parameter file structure
@@ -517,17 +541,94 @@ func countActiveInstances(ctx context.Context, ec2Client *ec2.Client, state *Swe
 		return 0, fmt.Errorf("describe instances failed: %w", err)
 	}
 
+	// Build a map of current AWS states
+	awsStates := make(map[string]string)
 	activeCount := 0
 	for _, reservation := range result.Reservations {
 		for _, instance := range reservation.Instances {
-			state := instance.State.Name
-			if state == ec2types.InstanceStateNamePending || state == ec2types.InstanceStateNameRunning {
+			instanceState := string(instance.State.Name)
+			awsStates[aws.ToString(instance.InstanceId)] = instanceState
+			if instance.State.Name == ec2types.InstanceStateNamePending || instance.State.Name == ec2types.InstanceStateNameRunning {
 				activeCount++
 			}
 		}
 	}
 
+	// Update state history for changed instances
+	now := time.Now().Format(time.RFC3339)
+	for i := range state.Instances {
+		inst := &state.Instances[i]
+		if inst.InstanceID == "" {
+			continue
+		}
+		awsState, ok := awsStates[inst.InstanceID]
+		if !ok {
+			continue
+		}
+		lastState := lastStateFromHistory(inst.StateHistory)
+		if awsState != lastState {
+			inst.StateHistory = append(inst.StateHistory, StateTransition{
+				Timestamp: now,
+				State:     awsState,
+			})
+			inst.State = awsState
+		}
+	}
+
 	return activeCount, nil
+}
+
+// lastStateFromHistory returns the most recent state from history, or empty string if none
+func lastStateFromHistory(history []StateTransition) string {
+	if len(history) == 0 {
+		return ""
+	}
+	return history[len(history)-1].State
+}
+
+// runningHours calculates total hours the instance was in "running" state
+// Falls back to total elapsed time if no state history available
+func runningHoursFromHistory(history []StateTransition, launchedAt string, end time.Time) float64 {
+	if len(history) == 0 {
+		// Fallback: no history, use total time
+		launched, err := time.Parse(time.RFC3339, launchedAt)
+		if err != nil {
+			return 0
+		}
+		hours := end.Sub(launched).Hours()
+		if hours < 0 {
+			return 0
+		}
+		return hours
+	}
+
+	totalRunning := 0.0
+	for i, transition := range history {
+		if transition.State != "running" {
+			continue
+		}
+		ts, err := time.Parse(time.RFC3339, transition.Timestamp)
+		if err != nil {
+			continue
+		}
+		// Find when this running period ended
+		var endTs time.Time
+		if i+1 < len(history) {
+			nextTs, err := time.Parse(time.RFC3339, history[i+1].Timestamp)
+			if err == nil {
+				endTs = nextTs
+			} else {
+				endTs = end
+			}
+		} else {
+			endTs = end
+		}
+		hours := endTs.Sub(ts).Hours()
+		if hours > 0 {
+			totalRunning += hours
+		}
+	}
+	return totalRunning
 }
 
 func launchInstance(ctx context.Context, ec2Client *ec2.Client, state *SweepRecord, config map[string]interface{}, paramIndex int) error {
@@ -632,7 +733,8 @@ func tryLaunchInstanceSingleRegion(ctx context.Context, ec2Client *ec2.Client, s
 		}
 	}()
 
-	// Record instance
+	// Record instance with initial state history
+	launchTime := time.Now().Format(time.RFC3339)
 	state.Instances = append(state.Instances, SweepInstance{
 		Index:         paramIndex,
 		Region:        state.Region,
@@ -640,7 +742,10 @@ func tryLaunchInstanceSingleRegion(ctx context.Context, ec2Client *ec2.Client, s
 		RequestedType: instanceTypePattern, // e.g., "c5.*" or "c5.large|m5.large"
 		ActualType:    instanceType,        // e.g., "c5.large"
 		State:         "pending",
-		LaunchedAt:    time.Now().Format(time.RFC3339),
+		LaunchedAt:    launchTime,
+		StateHistory: []StateTransition{
+			{Timestamp: launchTime, State: "pending"},
+		},
 	})
 
 	return nil
@@ -795,26 +900,20 @@ func updateRegionalCosts(state *SweepRecord) {
 			continue
 		}
 
-		launchedAt, err := time.Parse(time.RFC3339, inst.LaunchedAt)
-		if err != nil {
-			log.Printf("Failed to parse launch time for instance %s: %v", inst.InstanceID, err)
-			continue
-		}
-
 		var endTime time.Time
+		var err error
 		if inst.TerminatedAt != "" {
 			endTime, err = time.Parse(time.RFC3339, inst.TerminatedAt)
 			if err != nil {
 				log.Printf("Failed to parse termination time for instance %s: %v", inst.InstanceID, err)
 				endTime = now // Use now as fallback
 			}
-		} else if inst.State == "terminated" || inst.State == "stopped" {
-			endTime = now // Assume terminated now if state shows terminated but no timestamp
 		} else {
-			endTime = now // Still running, use current time
+			endTime = now
 		}
 
-		hours := endTime.Sub(launchedAt).Hours()
+		// Use state-aware running hours (only charge for time in "running" state)
+		hours := runningHoursFromHistory(inst.StateHistory, inst.LaunchedAt, endTime)
 		if hours < 0 {
 			hours = 0
 		}
@@ -829,7 +928,6 @@ func updateRegionalCosts(state *SweepRecord) {
 		}
 
 		// Get hourly rate from pricing package
-		// Need to import pricing package in main.go imports
 		hourlyRate := getPricingRate(inst.Region, instanceType)
 		cost := hours * hourlyRate
 

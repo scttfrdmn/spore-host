@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strconv"
 	"sync"
 	"time"
 
@@ -14,21 +15,26 @@ import (
 	ddbTypes "github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	ec2Types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	"github.com/aws/aws-sdk-go-v2/service/sqs"
+	sqsTypes "github.com/aws/aws-sdk-go-v2/service/sqs/types"
 )
 
 // AutoScaleGroup represents an auto-scaling group (minimal structure for reading from DynamoDB)
 type AutoScaleGroup struct {
-	AutoScaleGroupID string    `dynamodbav:"autoscale_group_id"`
-	GroupName        string    `dynamodbav:"group_name"`
-	JobArrayID       string    `dynamodbav:"job_array_id"`
-	DesiredCapacity  int       `dynamodbav:"desired_capacity"`
-	MinCapacity      int       `dynamodbav:"min_capacity"`
-	MaxCapacity      int       `dynamodbav:"max_capacity"`
-	Status           string    `dynamodbav:"status"`
-	CreatedAt        time.Time `dynamodbav:"created_at"`
-	UpdatedAt        time.Time `dynamodbav:"updated_at"`
-	LastScaleEvent   time.Time `dynamodbav:"last_scale_event"`
-	ScalingPolicy    *struct {
+	AutoScaleGroupID      string    `dynamodbav:"autoscale_group_id"`
+	GroupName             string    `dynamodbav:"group_name"`
+	JobArrayID            string    `dynamodbav:"job_array_id"`
+	DesiredCapacity       int       `dynamodbav:"desired_capacity"`
+	MinCapacity           int       `dynamodbav:"min_capacity"`
+	MaxCapacity           int       `dynamodbav:"max_capacity"`
+	Status                string    `dynamodbav:"status"`
+	CreatedAt             time.Time `dynamodbav:"created_at"`
+	UpdatedAt             time.Time `dynamodbav:"updated_at"`
+	LastScaleEvent        time.Time `dynamodbav:"last_scale_event"`
+	PausedAt              time.Time `dynamodbav:"paused_at,omitempty"`
+	PausedDesiredCapacity int       `dynamodbav:"paused_desired_capacity,omitempty"`
+	TerminatedAt          time.Time `dynamodbav:"terminated_at,omitempty"`
+	ScalingPolicy         *struct {
 		QueueURL string `dynamodbav:"queue_url"`
 	} `dynamodbav:"scaling_policy,omitempty"`
 	MetricPolicy *struct {
@@ -211,87 +217,198 @@ func handleGetCostSummary(ctx context.Context, cfg aws.Config, cliIamArn string)
 	return successResponse(response)
 }
 
-// getUserAutoscaleGroupIDs queries EC2 for instances with spawn:iam-user tag
-// and extracts unique spawn:autoscale-group tag values
-func getUserAutoscaleGroupIDs(ctx context.Context, cfg aws.Config, accountBase36 string) ([]string, error) {
-	groupIDSet := make(map[string]bool)
+// handlePauseAutoscaleGroup handles POST /api/autoscale-groups/{id}/pause
+func handlePauseAutoscaleGroup(ctx context.Context, cfg aws.Config, groupID, cliIamArn string) (events.APIGatewayProxyResponse, error) {
+	dynamodbClient := dynamodb.NewFromConfig(cfg)
 
-	var wg sync.WaitGroup
-	resultsChan := make(chan []string, len(awsRegions))
-	errorsChan := make(chan error, len(awsRegions))
-
-	for _, region := range awsRegions {
-		wg.Add(1)
-		go func(r string) {
-			defer wg.Done()
-
-			ec2Client, err := getEC2ClientForRegion(ctx, cfg, r)
-			if err != nil {
-				errorsChan <- fmt.Errorf("region %s: %w", r, err)
-				return
-			}
-
-			// Query for instances with spawn:account-base36 and spawn:autoscale-group tags
-			filters := []ec2Types.Filter{
-				{
-					Name:   aws.String("tag:spawn:account-base36"),
-					Values: []string{accountBase36},
-				},
-				{
-					Name:   aws.String("tag-key"),
-					Values: []string{"spawn:autoscale-group"},
-				},
-			}
-
-			result, err := ec2Client.DescribeInstances(ctx, &ec2.DescribeInstancesInput{
-				Filters: filters,
-			})
-			if err != nil {
-				errorsChan <- fmt.Errorf("region %s: %w", r, err)
-				return
-			}
-
-			var groupIDs []string
-			for _, reservation := range result.Reservations {
-				for _, instance := range reservation.Instances {
-					groupID := getTagValue(instance.Tags, "spawn:autoscale-group")
-					if groupID != "" {
-						groupIDs = append(groupIDs, groupID)
-					}
-				}
-			}
-
-			if len(groupIDs) > 0 {
-				resultsChan <- groupIDs
-			}
-		}(region)
+	// Fetch group and verify ownership
+	result, err := dynamodbClient.GetItem(ctx, &dynamodb.GetItemInput{
+		TableName: aws.String(dynamoAutoscaleGroupsTable),
+		Key: map[string]ddbTypes.AttributeValue{
+			"autoscale_group_id": &ddbTypes.AttributeValueMemberS{Value: groupID},
+		},
+	})
+	if err != nil {
+		return errorResponse(500, fmt.Sprintf("Failed to get group: %v", err)), nil
+	}
+	if result.Item == nil {
+		return errorResponse(404, "Autoscale group not found"), nil
 	}
 
-	go func() {
-		wg.Wait()
-		close(resultsChan)
-		close(errorsChan)
-	}()
+	var group AutoScaleGroupWithUserID
+	if err := attributevalue.UnmarshalMap(result.Item, &group); err != nil {
+		return errorResponse(500, fmt.Sprintf("Failed to unmarshal group: %v", err)), nil
+	}
+	if group.UserID != cliIamArn {
+		return errorResponse(403, "Access denied"), nil
+	}
+	if group.Status == "paused" {
+		return errorResponse(400, "Group is already paused"), nil
+	}
 
-	// Collect results
-	for groupIDs := range resultsChan {
-		for _, id := range groupIDs {
-			groupIDSet[id] = true
+	now := time.Now()
+	_, err = dynamodbClient.UpdateItem(ctx, &dynamodb.UpdateItemInput{
+		TableName: aws.String(dynamoAutoscaleGroupsTable),
+		Key: map[string]ddbTypes.AttributeValue{
+			"autoscale_group_id": &ddbTypes.AttributeValueMemberS{Value: groupID},
+		},
+		UpdateExpression: aws.String("SET #status = :status, paused_at = :paused_at, paused_desired_capacity = desired_capacity, desired_capacity = :zero, updated_at = :updated_at"),
+		ExpressionAttributeNames: map[string]string{
+			"#status": "status",
+		},
+		ExpressionAttributeValues: map[string]ddbTypes.AttributeValue{
+			":status":     &ddbTypes.AttributeValueMemberS{Value: "paused"},
+			":paused_at":  &ddbTypes.AttributeValueMemberS{Value: now.Format(time.RFC3339)},
+			":zero":       &ddbTypes.AttributeValueMemberN{Value: "0"},
+			":updated_at": &ddbTypes.AttributeValueMemberS{Value: now.Format(time.RFC3339)},
+		},
+	})
+	if err != nil {
+		return errorResponse(500, fmt.Sprintf("Failed to pause group: %v", err)), nil
+	}
+
+	return successResponse(map[string]interface{}{
+		"success": true,
+		"message": "Autoscale group paused",
+	})
+}
+
+// handleResumeAutoscaleGroup handles POST /api/autoscale-groups/{id}/resume
+func handleResumeAutoscaleGroup(ctx context.Context, cfg aws.Config, groupID, cliIamArn string) (events.APIGatewayProxyResponse, error) {
+	dynamodbClient := dynamodb.NewFromConfig(cfg)
+
+	// Fetch group and verify ownership
+	result, err := dynamodbClient.GetItem(ctx, &dynamodb.GetItemInput{
+		TableName: aws.String(dynamoAutoscaleGroupsTable),
+		Key: map[string]ddbTypes.AttributeValue{
+			"autoscale_group_id": &ddbTypes.AttributeValueMemberS{Value: groupID},
+		},
+	})
+	if err != nil {
+		return errorResponse(500, fmt.Sprintf("Failed to get group: %v", err)), nil
+	}
+	if result.Item == nil {
+		return errorResponse(404, "Autoscale group not found"), nil
+	}
+
+	var group AutoScaleGroupWithUserID
+	if err := attributevalue.UnmarshalMap(result.Item, &group); err != nil {
+		return errorResponse(500, fmt.Sprintf("Failed to unmarshal group: %v", err)), nil
+	}
+	if group.UserID != cliIamArn {
+		return errorResponse(403, "Access denied"), nil
+	}
+	if group.Status != "paused" {
+		return errorResponse(400, "Group is not paused"), nil
+	}
+
+	// Restore previous desired capacity (default to 1 if not stored)
+	desiredCapacity := group.PausedDesiredCapacity
+	if desiredCapacity == 0 {
+		desiredCapacity = 1
+	}
+
+	now := time.Now()
+	_, err = dynamodbClient.UpdateItem(ctx, &dynamodb.UpdateItemInput{
+		TableName: aws.String(dynamoAutoscaleGroupsTable),
+		Key: map[string]ddbTypes.AttributeValue{
+			"autoscale_group_id": &ddbTypes.AttributeValueMemberS{Value: groupID},
+		},
+		UpdateExpression: aws.String("SET #status = :status, desired_capacity = :desired_capacity, updated_at = :updated_at REMOVE paused_at, paused_desired_capacity"),
+		ExpressionAttributeNames: map[string]string{
+			"#status": "status",
+		},
+		ExpressionAttributeValues: map[string]ddbTypes.AttributeValue{
+			":status":           &ddbTypes.AttributeValueMemberS{Value: "active"},
+			":desired_capacity": &ddbTypes.AttributeValueMemberN{Value: fmt.Sprintf("%d", desiredCapacity)},
+			":updated_at":       &ddbTypes.AttributeValueMemberS{Value: now.Format(time.RFC3339)},
+		},
+	})
+	if err != nil {
+		return errorResponse(500, fmt.Sprintf("Failed to resume group: %v", err)), nil
+	}
+
+	return successResponse(map[string]interface{}{
+		"success":          true,
+		"message":          "Autoscale group resumed",
+		"desired_capacity": desiredCapacity,
+	})
+}
+
+// handleTerminateAutoscaleGroup handles DELETE /api/autoscale-groups/{id}
+func handleTerminateAutoscaleGroup(ctx context.Context, cfg aws.Config, groupID, cliIamArn string) (events.APIGatewayProxyResponse, error) {
+	dynamodbClient := dynamodb.NewFromConfig(cfg)
+
+	// Fetch group and verify ownership
+	result, err := dynamodbClient.GetItem(ctx, &dynamodb.GetItemInput{
+		TableName: aws.String(dynamoAutoscaleGroupsTable),
+		Key: map[string]ddbTypes.AttributeValue{
+			"autoscale_group_id": &ddbTypes.AttributeValueMemberS{Value: groupID},
+		},
+	})
+	if err != nil {
+		return errorResponse(500, fmt.Sprintf("Failed to get group: %v", err)), nil
+	}
+	if result.Item == nil {
+		return errorResponse(404, "Autoscale group not found"), nil
+	}
+
+	var group AutoScaleGroupWithUserID
+	if err := attributevalue.UnmarshalMap(result.Item, &group); err != nil {
+		return errorResponse(500, fmt.Sprintf("Failed to unmarshal group: %v", err)), nil
+	}
+	if group.UserID != cliIamArn {
+		return errorResponse(403, "Access denied"), nil
+	}
+
+	// Terminate all running instances
+	terminatedCount := 0
+	instances, _ := getGroupInstances(ctx, cfg, groupID, cliIamArn)
+	for _, inst := range instances {
+		if inst.State == "running" || inst.State == "pending" {
+			// Find the region for this instance by querying across regions
+			for _, region := range awsRegions {
+				ec2Client, err := getEC2ClientForRegion(ctx, cfg, region)
+				if err != nil {
+					continue
+				}
+				_, err = ec2Client.TerminateInstances(ctx, &ec2.TerminateInstancesInput{
+					InstanceIds: []string{inst.InstanceID},
+				})
+				if err == nil {
+					terminatedCount++
+					break
+				}
+			}
 		}
 	}
 
-	// Log errors (don't fail on region errors)
-	for err := range errorsChan {
-		fmt.Printf("Warning: %v\n", err)
+	now := time.Now()
+	_, err = dynamodbClient.UpdateItem(ctx, &dynamodb.UpdateItemInput{
+		TableName: aws.String(dynamoAutoscaleGroupsTable),
+		Key: map[string]ddbTypes.AttributeValue{
+			"autoscale_group_id": &ddbTypes.AttributeValueMemberS{Value: groupID},
+		},
+		UpdateExpression: aws.String("SET #status = :status, terminated_at = :terminated_at, desired_capacity = :zero, updated_at = :updated_at"),
+		ExpressionAttributeNames: map[string]string{
+			"#status": "status",
+		},
+		ExpressionAttributeValues: map[string]ddbTypes.AttributeValue{
+			":status":        &ddbTypes.AttributeValueMemberS{Value: "terminated"},
+			":terminated_at": &ddbTypes.AttributeValueMemberS{Value: now.Format(time.RFC3339)},
+			":zero":          &ddbTypes.AttributeValueMemberN{Value: "0"},
+			":updated_at":    &ddbTypes.AttributeValueMemberS{Value: now.Format(time.RFC3339)},
+		},
+	})
+	if err != nil {
+		return errorResponse(500, fmt.Sprintf("Failed to update group status: %v", err)), nil
 	}
 
-	// Convert set to slice
-	groupIDs := make([]string, 0, len(groupIDSet))
-	for id := range groupIDSet {
-		groupIDs = append(groupIDs, id)
-	}
-
-	return groupIDs, nil
+	return successResponse(map[string]interface{}{
+		"success":              true,
+		"message":              "Autoscale group terminated",
+		"instances_terminated": terminatedCount,
+	})
 }
 
 // getGroupsFromDynamoDB batch gets groups from DynamoDB
@@ -451,8 +568,10 @@ func enrichGroupWithHealth(ctx context.Context, cfg aws.Config, group *AutoScale
 
 	// Add policy-specific metadata
 	if group.ScalingPolicy != nil && group.ScalingPolicy.QueueURL != "" {
-		// Queue policy - could fetch queue depth here if needed
-		// For now, omit (would require SQS permissions)
+		// Fetch current queue depth from SQS
+		if depth, err := getQueueDepth(ctx, cfg, group.ScalingPolicy.QueueURL); err == nil {
+			detail.QueueDepth = aws.Int(depth)
+		}
 	}
 
 	if group.MetricPolicy != nil {
@@ -635,4 +754,24 @@ func determinePolicyType(group *AutoScaleGroup) string {
 		return "schedule"
 	}
 	return "none"
+}
+
+// getQueueDepth fetches the approximate number of messages in an SQS queue
+func getQueueDepth(ctx context.Context, cfg aws.Config, queueURL string) (int, error) {
+	sqsClient := sqs.NewFromConfig(cfg)
+	result, err := sqsClient.GetQueueAttributes(ctx, &sqs.GetQueueAttributesInput{
+		QueueUrl:       aws.String(queueURL),
+		AttributeNames: []sqsTypes.QueueAttributeName{"ApproximateNumberOfMessages"},
+	})
+	if err != nil {
+		return 0, fmt.Errorf("get queue attributes: %w", err)
+	}
+	if v, ok := result.Attributes["ApproximateNumberOfMessages"]; ok {
+		n, err := strconv.Atoi(v)
+		if err != nil {
+			return 0, fmt.Errorf("parse queue depth: %w", err)
+		}
+		return n, nil
+	}
+	return 0, nil
 }

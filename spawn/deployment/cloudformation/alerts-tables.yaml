@@ -133,6 +133,55 @@ Resources:
         - Key: Component
           Value: alerts
 
+  SpawnCostHistoryTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: spawn-cost-history
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: user_id
+          AttributeType: S
+        - AttributeName: timestamp
+          AttributeType: S
+      KeySchema:
+        - AttributeName: user_id
+          KeyType: HASH
+        - AttributeName: timestamp
+          KeyType: RANGE
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Application
+          Value: spawn
+        - Key: Component
+          Value: cost
+
+  SpawnAlertPreferencesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: spawn-alert-preferences
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: user_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: user_id
+          KeyType: HASH
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Application
+          Value: spawn
+        - Key: Component
+          Value: alerts
+
 Outputs:
   AlertsTableName:
     Description: Name of the alerts table

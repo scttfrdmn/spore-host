@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -93,8 +94,51 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		}
 		return handleGetAutoscaleGroup(ctx, cfg, groupID, cliIamArn)
 
+	case path == "/api/autoscale-groups//pause" && method == "POST":
+		groupID := request.PathParameters["id"]
+		if groupID == "" {
+			return errorResponse(400, "Autoscale group ID is required"), nil
+		}
+		return handlePauseAutoscaleGroup(ctx, cfg, groupID, cliIamArn)
+
+	case path == "/api/autoscale-groups//resume" && method == "POST":
+		groupID := request.PathParameters["id"]
+		if groupID == "" {
+			return errorResponse(400, "Autoscale group ID is required"), nil
+		}
+		return handleResumeAutoscaleGroup(ctx, cfg, groupID, cliIamArn)
+
+	case path == "/api/autoscale-groups/" && method == "DELETE":
+		groupID := request.PathParameters["id"]
+		if groupID == "" {
+			return errorResponse(400, "Autoscale group ID is required"), nil
+		}
+		return handleTerminateAutoscaleGroup(ctx, cfg, groupID, cliIamArn)
+
+	case path == "/api/instances/" && method == "DELETE":
+		instanceID := request.PathParameters["id"]
+		if instanceID == "" {
+			return errorResponse(400, "Instance ID is required"), nil
+		}
+		return handleTerminateInstance(ctx, cfg, instanceID, cliIamArn)
+
 	case path == "/api/cost-summary" && method == "GET":
 		return handleGetCostSummary(ctx, cfg, cliIamArn)
+
+	case path == "/api/cost-history" && method == "GET":
+		days := 30
+		if d := request.QueryStringParameters["days"]; d != "" {
+			if n, err := strconv.Atoi(d); err == nil && n > 0 && n <= 90 {
+				days = n
+			}
+		}
+		return handleGetCostHistory(ctx, cfg, days, cliIamArn)
+
+	case path == "/api/alert-preferences" && method == "GET":
+		return handleGetAlertPreferences(ctx, cfg, cliIamArn)
+
+	case path == "/api/alert-preferences" && method == "POST":
+		return handleSaveAlertPreferences(ctx, cfg, request.Body, cliIamArn)
 
 	case path == "/api/user/profile" && method == "GET":
 		return handleGetUserProfile(ctx, cfg, userID, cliIamArn, accountBase36)

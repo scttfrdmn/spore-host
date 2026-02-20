@@ -6,7 +6,7 @@
     <title>spore.host - Launch Ephemeral AWS EC2 Instances</title>
     <meta name="description" content="Free, open-source CLI tools for launching ephemeral AWS EC2 instances with automatic termination, cost control, and hibernation support.">
     <link rel="stylesheet" href="css/style.css">
-    <link rel="icon" type="image/png" href="assets/favicon.png">
+    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/asciinema-player@3.14.0/dist/bundle/asciinema-player.min.css">
     <script src="https://cdn.jsdelivr.net/npm/asciinema-player@3.14.0/dist/bundle/asciinema-player.min.js"></script>
     <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1564.0.min.js"></script>
@@ -22,7 +22,7 @@
             <div class="nav-links">
                 <a href="#install">Install</a>
                 <a href="#examples">Examples</a>
-                <a href="/dashboard.html">Dashboard</a>
+                <a href="/dashboard.html" class="btn-login-nav" style="background: var(--accent-blue); color: white; padding: 0.5rem 1rem; border-radius: 6px; text-decoration: none; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">🔐 Dashboard / Login</a>
                 <a href="https://github.com/scttfrdmn/mycelium" target="_blank">GitHub</a>
                 <button id="theme-toggle" onclick="toggleTheme()" style="background: none; border: 1px solid var(--border); border-radius: 6px; padding: 0.5rem 0.75rem; cursor: pointer; color: var(--text-primary); font-size: 1.2rem; transition: all 0.3s ease;" title="Toggle theme">
                     <span id="theme-icon">🌙</span>
@@ -248,7 +248,7 @@ Cost: $1.006/hr active, $0.01/hr hibernated</code></pre>
             <p class="footer-text">
                 Made with 🍄 by <a href="https://github.com/scttfrdmn">@scttfrdmn</a>
                 <br>
-                Licensed under <a href="https://github.com/scttfrdmn/mycelium/blob/main/LICENSE">MIT</a>
+                Licensed under <a href="https://github.com/scttfrdmn/mycelium/blob/main/LICENSE">Apache 2.0</a>
             </p>
         </footer>
     </div>

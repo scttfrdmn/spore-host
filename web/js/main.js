@@ -179,6 +179,15 @@ function getAPIHeaders() {
         console.log('AWS.config.credentials:', AWS?.config?.credentials);
     }
 
+    // Add user email for web user identity mapping
+    if (typeof authManager !== 'undefined') {
+        const user = authManager.getUser();
+        if (user && user.email) {
+            headers['X-User-Email'] = user.email;
+            console.log('✓ Added user email to request headers');
+        }
+    }
+
     return headers;
 }
 
@@ -1106,46 +1115,37 @@ let sweepSortState = { column: null, direction: 'asc' };
 function switchDashboardTab(tab) {
     currentDashboardTab = tab;
 
-    // Update tab buttons
-    const instancesTab = document.getElementById('tab-instances');
-    const sweepsTab = document.getElementById('tab-sweeps');
-    const autoscaleTab = document.getElementById('tab-autoscale');
-    const instancesContent = document.getElementById('instances-tab-content');
-    const sweepsContent = document.getElementById('sweeps-tab-content');
-    const autoscaleContent = document.getElementById('autoscale-tab-content');
-
-    // Reset all tabs
-    [instancesTab, sweepsTab, autoscaleTab].forEach(t => {
-        if (t) {
-            t.classList.remove('active');
-            t.style.borderBottom = '3px solid transparent';
-            t.style.color = 'var(--text-muted)';
+    const allTabs = ['instances', 'sweeps', 'autoscale', 'settings'];
+    allTabs.forEach(t => {
+        const btn = document.getElementById(`tab-${t}`);
+        const content = document.getElementById(`${t}-tab-content`);
+        if (btn) {
+            btn.classList.remove('active');
+            btn.style.borderBottom = '3px solid transparent';
+            btn.style.color = 'var(--text-muted)';
         }
+        if (content) content.style.display = 'none';
     });
 
-    [instancesContent, sweepsContent, autoscaleContent].forEach(c => {
-        if (c) c.style.display = 'none';
-    });
+    const activeBtn = document.getElementById(`tab-${tab}`);
+    const activeContent = document.getElementById(`${tab}-tab-content`);
+    if (activeBtn) {
+        activeBtn.classList.add('active');
+        activeBtn.style.borderBottom = '3px solid var(--accent-blue)';
+        activeBtn.style.color = 'var(--accent-blue)';
+    }
+    if (activeContent) activeContent.style.display = 'block';
 
     if (tab === 'instances') {
-        instancesTab.classList.add('active');
-        instancesTab.style.borderBottom = '3px solid var(--accent-blue)';
-        instancesTab.style.color = 'var(--accent-blue)';
-        instancesContent.style.display = 'block';
         loadDashboard();
     } else if (tab === 'sweeps') {
-        sweepsTab.classList.add('active');
-        sweepsTab.style.borderBottom = '3px solid var(--accent-blue)';
-        sweepsTab.style.color = 'var(--accent-blue)';
-        sweepsContent.style.display = 'block';
         loadSweeps();
     } else if (tab === 'autoscale') {
-        autoscaleTab.classList.add('active');
-        autoscaleTab.style.borderBottom = '3px solid var(--accent-blue)';
-        autoscaleTab.style.color = 'var(--accent-blue)';
-        autoscaleContent.style.display = 'block';
         loadAutoscaleGroups();
         loadCostSummary();
+        loadCostChart(30);
+    } else if (tab === 'settings') {
+        loadAlertPreferences();
     }
 }
 
@@ -1690,6 +1690,12 @@ function renderAutoscaleGroupsTable(groups) {
         eventCell.style.color = 'var(--text-muted)';
         row.appendChild(eventCell);
 
+        // Actions
+        const actionsCell = document.createElement('td');
+        actionsCell.innerHTML = renderGroupActions(group);
+        actionsCell.onclick = e => e.stopPropagation(); // Don't toggle details on action click
+        row.appendChild(actionsCell);
+
         tbody.appendChild(row);
 
         // Add details row (hidden by default)
@@ -1699,7 +1705,7 @@ function renderAutoscaleGroupsTable(groups) {
         detailRow.style.display = 'none';
 
         const detailCell = document.createElement('td');
-        detailCell.colSpan = 6;
+        detailCell.colSpan = 7;
         detailCell.innerHTML = '<div style="padding: 1rem; text-align: center; color: var(--text-muted);">Loading details...</div>';
         detailRow.appendChild(detailCell);
 
@@ -1769,6 +1775,14 @@ function renderGroupDetails(detailRow, group) {
             </div>
     `;
 
+    // Queue depth gauge (Phase 5)
+    if (group.queue_depth !== null && group.queue_depth !== undefined && group.policy_type === 'queue') {
+        detailHTML += `<div style="margin-bottom: 1.5rem;">
+            <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem;">Queue Depth</div>
+            <div id="queue-gauge-${group.autoscale_group_id}" style="display: inline-block;"></div>
+        </div>`;
+    }
+
     if (group.instances && group.instances.length > 0) {
         detailHTML += `
             <h4 style="margin-bottom: 1rem; color: var(--text-primary);">Instances</h4>
@@ -1814,6 +1828,15 @@ function renderGroupDetails(detailRow, group) {
     detailHTML += '</div>';
 
     cell.innerHTML = detailHTML;
+
+    // Render queue depth gauge if applicable
+    if (group.queue_depth !== null && group.queue_depth !== undefined && group.policy_type === 'queue') {
+        const gaugeContainer = document.getElementById(`queue-gauge-${group.autoscale_group_id}`);
+        if (gaugeContainer) {
+            const threshold = group.max_capacity || 100;
+            renderQueueDepthGauge(gaugeContainer, group.queue_depth, threshold);
+        }
+    }
 }
 
 // Get group status badge
@@ -1884,6 +1907,324 @@ function clearAutoscaleFilters() {
     if (statusFilter) statusFilter.value = '';
 
     applyAutoscaleFilters();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Autoscale Group Actions (Phase 2 - Issue #127)
+// ═══════════════════════════════════════════════════════════════
+
+function renderGroupActions(group) {
+    const id = group.autoscale_group_id;
+    const status = group.status;
+    let html = '';
+    if (status === 'active') {
+        html += `<button class="btn-action" onclick="pauseGroup('${id}')" title="Pause">⏸</button>`;
+    } else if (status === 'paused') {
+        html += `<button class="btn-action" onclick="resumeGroup('${id}')" title="Resume">▶</button>`;
+    }
+    if (status !== 'terminated') {
+        html += `<button class="btn-action btn-danger" onclick="terminateGroup('${id}', ${group.current_capacity})" title="Terminate">✕</button>`;
+    }
+    return html;
+}
+
+async function pauseGroup(id) {
+    try {
+        const response = await fetch(`https://api.spore.host/api/autoscale-groups/${id}/pause`, {
+            method: 'POST', headers: getAPIHeaders(), credentials: 'include'
+        });
+        const data = await response.json();
+        if (data.success) {
+            showNotification('Group paused', 'success');
+            await loadAutoscaleGroups();
+        } else {
+            showNotification(data.error || 'Failed to pause group', 'error');
+        }
+    } catch (e) {
+        showNotification(`Error: ${e.message}`, 'error');
+    }
+}
+
+async function resumeGroup(id) {
+    try {
+        const response = await fetch(`https://api.spore.host/api/autoscale-groups/${id}/resume`, {
+            method: 'POST', headers: getAPIHeaders(), credentials: 'include'
+        });
+        const data = await response.json();
+        if (data.success) {
+            showNotification(`Group resumed (desired: ${data.desired_capacity})`, 'success');
+            await loadAutoscaleGroups();
+        } else {
+            showNotification(data.error || 'Failed to resume group', 'error');
+        }
+    } catch (e) {
+        showNotification(`Error: ${e.message}`, 'error');
+    }
+}
+
+async function terminateGroup(id, instanceCount) {
+    const msg = instanceCount > 0
+        ? `Terminate this group and its ${instanceCount} instance(s)? This cannot be undone.`
+        : 'Terminate this autoscale group? This cannot be undone.';
+    if (!confirm(msg)) return;
+    try {
+        const response = await fetch(`https://api.spore.host/api/autoscale-groups/${id}`, {
+            method: 'DELETE', headers: getAPIHeaders(), credentials: 'include'
+        });
+        const data = await response.json();
+        if (data.success) {
+            showNotification(`Group terminated (${data.instances_terminated} instance(s) stopped)`, 'success');
+            await loadAutoscaleGroups();
+        } else {
+            showNotification(data.error || 'Failed to terminate group', 'error');
+        }
+    } catch (e) {
+        showNotification(`Error: ${e.message}`, 'error');
+    }
+}
+
+function showNotification(msg, type) {
+    const toast = document.createElement('div');
+    toast.className = `toast-notification toast-${type}`;
+    toast.textContent = msg;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Cost Charts (Phase 3 - Issue #126)
+// ═══════════════════════════════════════════════════════════════
+
+let costTrendChart = null;
+let costBreakdownChart = null;
+
+async function loadCostChart(days) {
+    // Update active button
+    [7, 30, 90].forEach(d => {
+        const btn = document.getElementById(`cost-btn-${d}d`);
+        if (btn) {
+            btn.style.borderColor = d === days ? 'var(--accent-blue)' : 'var(--border)';
+            btn.style.color = d === days ? 'var(--accent-blue)' : 'var(--text-secondary)';
+        }
+    });
+
+    const loading = document.getElementById('cost-chart-loading');
+    const container = document.getElementById('cost-chart-container');
+    const empty = document.getElementById('cost-chart-empty');
+
+    if (loading) loading.style.display = 'block';
+    if (container) container.style.display = 'none';
+    if (empty) empty.style.display = 'none';
+
+    try {
+        const response = await fetch(`https://api.spore.host/api/cost-history?days=${days}`, {
+            headers: getAPIHeaders(), credentials: 'include'
+        });
+        const data = await response.json();
+
+        if (loading) loading.style.display = 'none';
+
+        if (!data.success || !data.history || data.history.length === 0) {
+            if (empty) empty.style.display = 'block';
+            return;
+        }
+
+        if (container) container.style.display = 'block';
+
+        const labels = data.history.map(p => formatChartDate(p.timestamp));
+        const hourlyCosts = data.history.map(p => p.hourly_cost);
+        const computeCosts = data.history.map(p => p.breakdown?.compute || 0);
+        const networkCosts = data.history.map(p => p.breakdown?.network || 0);
+
+        // Destroy existing charts
+        if (costTrendChart) { costTrendChart.destroy(); costTrendChart = null; }
+        if (costBreakdownChart) { costBreakdownChart.destroy(); costBreakdownChart = null; }
+
+        // Line chart: hourly cost over time
+        const trendCtx = document.getElementById('cost-trend-chart')?.getContext('2d');
+        if (trendCtx) {
+            costTrendChart = new Chart(trendCtx, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: 'Hourly Cost ($)',
+                        data: hourlyCosts,
+                        borderColor: '#4fc3f7',
+                        backgroundColor: 'rgba(79, 195, 247, 0.1)',
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { ticks: { callback: v => `$${v.toFixed(3)}` }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                        x: { grid: { color: 'rgba(255,255,255,0.05)' } }
+                    }
+                }
+            });
+        }
+
+        // Stacked area chart: compute vs network
+        const breakdownCtx = document.getElementById('cost-breakdown-chart')?.getContext('2d');
+        if (breakdownCtx) {
+            costBreakdownChart = new Chart(breakdownCtx, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [
+                        {
+                            label: 'Compute',
+                            data: computeCosts,
+                            borderColor: '#66bb6a',
+                            backgroundColor: 'rgba(102, 187, 106, 0.3)',
+                            fill: true, tension: 0.3, pointRadius: 2
+                        },
+                        {
+                            label: 'Network',
+                            data: networkCosts,
+                            borderColor: '#f44336',
+                            backgroundColor: 'rgba(244, 67, 54, 0.3)',
+                            fill: true, tension: 0.3, pointRadius: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { position: 'bottom', labels: { color: 'var(--text-secondary)' } } },
+                    scales: {
+                        y: { stacked: true, ticks: { callback: v => `$${v.toFixed(3)}` }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                        x: { grid: { color: 'rgba(255,255,255,0.05)' } }
+                    }
+                }
+            });
+        }
+    } catch (e) {
+        if (loading) loading.style.display = 'none';
+        if (empty) { empty.style.display = 'block'; empty.textContent = `Error loading chart: ${e.message}`; }
+    }
+}
+
+function formatChartDate(ts) {
+    const d = new Date(ts);
+    return `${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:00`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Alert Preferences (Phase 4 - Issue #128)
+// ═══════════════════════════════════════════════════════════════
+
+async function loadAlertPreferences() {
+    const loading = document.getElementById('alert-prefs-loading');
+    if (loading) loading.style.display = 'block';
+
+    try {
+        const response = await fetch('https://api.spore.host/api/alert-preferences', {
+            headers: getAPIHeaders(), credentials: 'include'
+        });
+        const data = await response.json();
+        if (loading) loading.style.display = 'none';
+
+        if (data.success && data.preferences) {
+            const p = data.preferences;
+            const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+            const setCheck = (id, val) => { const el = document.getElementById(id); if (el) el.checked = !!val; };
+
+            setCheck('alerts-enabled', p.enabled);
+            setVal('alert-email', p.notification_email);
+            setVal('alert-hourly', p.cost_threshold_hourly);
+            setVal('alert-daily', p.cost_threshold_daily);
+            setVal('alert-instance-count', p.instance_count_threshold);
+            setVal('alert-queue-high', p.queue_depth_high);
+        }
+    } catch (e) {
+        if (loading) loading.style.display = 'none';
+        console.error('Failed to load alert preferences:', e);
+    }
+}
+
+async function saveAlertPreferences(event) {
+    event.preventDefault();
+    const getVal = id => { const el = document.getElementById(id); return el ? el.value : ''; };
+    const getCheck = id => { const el = document.getElementById(id); return el ? el.checked : false; };
+    const getNum = id => { const v = parseFloat(getVal(id)); return isNaN(v) ? 0 : v; };
+    const getInt = id => { const v = parseInt(getVal(id)); return isNaN(v) ? 0 : v; };
+
+    const prefs = {
+        enabled: getCheck('alerts-enabled'),
+        notification_email: getVal('alert-email'),
+        cost_threshold_hourly: getNum('alert-hourly'),
+        cost_threshold_daily: getNum('alert-daily'),
+        instance_count_threshold: getInt('alert-instance-count'),
+        queue_depth_high: getInt('alert-queue-high')
+    };
+
+    try {
+        const response = await fetch('https://api.spore.host/api/alert-preferences', {
+            method: 'POST',
+            headers: getAPIHeaders(),
+            credentials: 'include',
+            body: JSON.stringify(prefs)
+        });
+        const data = await response.json();
+        if (data.success) {
+            showNotification('Alert preferences saved', 'success');
+        } else {
+            showNotification(data.error || 'Failed to save preferences', 'error');
+        }
+    } catch (e) {
+        showNotification(`Error: ${e.message}`, 'error');
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Queue Depth Gauge (Phase 5 - Issue #129)
+// ═══════════════════════════════════════════════════════════════
+
+function renderQueueDepthGauge(container, queueDepth, threshold) {
+    if (typeof Chart === 'undefined') {
+        // Fallback: numeric display
+        container.innerHTML = `<div style="font-size: 1.4rem; font-weight: bold;">${queueDepth}</div><div style="font-size: 0.8rem; color: var(--text-muted);">messages</div>`;
+        return;
+    }
+
+    const ratio = threshold > 0 ? queueDepth / threshold : 0;
+    const color = ratio < 0.5 ? '#66bb6a' : ratio < 0.8 ? '#FFC107' : '#f44336';
+    const remaining = Math.max(0, 1 - ratio);
+    const gaugeId = `gauge-${Date.now()}`;
+
+    container.innerHTML = `
+        <div style="position: relative; display: inline-block;">
+            <canvas id="${gaugeId}" width="120" height="70"></canvas>
+            <div style="position: absolute; bottom: 5px; left: 0; right: 0; text-align: center;">
+                <span style="font-size: 1.1rem; font-weight: bold; color: ${color};">${queueDepth}</span>
+                <span style="font-size: 0.75rem; color: var(--text-muted);">/ ${threshold}</span>
+            </div>
+        </div>`;
+
+    const ctx = document.getElementById(gaugeId)?.getContext('2d');
+    if (!ctx) return;
+
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            datasets: [{
+                data: [ratio > 1 ? 1 : ratio, ratio > 1 ? 0 : remaining],
+                backgroundColor: [color, 'rgba(255,255,255,0.1)'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            circumference: 180,
+            rotation: -90,
+            responsive: false,
+            cutout: '75%',
+            plugins: { legend: { display: false }, tooltip: { enabled: false } }
+        }
+    });
 }
 
 // Auto-refresh sweeps (every 10 seconds if on sweeps tab)

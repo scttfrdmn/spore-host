@@ -6,8 +6,34 @@
     <title>Dashboard - spore.host</title>
     <meta name="description" content="Monitor and manage your AWS EC2 instances launched via Spawn CLI.">
     <link rel="stylesheet" href="css/style.css">
-    <link rel="icon" type="image/png" href="assets/favicon.png">
+    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
     <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1564.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        .btn-action {
+            padding: 0.3rem 0.7rem;
+            font-size: 0.8rem;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+            background: var(--bg-dark);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            margin: 0 0.15rem;
+        }
+        .btn-action:hover { background: rgba(79, 195, 247, 0.15); border-color: var(--accent-blue); color: var(--accent-blue); }
+        .btn-danger { border-color: var(--accent-red); color: var(--accent-red); }
+        .btn-danger:hover { background: rgba(244, 67, 54, 0.15) !important; }
+        .toast-notification {
+            position: fixed; bottom: 1.5rem; right: 1.5rem;
+            padding: 0.75rem 1.25rem; border-radius: 8px;
+            font-size: 0.9rem; z-index: 9999;
+            animation: slideIn 0.3s ease;
+        }
+        .toast-success { background: rgba(102, 187, 106, 0.9); color: #fff; }
+        .toast-error   { background: rgba(244, 67, 54, 0.9); color: #fff; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
 </head>
 <body>
     <!-- Navigation -->
@@ -98,6 +124,9 @@
                 </button>
                 <button onclick="switchDashboardTab('autoscale')" id="tab-autoscale" class="dashboard-tab" style="padding: 0.75rem 1.5rem; background: none; border: none; border-bottom: 3px solid transparent; color: var(--text-muted); cursor: pointer; font-size: 1rem; font-weight: 600; transition: all 0.2s;">
                     ⚙️ Autoscale Groups
+                </button>
+                <button onclick="switchDashboardTab('settings')" id="tab-settings" class="dashboard-tab" style="padding: 0.75rem 1.5rem; background: none; border: none; border-bottom: 3px solid transparent; color: var(--text-muted); cursor: pointer; font-size: 1rem; font-weight: 600; transition: all 0.2s;">
+                    🔔 Settings
                 </button>
             </div>
 
@@ -285,11 +314,12 @@
                                 <th style="cursor: pointer; user-select: none;">Min/Max</th>
                                 <th style="cursor: pointer; user-select: none;">Policy</th>
                                 <th style="cursor: pointer; user-select: none;">Last Event</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody id="autoscale-tbody">
                             <tr>
-                                <td colspan="6" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                                <td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-muted);">
                                     Loading autoscale groups...
                                 </td>
                             </tr>
@@ -301,6 +331,77 @@
                     <p style="margin: 0; color: var(--text-muted); font-size: 0.9rem;">
                         <strong>💡 Tip:</strong> Create autoscale groups with <code>spawn autoscale launch</code>. Click any row to view instance health and details.
                     </p>
+                </div>
+
+                <!-- Cost Trends Section -->
+                <div id="cost-trends-section" style="margin-top: 2rem; padding: 1.5rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h3 style="margin: 0; color: var(--text-primary);">📈 Cost Trends</h3>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button onclick="loadCostChart(7)"  id="cost-btn-7d"  class="btn-action">7d</button>
+                            <button onclick="loadCostChart(30)" id="cost-btn-30d" class="btn-action" style="border-color: var(--accent-blue); color: var(--accent-blue);">30d</button>
+                            <button onclick="loadCostChart(90)" id="cost-btn-90d" class="btn-action">90d</button>
+                        </div>
+                    </div>
+                    <div id="cost-chart-loading" style="text-align: center; padding: 2rem; color: var(--text-muted);">Loading cost history...</div>
+                    <div id="cost-chart-container" style="display: none;">
+                        <canvas id="cost-trend-chart" style="max-height: 250px; margin-bottom: 1.5rem;"></canvas>
+                        <canvas id="cost-breakdown-chart" style="max-height: 200px;"></canvas>
+                    </div>
+                    <div id="cost-chart-empty" style="display: none; text-align: center; padding: 2rem; color: var(--text-muted);">
+                        No cost history yet. Data is collected hourly.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Tab Content -->
+            <div id="settings-tab-content" class="dashboard-tab-content" style="display: none;">
+                <p class="dashboard-subtitle">Configure alerts and notification preferences</p>
+
+                <div style="max-width: 600px;">
+                    <div style="padding: 1.5rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;">
+                        <h3 style="color: var(--text-primary); margin-bottom: 1.5rem;">🔔 Alert Preferences</h3>
+                        <form id="alert-prefs-form" onsubmit="saveAlertPreferences(event)">
+                            <div style="margin-bottom: 1rem;">
+                                <label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer;">
+                                    <input type="checkbox" id="alerts-enabled" style="width: 1.1rem; height: 1.1rem;">
+                                    <span style="font-weight: 500;">Enable alert notifications</span>
+                                </label>
+                            </div>
+
+                            <div style="margin-bottom: 1rem;">
+                                <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.4rem;">Notification Email</label>
+                                <input type="email" id="alert-email" placeholder="you@example.com" style="width: 100%; padding: 0.6rem 1rem; background: var(--bg-dark); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); font-size: 0.9rem; box-sizing: border-box;">
+                            </div>
+
+                            <hr style="border-color: var(--border); margin: 1.25rem 0;">
+                            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">Alert when thresholds are exceeded (leave blank to disable):</p>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                                <div>
+                                    <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.4rem;">Hourly Cost ($)</label>
+                                    <input type="number" id="alert-hourly" min="0" step="0.01" placeholder="e.g. 0.50" style="width: 100%; padding: 0.6rem 1rem; background: var(--bg-dark); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); font-size: 0.9rem; box-sizing: border-box;">
+                                </div>
+                                <div>
+                                    <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.4rem;">Daily Cost ($)</label>
+                                    <input type="number" id="alert-daily" min="0" step="0.01" placeholder="e.g. 5.00" style="width: 100%; padding: 0.6rem 1rem; background: var(--bg-dark); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); font-size: 0.9rem; box-sizing: border-box;">
+                                </div>
+                                <div>
+                                    <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.4rem;">Max Instance Count</label>
+                                    <input type="number" id="alert-instance-count" min="0" step="1" placeholder="e.g. 20" style="width: 100%; padding: 0.6rem 1rem; background: var(--bg-dark); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); font-size: 0.9rem; box-sizing: border-box;">
+                                </div>
+                                <div>
+                                    <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.4rem;">Queue Depth High</label>
+                                    <input type="number" id="alert-queue-high" min="0" step="1" placeholder="e.g. 1000" style="width: 100%; padding: 0.6rem 1rem; background: var(--bg-dark); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); font-size: 0.9rem; box-sizing: border-box;">
+                                </div>
+                            </div>
+
+                            <button type="submit" style="padding: 0.75rem 2rem; background: var(--accent-blue); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.95rem; font-weight: 500; transition: opacity 0.2s;">
+                                Save Preferences
+                            </button>
+                        </form>
+                        <div id="alert-prefs-loading" style="display: none; margin-top: 1rem; color: var(--text-muted); font-size: 0.9rem;">Loading preferences...</div>
+                    </div>
                 </div>
             </div>
         </section>

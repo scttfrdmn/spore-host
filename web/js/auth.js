@@ -69,6 +69,10 @@ class AuthManager {
             console.log('Handling GitHub callback');
             await this.handleGitHubCallback(params);
             window.history.replaceState({}, document.title, window.location.pathname);
+            // Redirect to dashboard if we're on the home page
+            if (window.location.pathname === '/' || window.location.pathname === '/index.html') {
+                window.location.href = '/dashboard.html';
+            }
             return true;
         }
 
@@ -76,6 +80,10 @@ class AuthManager {
         if (params.has('id_token')) {
             await this.handleOAuthCallback(params);
             window.history.replaceState({}, document.title, window.location.pathname);
+            // Redirect to dashboard if we're on the home page
+            if (window.location.pathname === '/' || window.location.pathname === '/index.html') {
+                window.location.href = '/dashboard.html';
+            }
             return true;
         }
 
@@ -393,6 +401,23 @@ const authManager = new AuthManager();
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', async function() {
     try {
+        // Clear any expired credentials before init
+        try {
+            const data = localStorage.getItem('spawn_auth');
+            if (data) {
+                const parsed = JSON.parse(data);
+                if (parsed.credentials && parsed.credentials.expiration <= Date.now()) {
+                    console.log('Clearing expired credentials on page load');
+                    localStorage.removeItem('spawn_auth');
+                    authManager.currentUser = null;
+                    authManager.credentials = null;
+                }
+            }
+        } catch (e) {
+            console.error('Error checking stored credentials:', e);
+            localStorage.removeItem('spawn_auth');
+        }
+
         const authenticated = await authManager.init();
 
         if (authenticated) {

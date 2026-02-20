@@ -33,11 +33,11 @@ var costBreakdownCmd = &cobra.Command{
 	Long: `Display detailed cost breakdown by region and instance type.
 
 Shows:
-- Total estimated cost
+- Resource costs (compute, storage, network)
+- Cloud economics (effective cost/hr, utilization, savings)
+- Time breakdown (running vs stopped hours)
 - Budget status (if budget was set)
-- Cost by region
-- Cost by instance type
-- Instance hours
+- Cost by region and instance type
 
 Examples:
   spawn cost breakdown sweep-20260124-140530
@@ -55,25 +55,21 @@ func runCostBreakdown(cmd *cobra.Command, args []string) error {
 	ctx := context.Background()
 	sweepID := args[0]
 
-	// Load AWS config
 	cfg, err := config.LoadDefaultConfig(ctx)
 	if err != nil {
 		return fmt.Errorf("load AWS config: %w", err)
 	}
 
-	// Create cost client
 	dbClient := dynamodb.NewFromConfig(cfg)
 	costClient := cost.NewClient(dbClient)
 
-	// Get cost breakdown
 	breakdown, err := costClient.GetCostBreakdown(ctx, sweepID)
 	if err != nil {
 		return fmt.Errorf("get cost breakdown: %w", err)
 	}
 
-	// Print breakdown
 	fmt.Printf("\nCost Breakdown for %s\n", sweepID)
-	fmt.Println(strings.Repeat("━", 80))
+	fmt.Println(strings.Repeat("━", 60))
 	fmt.Println()
 
 	// Budget status
@@ -81,7 +77,7 @@ func runCostBreakdown(cmd *cobra.Command, args []string) error {
 		fmt.Printf("Budget:           $%.2f\n", breakdown.Budget)
 		fmt.Printf("Total Cost:       $%.2f\n", breakdown.TotalCost)
 		if breakdown.BudgetExceeded {
-			fmt.Printf("Budget Status:    ⚠️  EXCEEDED by $%.2f\n", -breakdown.BudgetRemaining)
+			fmt.Printf("Budget Status:    EXCEEDED by $%.2f\n", -breakdown.BudgetRemaining)
 		} else {
 			fmt.Printf("Budget Remaining: $%.2f\n", breakdown.BudgetRemaining)
 		}
@@ -91,14 +87,54 @@ func runCostBreakdown(cmd *cobra.Command, args []string) error {
 		fmt.Println()
 	}
 
+	// Resource costs (only if we have component data)
+	if breakdown.ComputeCost > 0 || breakdown.StorageCost > 0 || breakdown.NetworkCost > 0 {
+		fmt.Println("Resource Costs:")
+		fmt.Printf("  Compute (%.1fh running):  $%.2f\n", breakdown.RunningHours, breakdown.ComputeCost)
+		fmt.Printf("  Storage (%.1fh total):    $%.2f\n", breakdown.TotalHours, breakdown.StorageCost)
+		if breakdown.NetworkCost > 0 {
+			fmt.Printf("  Network (IPv4):          $%.2f\n", breakdown.NetworkCost)
+		}
+		fmt.Printf("  %s\n", strings.Repeat("─", 35))
+		fmt.Printf("  Total:                   $%.2f\n", breakdown.TotalCost)
+		fmt.Println()
+	}
+
+	// Time breakdown
+	if breakdown.TotalHours > 0 {
+		fmt.Println("Time Breakdown:")
+		totalH := int(breakdown.TotalHours)
+		totalM := int((breakdown.TotalHours - float64(totalH)) * 60)
+		runH := int(breakdown.RunningHours)
+		runM := int((breakdown.RunningHours - float64(runH)) * 60)
+		stopH := int(breakdown.StoppedHours)
+		stopM := int((breakdown.StoppedHours - float64(stopH)) * 60)
+		fmt.Printf("  Lifetime:  %dh %dm\n", totalH, totalM)
+		if breakdown.TotalHours > 0 {
+			fmt.Printf("  Running:   %dh %dm (%.1f%%)\n", runH, runM, (breakdown.RunningHours/breakdown.TotalHours)*100)
+			fmt.Printf("  Stopped:   %dh %dm (%.1f%%)\n", stopH, stopM, (breakdown.StoppedHours/breakdown.TotalHours)*100)
+		}
+		fmt.Println()
+	}
+
+	// Cloud economics
+	if breakdown.EffectiveCostPerHour > 0 {
+		fmt.Println("Cloud Economics:")
+		fmt.Printf("  Effective Cost/Hour:     $%.4f/hr\n", breakdown.EffectiveCostPerHour)
+		if breakdown.Utilization > 0 {
+			fmt.Printf("  Utilization:             %.1f%%\n", breakdown.Utilization)
+		}
+		fmt.Println()
+	}
+
 	// By region
 	if len(breakdown.ByRegion) > 0 {
 		fmt.Println("By Region:")
 		fmt.Println()
 
 		w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-		fmt.Fprintln(w, "REGION\tINSTANCES\tINSTANCE-HOURS\tCOST")
-		fmt.Fprintln(w, strings.Repeat("─", 80))
+		fmt.Fprintln(w, "REGION\tINSTANCES\tRUNNING-HOURS\tCOST")
+		fmt.Fprintln(w, strings.Repeat("─", 60))
 
 		for _, rc := range breakdown.ByRegion {
 			fmt.Fprintf(w, "%s\t%d\t%.1f\t$%.2f\n",
@@ -108,7 +144,6 @@ func runCostBreakdown(cmd *cobra.Command, args []string) error {
 				rc.EstimatedCost,
 			)
 		}
-
 		w.Flush()
 		fmt.Println()
 	}
@@ -119,8 +154,8 @@ func runCostBreakdown(cmd *cobra.Command, args []string) error {
 		fmt.Println()
 
 		w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-		fmt.Fprintln(w, "INSTANCE TYPE\tINSTANCES\tINSTANCE-HOURS\tCOST")
-		fmt.Fprintln(w, strings.Repeat("─", 80))
+		fmt.Fprintln(w, "INSTANCE TYPE\tINSTANCES\tRUNNING-HOURS\tCOST")
+		fmt.Fprintln(w, strings.Repeat("─", 60))
 
 		for _, tc := range breakdown.ByInstanceType {
 			fmt.Fprintf(w, "%s\t%d\t%.1f\t$%.2f\n",
@@ -130,18 +165,17 @@ func runCostBreakdown(cmd *cobra.Command, args []string) error {
 				tc.EstimatedCost,
 			)
 		}
-
 		w.Flush()
 		fmt.Println()
 	}
 
 	// Summary
 	fmt.Println("Summary:")
-	fmt.Printf("  Total Instance-Hours: %.1f\n", breakdown.TotalInstanceHours)
-	fmt.Printf("  Total Estimated Cost: $%.2f\n", breakdown.TotalCost)
+	fmt.Printf("  Total Running-Hours: %.1f\n", breakdown.TotalInstanceHours)
+	fmt.Printf("  Total Cost:          $%.2f\n", breakdown.TotalCost)
 	if breakdown.Budget > 0 {
 		percentUsed := (breakdown.TotalCost / breakdown.Budget) * 100
-		fmt.Printf("  Budget Utilization:   %.1f%%\n", percentUsed)
+		fmt.Printf("  Budget Utilization:  %.1f%%\n", percentUsed)
 	}
 	fmt.Println()
 
