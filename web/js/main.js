@@ -2237,6 +2237,179 @@ setInterval(() => {
     }
 }, 10000);
 
+// ═══════════════════════════════════════════════════════════════
+// Hamburger Menu (Mobile Navigation)
+// ═══════════════════════════════════════════════════════════════
+
+(function initHamburgerMenu() {
+    const btn = document.getElementById('hamburger-btn');
+    if (!btn) return;
+    const nav = btn.closest('.nav');
+    if (!nav) return;
+
+    btn.addEventListener('click', function () {
+        const expanded = btn.getAttribute('aria-expanded') === 'true';
+        btn.setAttribute('aria-expanded', String(!expanded));
+        nav.classList.toggle('nav-open');
+    });
+
+    // Close menu when a nav link is clicked
+    nav.querySelectorAll('.nav-links a, .nav-links button').forEach(function (el) {
+        el.addEventListener('click', function () {
+            nav.classList.remove('nav-open');
+            btn.setAttribute('aria-expanded', 'false');
+        });
+    });
+
+    // Close menu on outside click
+    document.addEventListener('click', function (e) {
+        if (!nav.contains(e.target)) {
+            nav.classList.remove('nav-open');
+            btn.setAttribute('aria-expanded', 'false');
+        }
+    });
+})();
+
+// ═══════════════════════════════════════════════════════════════
+// Keyboard Shortcuts (Dashboard)
+// ═══════════════════════════════════════════════════════════════
+
+(function initKeyboardShortcuts() {
+    if (typeof switchDashboardTab !== 'function') return;
+
+    const tabOrder = ['instances', 'sweeps', 'autoscale', 'settings'];
+    let gPressed = false;
+    let gTimer = null;
+
+    function showShortcutsModal() {
+        const existing = document.getElementById('shortcuts-modal');
+        if (existing) { existing.remove(); return; }
+
+        const modal = document.createElement('div');
+        modal.id = 'shortcuts-modal';
+        modal.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:2rem;z-index:9998;min-width:300px;box-shadow:0 20px 60px rgba(0,0,0,0.5);';
+        modal.innerHTML = `
+            <h3 style="margin-bottom:1rem;color:var(--accent-blue);">Keyboard Shortcuts</h3>
+            <table style="border-collapse:collapse;width:100%;">
+                <tr><td style="padding:0.4rem 1rem 0.4rem 0;color:var(--text-muted);font-family:monospace;">g i</td><td>Switch to Instances tab</td></tr>
+                <tr><td style="padding:0.4rem 1rem 0.4rem 0;color:var(--text-muted);font-family:monospace;">g s</td><td>Switch to Sweeps tab</td></tr>
+                <tr><td style="padding:0.4rem 1rem 0.4rem 0;color:var(--text-muted);font-family:monospace;">g a</td><td>Switch to Autoscale tab</td></tr>
+                <tr><td style="padding:0.4rem 1rem 0.4rem 0;color:var(--text-muted);font-family:monospace;">r</td><td>Refresh current tab</td></tr>
+                <tr><td style="padding:0.4rem 1rem 0.4rem 0;color:var(--text-muted);font-family:monospace;">/</td><td>Focus search/filter</td></tr>
+                <tr><td style="padding:0.4rem 1rem 0.4rem 0;color:var(--text-muted);font-family:monospace;">?</td><td>Toggle this help</td></tr>
+            </table>
+            <p style="margin-top:1rem;font-size:0.85rem;color:var(--text-muted);">Press <kbd style="background:var(--bg-dark);padding:0.1rem 0.4rem;border-radius:3px;font-family:monospace;">Esc</kbd> or <kbd style="background:var(--bg-dark);padding:0.1rem 0.4rem;border-radius:3px;font-family:monospace;">?</kbd> to close</p>`;
+
+        const backdrop = document.createElement('div');
+        backdrop.id = 'shortcuts-backdrop';
+        backdrop.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9997;';
+        backdrop.addEventListener('click', function () { modal.remove(); backdrop.remove(); });
+
+        document.body.appendChild(backdrop);
+        document.body.appendChild(modal);
+    }
+
+    document.addEventListener('keydown', function (e) {
+        // Skip if typing in an input
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) {
+            if (e.key === 'Escape') { e.target.blur(); }
+            return;
+        }
+
+        // Escape: close modal
+        if (e.key === 'Escape') {
+            const modal = document.getElementById('shortcuts-modal');
+            const backdrop = document.getElementById('shortcuts-backdrop');
+            if (modal) modal.remove();
+            if (backdrop) backdrop.remove();
+            return;
+        }
+
+        // ? — toggle shortcuts help
+        if (e.key === '?') {
+            e.preventDefault();
+            showShortcutsModal();
+            return;
+        }
+
+        // r — refresh current tab
+        if (e.key === 'r' && !e.ctrlKey && !e.metaKey) {
+            e.preventDefault();
+            if (typeof refreshCurrentDashboardView === 'function') {
+                refreshCurrentDashboardView();
+            }
+            return;
+        }
+
+        // / — focus filter input
+        if (e.key === '/') {
+            e.preventDefault();
+            const filter = document.getElementById('filter-input') ||
+                           document.querySelector('input[type="search"]') ||
+                           document.querySelector('input[placeholder*="filter" i]') ||
+                           document.querySelector('input[placeholder*="search" i]');
+            if (filter) filter.focus();
+            return;
+        }
+
+        // g + key — tab navigation
+        if (e.key === 'g' && !gPressed) {
+            gPressed = true;
+            clearTimeout(gTimer);
+            gTimer = setTimeout(function () { gPressed = false; }, 1000);
+            return;
+        }
+
+        if (gPressed) {
+            gPressed = false;
+            clearTimeout(gTimer);
+            if (e.key === 'i') { e.preventDefault(); switchDashboardTab('instances'); }
+            else if (e.key === 's') { e.preventDefault(); switchDashboardTab('sweeps'); }
+            else if (e.key === 'a') { e.preventDefault(); switchDashboardTab('autoscale'); }
+        }
+    });
+})();
+
+// ═══════════════════════════════════════════════════════════════
+// Swipeable Tabs (Mobile Touch)
+// ═══════════════════════════════════════════════════════════════
+
+(function initSwipeableTabs() {
+    if (typeof switchDashboardTab !== 'function') return;
+
+    const tabOrder = ['instances', 'sweeps', 'autoscale'];
+    let touchStartX = 0;
+    let touchStartY = 0;
+
+    const mainContent = document.querySelector('.container') || document.body;
+
+    mainContent.addEventListener('touchstart', function (e) {
+        touchStartX = e.changedTouches[0].clientX;
+        touchStartY = e.changedTouches[0].clientY;
+    }, { passive: true });
+
+    mainContent.addEventListener('touchend', function (e) {
+        const deltaX = e.changedTouches[0].clientX - touchStartX;
+        const deltaY = e.changedTouches[0].clientY - touchStartY;
+
+        // Require horizontal swipe > 50px and more horizontal than vertical
+        if (Math.abs(deltaX) < 50 || Math.abs(deltaY) > Math.abs(deltaX)) return;
+
+        const currentIdx = tabOrder.indexOf(
+            typeof currentDashboardTab !== 'undefined' ? currentDashboardTab : 'instances'
+        );
+        if (currentIdx === -1) return;
+
+        if (deltaX < 0 && currentIdx < tabOrder.length - 1) {
+            // Swipe left → next tab
+            switchDashboardTab(tabOrder[currentIdx + 1]);
+        } else if (deltaX > 0 && currentIdx > 0) {
+            // Swipe right → previous tab
+            switchDashboardTab(tabOrder[currentIdx - 1]);
+        }
+    }, { passive: true });
+})();
+
 // Export for use in other scripts
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = { DashboardAPI, showTab };
