@@ -105,7 +105,6 @@ else
                 }
             }
         ]' \
-        --billing-mode-override PAY_PER_REQUEST \
         --profile "$AWS_PROFILE" --region "$AWS_REGION" \
         --output text > /dev/null
     echo "  ✓ spawn-sweep-orchestration team_id-index created (propagating...)"
@@ -133,7 +132,6 @@ else
                 }
             }
         ]' \
-        --billing-mode-override PAY_PER_REQUEST \
         --profile "$AWS_PROFILE" --region "$AWS_REGION" \
         --output text > /dev/null
     echo "  ✓ spawn-autoscale-groups-production team_id-index created (propagating...)"
