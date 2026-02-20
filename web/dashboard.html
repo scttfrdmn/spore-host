@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - spore.host</title>
     <meta name="description" content="Monitor and manage your AWS EC2 instances launched via Spawn CLI.">
+    <!-- Anti-FOUC: set data-theme before CSS renders -->
+    <script>(function(){var t=localStorage.getItem('theme')||(matchMedia('(prefers-color-scheme:light)').matches?'light':'dark');document.documentElement.setAttribute('data-theme',t);}());</script>
     <link rel="stylesheet" href="css/style.css">
     <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
     <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1564.0.min.js"></script>
@@ -413,47 +415,5 @@
     <script src="js/auth.js?v=2"></script>
     <script src="js/websocket.js?v=1"></script>
     <script src="js/main.js?v=2"></script>
-    <script>
-    // Theme toggle functionality
-    function toggleTheme() {
-        const html = document.documentElement;
-        const currentTheme = html.getAttribute('data-theme') || 'dark';
-        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-
-        html.setAttribute('data-theme', newTheme);
-        localStorage.setItem('theme', newTheme);
-
-        // Update icon
-        const icon = document.getElementById('theme-icon');
-        if (icon) {
-            icon.textContent = newTheme === 'dark' ? '🌙' : '☀️';
-        }
-    }
-
-    // Initialize theme on page load
-    (function initTheme() {
-        const savedTheme = localStorage.getItem('theme') ||
-                          (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
-
-        document.documentElement.setAttribute('data-theme', savedTheme);
-
-        const icon = document.getElementById('theme-icon');
-        if (icon) {
-            icon.textContent = savedTheme === 'dark' ? '🌙' : '☀️';
-        }
-    })();
-
-    // Listen for system theme changes
-    window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', e => {
-        if (!localStorage.getItem('theme')) {
-            const newTheme = e.matches ? 'light' : 'dark';
-            document.documentElement.setAttribute('data-theme', newTheme);
-            const icon = document.getElementById('theme-icon');
-            if (icon) {
-                icon.textContent = newTheme === 'dark' ? '🌙' : '☀️';
-            }
-        }
-    });
-    </script>
 </body>
 </html>

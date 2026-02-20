@@ -104,6 +104,60 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
+// ═══════════════════════════════════════════════════════════════
+// Theme System
+// ═══════════════════════════════════════════════════════════════
+
+function getChartColors() {
+    const style = getComputedStyle(document.documentElement);
+    return {
+        grid:  style.getPropertyValue('--chart-grid').trim()  || 'rgba(255,255,255,0.07)',
+        text:  style.getPropertyValue('--chart-text').trim()  || '#9aa0a6',
+        empty: style.getPropertyValue('--chart-empty').trim() || 'rgba(255,255,255,0.08)',
+    };
+}
+
+let currentCostDays = 30;
+
+function toggleTheme() {
+    const html = document.documentElement;
+    const currentTheme = html.getAttribute('data-theme') || 'dark';
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+    html.classList.add('theme-transitioning');
+    html.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+    setTimeout(() => html.classList.remove('theme-transitioning'), 300);
+
+    const icon = document.getElementById('theme-icon');
+    if (icon) icon.textContent = newTheme === 'dark' ? '🌙' : '☀️';
+
+    // Re-render charts so colors adapt to new theme
+    if (typeof loadCostChart === 'function' && (costTrendChart || costBreakdownChart)) {
+        loadCostChart(currentCostDays);
+    }
+}
+
+// Set icon once DOM is ready (data-theme already set by FOUC script in <head>)
+document.addEventListener('DOMContentLoaded', function () {
+    const savedTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+    const icon = document.getElementById('theme-icon');
+    if (icon) icon.textContent = savedTheme === 'dark' ? '🌙' : '☀️';
+});
+
+// Follow system preference changes when user hasn't manually chosen
+window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', function (e) {
+    if (!localStorage.getItem('theme')) {
+        const newTheme = e.matches ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', newTheme);
+        const icon = document.getElementById('theme-icon');
+        if (icon) icon.textContent = newTheme === 'dark' ? '🌙' : '☀️';
+        if (typeof loadCostChart === 'function' && (costTrendChart || costBreakdownChart)) {
+            loadCostChart(currentCostDays);
+        }
+    }
+});
+
 // Copy to Clipboard for Code Blocks
 function addCopyButtons() {
     const codeBlocks = document.querySelectorAll('pre code');
@@ -1999,6 +2053,8 @@ let costTrendChart = null;
 let costBreakdownChart = null;
 
 async function loadCostChart(days) {
+    currentCostDays = days;
+
     // Update active button
     [7, 30, 90].forEach(d => {
         const btn = document.getElementById(`cost-btn-${d}d`);
@@ -2040,6 +2096,8 @@ async function loadCostChart(days) {
         if (costTrendChart) { costTrendChart.destroy(); costTrendChart = null; }
         if (costBreakdownChart) { costBreakdownChart.destroy(); costBreakdownChart = null; }
 
+        const cc = getChartColors();
+
         // Line chart: hourly cost over time
         const trendCtx = document.getElementById('cost-trend-chart')?.getContext('2d');
         if (trendCtx) {
@@ -2061,8 +2119,8 @@ async function loadCostChart(days) {
                     responsive: true,
                     plugins: { legend: { display: false } },
                     scales: {
-                        y: { ticks: { callback: v => `$${v.toFixed(3)}` }, grid: { color: 'rgba(255,255,255,0.05)' } },
-                        x: { grid: { color: 'rgba(255,255,255,0.05)' } }
+                        y: { ticks: { color: cc.text, callback: v => `$${v.toFixed(3)}` }, grid: { color: cc.grid } },
+                        x: { ticks: { color: cc.text }, grid: { color: cc.grid } }
                     }
                 }
             });
@@ -2094,10 +2152,10 @@ async function loadCostChart(days) {
                 },
                 options: {
                     responsive: true,
-                    plugins: { legend: { position: 'bottom', labels: { color: 'var(--text-secondary)' } } },
+                    plugins: { legend: { position: 'bottom', labels: { color: cc.text } } },
                     scales: {
-                        y: { stacked: true, ticks: { callback: v => `$${v.toFixed(3)}` }, grid: { color: 'rgba(255,255,255,0.05)' } },
-                        x: { grid: { color: 'rgba(255,255,255,0.05)' } }
+                        y: { stacked: true, ticks: { color: cc.text, callback: v => `$${v.toFixed(3)}` }, grid: { color: cc.grid } },
+                        x: { ticks: { color: cc.text }, grid: { color: cc.grid } }
                     }
                 }
             });
@@ -2213,7 +2271,7 @@ function renderQueueDepthGauge(container, queueDepth, threshold) {
         data: {
             datasets: [{
                 data: [ratio > 1 ? 1 : ratio, ratio > 1 ? 0 : remaining],
-                backgroundColor: [color, 'rgba(255,255,255,0.1)'],
+                backgroundColor: [color, getChartColors().empty],
                 borderWidth: 0
             }]
         },

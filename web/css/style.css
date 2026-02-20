@@ -11,6 +11,9 @@
     --glow-blue: rgba(79, 195, 247, 0.3);
     --glow-green: rgba(102, 187, 106, 0.3);
     --border: rgba(255, 255, 255, 0.1);
+    --chart-grid: rgba(255, 255, 255, 0.07);
+    --chart-text: #9aa0a6;
+    --chart-empty: rgba(255, 255, 255, 0.08);
 }
 
 /* Light Theme */
@@ -26,6 +29,18 @@
     --glow-blue: rgba(2, 132, 199, 0.15);
     --glow-green: rgba(5, 150, 105, 0.15);
     --border: rgba(0, 0, 0, 0.1);
+    --chart-grid: rgba(0, 0, 0, 0.08);
+    --chart-text: #4a5568;
+    --chart-empty: rgba(0, 0, 0, 0.08);
+}
+
+/* Smooth theme transitions - only applied during toggle, not on initial load */
+.theme-transitioning,
+.theme-transitioning *,
+.theme-transitioning *::before,
+.theme-transitioning *::after {
+    transition: background-color 0.25s ease, color 0.25s ease,
+                border-color 0.25s ease, box-shadow 0.25s ease !important;
 }
 
 * {
