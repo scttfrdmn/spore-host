@@ -9,10 +9,10 @@ import (
 	"time"
 
 	"github.com/scttfrdmn/mycelium/pkg/i18n"
-	"github.com/yourusername/truffle/pkg/aws"
-	"github.com/yourusername/truffle/pkg/find"
-	"github.com/yourusername/truffle/pkg/output"
-	"github.com/yourusername/truffle/pkg/progress"
+	"github.com/scttfrdmn/mycelium/truffle/pkg/aws"
+	"github.com/scttfrdmn/mycelium/truffle/pkg/find"
+	"github.com/scttfrdmn/mycelium/truffle/pkg/output"
+	"github.com/scttfrdmn/mycelium/truffle/pkg/progress"
 	"github.com/spf13/cobra"
 )
 

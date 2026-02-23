@@ -512,25 +512,11 @@ func getStringField(m map[string]interface{}, key string) string {
 	return ""
 }
 
-func getIntField(m map[string]interface{}, key string) int {
-	if v, ok := m[key].(float64); ok {
-		return int(v)
-	}
-	return 0
-}
-
 func getFloatField(m map[string]interface{}, key string) float64 {
 	if v, ok := m[key].(float64); ok {
 		return v
 	}
 	return 0.0
-}
-
-func getSliceField(m map[string]interface{}, key string) []interface{} {
-	if v, ok := m[key].([]interface{}); ok {
-		return v
-	}
-	return nil
 }
 
 func formatDurationFromTime(duration time.Duration) string {

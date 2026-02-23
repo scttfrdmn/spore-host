@@ -383,7 +383,7 @@ func TestValidateFedRAMPInstance(t *testing.T) {
 			}
 
 			if result == nil {
-				t.Error("Expected result, got nil")
+				t.Fatal("Expected result, got nil")
 			}
 
 			// Runtime validation not fully implemented yet, so just check structure

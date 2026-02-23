@@ -61,7 +61,7 @@ func renderStageNode(stage *Stage) string {
 	sb.WriteString(fmt.Sprintf("┌─ %s\n", stage.StageID))
 
 	// Instance info
-	instanceInfo := fmt.Sprintf("%s", stage.InstanceType)
+	instanceInfo := stage.InstanceType
 	if stage.InstanceCount > 1 {
 		instanceInfo += fmt.Sprintf(" (×%d)", stage.InstanceCount)
 	}

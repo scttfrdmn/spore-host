@@ -36,8 +36,6 @@ const (
 	s3ReplicationCost       = 0.02 // S3 replication
 	internetTransferCost    = 0.09 // Internet out
 
-	// Within-region transfers are free
-	withinRegionTransferCost = 0.0
 )
 
 // EstimateStagingCost calculates the cost of different staging strategies

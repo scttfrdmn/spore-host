@@ -579,7 +579,7 @@ func runQueueTemplateInit(cmd *cobra.Command, args []string) error {
 	for i := 0; i < numJobs; i++ {
 		fmt.Fprintf(os.Stderr, "Job %d:\n", i+1)
 
-		jobID := prompt(fmt.Sprintf("  Job ID"), fmt.Sprintf("job%d", i+1))
+		jobID := prompt("  Job ID", fmt.Sprintf("job%d", i+1))
 		command := prompt("  Command to execute", "echo 'Hello World'")
 		timeout := prompt("  Timeout (e.g., 5m, 1h, 30s)", "10m")
 

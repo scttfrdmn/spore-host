@@ -6,6 +6,7 @@ import (
 	"embed"
 	"fmt"
 	"log"
+	"os"
 	"sync"
 
 	"github.com/BurntSushi/toml"
@@ -206,11 +207,14 @@ func (l *Localizer) Te(key string, err error, data ...interface{}) error {
 	return fmt.Errorf("%s", msg)
 }
 
-// MustT translates or panics (for initialization-time strings)
+// MustT translates with a warning fallback for missing keys.
+// In prior versions this panicked; now it logs a warning and returns the key
+// so production binaries never crash on a missing translation string.
 func (l *Localizer) MustT(key string, data ...interface{}) string {
 	msg := l.T(key, data...)
 	if msg == fmt.Sprintf("[%s]", key) {
-		panic(fmt.Sprintf("missing translation for key: %s", key))
+		fmt.Fprintf(os.Stderr, "warning: missing translation for key: %s\n", key)
+		return key
 	}
 	return msg
 }

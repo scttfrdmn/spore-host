@@ -6,7 +6,7 @@ import (
 	"log"
 	"sort"
 
-	"github.com/yourusername/truffle/pkg/aws"
+	"github.com/scttfrdmn/mycelium/truffle/pkg/aws"
 )
 
 // Example: Check capacity reservations for GPU instances

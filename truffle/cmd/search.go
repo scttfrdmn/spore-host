@@ -11,9 +11,9 @@ import (
 
 	"github.com/scttfrdmn/mycelium/pkg/i18n"
 	"github.com/spf13/cobra"
-	"github.com/yourusername/truffle/pkg/aws"
-	"github.com/yourusername/truffle/pkg/output"
-	"github.com/yourusername/truffle/pkg/progress"
+	"github.com/scttfrdmn/mycelium/truffle/pkg/aws"
+	"github.com/scttfrdmn/mycelium/truffle/pkg/output"
+	"github.com/scttfrdmn/mycelium/truffle/pkg/progress"
 )
 
 var (

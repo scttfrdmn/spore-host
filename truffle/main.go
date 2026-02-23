@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/yourusername/truffle/cmd"
+	"github.com/scttfrdmn/mycelium/truffle/cmd"
 )
 
 func main() {

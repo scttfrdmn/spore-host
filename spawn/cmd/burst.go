@@ -201,7 +201,7 @@ func launchBurstInstances(ctx context.Context, client *ec2.Client, params *Launc
 
 func generateBurstUserData(params *LaunchParams) string {
 	// User data script that registers with DynamoDB on startup
-	return fmt.Sprintf(`#!/bin/bash
+	return `#!/bin/bash
 # Spawn burst instance setup
 
 # Wait for spored to be available
@@ -214,7 +214,7 @@ systemctl enable spored
 systemctl start spored
 
 # Register with DynamoDB registry happens automatically via spored
-`)
+`
 }
 
 func findLatestSpawnAMI(ctx context.Context, client *ec2.Client) (string, error) {

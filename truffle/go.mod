@@ -1,4 +1,4 @@
-module github.com/yourusername/truffle
+module github.com/scttfrdmn/mycelium/truffle
 
 go 1.23
 
@@ -48,11 +48,11 @@ require (
 // This module can be used both as a CLI tool and as a library in other Go applications.
 //
 // Key packages:
-//   - github.com/yourusername/truffle/pkg/aws: AWS EC2 client and data structures
-//   - github.com/yourusername/truffle/pkg/output: Output formatting utilities
+//   - github.com/scttfrdmn/mycelium/truffle/pkg/aws: AWS EC2 client and data structures
+//   - github.com/scttfrdmn/mycelium/truffle/pkg/output: Output formatting utilities
 //
 // Example usage as a library:
-//   import "github.com/yourusername/truffle/pkg/aws"
+//   import "github.com/scttfrdmn/mycelium/truffle/pkg/aws"
 //
 //   client, _ := aws.NewClient(ctx)
 //   results, _ := client.SearchInstanceTypes(ctx, regions, matcher, opts)

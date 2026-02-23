@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/yourusername/truffle/pkg/aws"
-	"github.com/yourusername/truffle/pkg/metadata"
+	"github.com/scttfrdmn/mycelium/truffle/pkg/aws"
+	"github.com/scttfrdmn/mycelium/truffle/pkg/metadata"
 )
 
 // FindResult extends InstanceTypeResult with match explanations

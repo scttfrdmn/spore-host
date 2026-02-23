@@ -136,7 +136,7 @@ func TestLoadLocalConfig_MissingFile(t *testing.T) {
 		t.Errorf("LoadLocalConfig() should fall back to env vars, got error: %v", err)
 	}
 	if cfg == nil {
-		t.Errorf("LoadLocalConfig() should return config even without file")
+		t.Fatalf("LoadLocalConfig() should return config even without file")
 	}
 	// Should have default values applied
 	if cfg.InstanceID == "" {

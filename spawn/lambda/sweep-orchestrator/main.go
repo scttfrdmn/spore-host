@@ -188,7 +188,6 @@ type RegionalOrchestrator struct {
 	ec2Clients  map[string]*ec2.Client
 	accountID   string
 	credentials *ststypes.Credentials
-	mu          sync.Mutex
 }
 
 var (

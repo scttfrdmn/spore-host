@@ -6,7 +6,7 @@ import (
 	"log"
 	"regexp"
 
-	"github.com/yourusername/truffle/pkg/aws"
+	"github.com/scttfrdmn/mycelium/truffle/pkg/aws"
 )
 
 // Example: Basic instance type search using Truffle as a library
@@ -28,7 +28,7 @@ func main() {
 	fmt.Printf("Searching across %d regions...\n", len(regions))
 
 	// Search for m7i.large instances
-	pattern := regexp.MustCompile("^m7i\\.large$")
+	pattern := regexp.MustCompile(`^m7i\.large$`)
 	
 	results, err := client.SearchInstanceTypes(ctx, regions, pattern, aws.FilterOptions{
 		IncludeAZs: true,

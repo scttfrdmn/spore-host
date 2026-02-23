@@ -9,7 +9,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
-	"github.com/yourusername/truffle/pkg/quotas"
+	"github.com/scttfrdmn/mycelium/truffle/pkg/quotas"
 )
 
 var (

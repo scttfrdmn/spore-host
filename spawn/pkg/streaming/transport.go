@@ -157,7 +157,6 @@ func (t *TCPTransport) Type() TransportType {
 
 // QUICTransport implements Transport using QUIC (placeholder)
 type QUICTransport struct {
-	config TransportConfig
 	// TODO: Add quic-go connection
 }
 
@@ -189,7 +188,6 @@ func (t *QUICTransport) Type() TransportType {
 
 // RDMATransport implements Transport using RDMA/EFA (placeholder)
 type RDMATransport struct {
-	config TransportConfig
 	// TODO: Add libfabric bindings
 }
 

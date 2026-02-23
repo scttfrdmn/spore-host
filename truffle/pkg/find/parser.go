@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/yourusername/truffle/pkg/metadata"
+	"github.com/scttfrdmn/mycelium/truffle/pkg/metadata"
 )
 
 // TokenType represents the type of a parsed token

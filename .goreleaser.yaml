@@ -26,9 +26,9 @@ builds:
       - arm64
     ldflags:
       - -s -w
-      - -X github.com/yourusername/truffle/cmd.Version={{.Version}}
-      - -X github.com/yourusername/truffle/cmd.GitCommit={{.Commit}}
-      - -X github.com/yourusername/truffle/cmd.BuildDate={{.Date}}
+      - -X github.com/scttfrdmn/mycelium/truffle/cmd.Version={{.Version}}
+      - -X github.com/scttfrdmn/mycelium/truffle/cmd.GitCommit={{.Commit}}
+      - -X github.com/scttfrdmn/mycelium/truffle/cmd.BuildDate={{.Date}}
     mod_timestamp: '{{ .CommitTimestamp }}'
 
   # spawn - EC2 instance launcher

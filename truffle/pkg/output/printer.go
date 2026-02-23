@@ -11,7 +11,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/olekukonko/tablewriter"
 	"github.com/scttfrdmn/mycelium/pkg/i18n"
-	"github.com/yourusername/truffle/pkg/aws"
+	"github.com/scttfrdmn/mycelium/truffle/pkg/aws"
 	"gopkg.in/yaml.v3"
 )
 

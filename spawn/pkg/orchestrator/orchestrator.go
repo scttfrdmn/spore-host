@@ -20,7 +20,6 @@ type Orchestrator struct {
 	config    *Config
 	sqsClient *sqs.Client
 	ec2Client *ec2.Client
-	registry  *registry.PeerRegistry
 
 	// State tracking
 	managedInstances map[string]*ManagedInstance

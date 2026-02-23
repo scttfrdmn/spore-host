@@ -242,21 +242,3 @@ func shouldAlert(lastAlerted string, cooldown time.Duration) bool {
 	return time.Since(t) > cooldown
 }
 
-// getQueueDepth fetches approximate message count for an SQS queue URL
-func getQueueDepth(ctx context.Context, queueURL string) (int, error) {
-	sqsClient := sqs.NewFromConfig(awsCfg)
-	result, err := sqsClient.GetQueueAttributes(ctx, &sqs.GetQueueAttributesInput{
-		QueueUrl: aws.String(queueURL),
-		AttributeNames: []sqsTypes.QueueAttributeName{
-			"ApproximateNumberOfMessages",
-		},
-	})
-	if err != nil {
-		return 0, err
-	}
-	var depth int
-	if v, ok := result.Attributes["ApproximateNumberOfMessages"]; ok {
-		fmt.Sscanf(v, "%d", &depth)
-	}
-	return depth, nil
-}

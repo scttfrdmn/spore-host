@@ -6,7 +6,7 @@ import (
 	"log"
 	"regexp"
 
-	"github.com/yourusername/truffle/pkg/aws"
+	"github.com/scttfrdmn/mycelium/truffle/pkg/aws"
 )
 
 // Example: Get Spot pricing for instance types
@@ -21,7 +21,7 @@ func main() {
 
 	// Search for Graviton instances
 	regions := []string{"us-east-1", "us-west-2"}
-	pattern := regexp.MustCompile("^m8g\\..*")
+	pattern := regexp.MustCompile(`^m8g\..*`)
 	
 	results, err := client.SearchInstanceTypes(ctx, regions, pattern, aws.FilterOptions{
 		IncludeAZs: true,

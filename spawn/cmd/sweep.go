@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -254,49 +253,4 @@ func loadSweepState(sweepID string) (*SweepState, error) {
 	}
 
 	return &state, nil
-}
-
-// launchSweep orchestrates a parameter sweep with rolling queue
-func launchSweep(ctx context.Context, config SweepConfig) error {
-	// TODO: Implement rolling queue orchestration
-	// For now, just launch all instances in parallel (like job arrays)
-	return fmt.Errorf("parameter sweep orchestration not yet implemented")
-}
-
-// injectParamEnvVars adds PARAM_* environment variables to user-data script
-func injectParamEnvVars(script string, params map[string]string) string {
-	if len(params) == 0 {
-		return script
-	}
-
-	// Build param export block
-	paramBlock := "\n# Parameter sweep environment variables\n"
-	for key, value := range params {
-		// Export as PARAM_<name>
-		paramBlock += fmt.Sprintf("export PARAM_%s=%q\n", key, value)
-	}
-
-	// Write to /etc/profile.d for persistence
-	paramBlock += "\n# Write to profile.d for persistence\n"
-	paramBlock += "cat > /etc/profile.d/spawn-params.sh << 'SPAWN_PARAMS_EOF'\n"
-	for key, value := range params {
-		paramBlock += fmt.Sprintf("export PARAM_%s=%q\n", key, value)
-	}
-	paramBlock += "SPAWN_PARAMS_EOF\n"
-	paramBlock += "chmod 644 /etc/profile.d/spawn-params.sh\n"
-
-	// Insert at the beginning of the script (after shebang if present)
-	if len(script) > 2 && script[0:2] == "#!" {
-		// Find the end of the shebang line
-		newlineIdx := 0
-		for i, c := range script {
-			if c == '\n' {
-				newlineIdx = i + 1
-				break
-			}
-		}
-		return script[:newlineIdx] + paramBlock + script[newlineIdx:]
-	}
-
-	return paramBlock + script
 }

@@ -61,36 +61,6 @@ func getUserAccount(ctx context.Context, cfg aws.Config, userID string) (*UserAc
 	return &record, nil
 }
 
-// createUserAccount creates a new user account record in DynamoDB
-func createUserAccount(ctx context.Context, cfg aws.Config, userID, accountID, accountBase36, email string) error {
-	client := dynamodb.NewFromConfig(cfg)
-
-	now := time.Now().UTC().Format(time.RFC3339)
-
-	record := UserAccountRecord{
-		UserID:        userID,
-		AWSAccountID:  accountID,
-		AccountBase36: accountBase36,
-		Email:         email,
-		CreatedAt:     now,
-		LastAccess:    now,
-	}
-
-	item, err := attributevalue.MarshalMap(record)
-	if err != nil {
-		return fmt.Errorf("failed to marshal user account record: %w", err)
-	}
-
-	_, err = client.PutItem(ctx, &dynamodb.PutItemInput{
-		TableName: aws.String(dynamoDBTableName),
-		Item:      item,
-	})
-	if err != nil {
-		return fmt.Errorf("failed to put item to DynamoDB: %w", err)
-	}
-
-	return nil
-}
 
 // updateLastAccess updates the last access timestamp for a user
 func updateLastAccess(ctx context.Context, cfg aws.Config, userID string) error {

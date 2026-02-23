@@ -3,7 +3,7 @@ package find
 import (
 	"testing"
 
-	"github.com/yourusername/truffle/pkg/aws"
+	"github.com/scttfrdmn/mycelium/truffle/pkg/aws"
 )
 
 func TestExplainMatch(t *testing.T) {
