@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Deploy custom DNS infrastructure for spawn (mycelium project)
+# Deploy custom DNS infrastructure for spawn (spore-host project)
 #
 # Usage: ./deploy-custom-dns.sh --hosted-zone-id Z123... --domain spore.example.edu
 #

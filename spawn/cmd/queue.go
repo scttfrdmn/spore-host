@@ -15,7 +15,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"github.com/scttfrdmn/mycelium/spawn/pkg/queue"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/queue"
 	"github.com/spf13/cobra"
 )
 
@@ -197,7 +197,7 @@ func runQueueStatus(cmd *cobra.Command, args []string) error {
 
 	cfg, err := config.LoadDefaultConfig(ctx,
 		config.WithRegion(region),
-		config.WithSharedConfigProfile("mycelium-dev"),
+		config.WithSharedConfigProfile("spore-host-dev"),
 	)
 	if err != nil {
 		return fmt.Errorf("failed to load AWS config: %w", err)
@@ -313,7 +313,7 @@ func runQueueResults(cmd *cobra.Command, args []string) error {
 	// Load AWS config
 	cfg, err := config.LoadDefaultConfig(ctx,
 		config.WithRegion(downloadRegion),
-		config.WithSharedConfigProfile("mycelium-dev"),
+		config.WithSharedConfigProfile("spore-host-dev"),
 	)
 	if err != nil {
 		return fmt.Errorf("failed to load AWS config: %w", err)

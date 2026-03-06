@@ -10,7 +10,7 @@ echo "Current account: $CURRENT_ACCOUNT_ID"
 echo "Trust: Lambda from account $INFRA_ACCOUNT_ID"
 
 if [ "$CURRENT_ACCOUNT_ID" == "$INFRA_ACCOUNT_ID" ]; then
-  echo "❌ Error: This script must be run in the target account (mycelium-dev), not the infra account"
+  echo "❌ Error: This script must be run in the target account (spore-host-dev), not the infra account"
   exit 1
 fi
 

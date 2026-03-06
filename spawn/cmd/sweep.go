@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/scttfrdmn/mycelium/spawn/pkg/aws"
-	paramparser "github.com/scttfrdmn/mycelium/spawn/pkg/params"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/aws"
+	paramparser "github.com/scttfrdmn/spore-host/spawn/pkg/params"
 )
 
 // SweepConfig represents a parameter sweep configuration

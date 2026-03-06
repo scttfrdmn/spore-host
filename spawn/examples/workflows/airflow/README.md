@@ -18,7 +18,7 @@ pip install apache-airflow
 which spawn
 
 # Configure AWS credentials
-aws configure --profile mycelium-dev
+aws configure --profile spore-host-dev
 ```
 
 ## Setup
@@ -113,7 +113,7 @@ airflow dags list-runs -d spawn_parameter_sweep
 ### Sweep launch fails
 
 - Verify spawn is in PATH: `which spawn`
-- Check AWS credentials: `aws sts get-caller-identity --profile mycelium-dev`
+- Check AWS credentials: `aws sts get-caller-identity --profile spore-host-dev`
 - Check sweep file exists and is valid
 
 ### Timeout issues

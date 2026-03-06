@@ -10,7 +10,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/scttfrdmn/mycelium/spawn/pkg/provider"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/provider"
 )
 
 // MockDynamoDBClient would go here for proper unit tests

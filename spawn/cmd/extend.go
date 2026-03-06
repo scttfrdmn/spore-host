@@ -12,9 +12,9 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 	"github.com/google/uuid"
-	"github.com/scttfrdmn/mycelium/pkg/i18n"
-	"github.com/scttfrdmn/mycelium/spawn/pkg/audit"
-	"github.com/scttfrdmn/mycelium/spawn/pkg/aws"
+	"github.com/scttfrdmn/spore-host/pkg/i18n"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/audit"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/aws"
 	"github.com/spf13/cobra"
 )
 

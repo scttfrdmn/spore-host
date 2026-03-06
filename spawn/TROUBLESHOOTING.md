@@ -1518,9 +1518,9 @@ spawn launch --instance-type c5.4xlarge --verbose 2>&1 | tee spawn-debug.log
 ### Getting Help
 
 **Resources:**
-- **Documentation:** https://github.com/scttfrdmn/mycelium
-- **Issues:** https://github.com/scttfrdmn/mycelium/issues
-- **Discussions:** https://github.com/scttfrdmn/mycelium/discussions
+- **Documentation:** https://github.com/scttfrdmn/spore-host
+- **Issues:** https://github.com/scttfrdmn/spore-host/issues
+- **Discussions:** https://github.com/scttfrdmn/spore-host/discussions
 
 **Response times:**
 - Critical bugs: 1-2 days

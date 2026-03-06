@@ -1,4 +1,4 @@
-# Goreleaser configuration for mycelium (truffle + spawn)
+# Goreleaser configuration for spore-host (truffle + spawn)
 # https://goreleaser.com
 
 version: 2
@@ -26,9 +26,9 @@ builds:
       - arm64
     ldflags:
       - -s -w
-      - -X github.com/scttfrdmn/mycelium/truffle/cmd.Version={{.Version}}
-      - -X github.com/scttfrdmn/mycelium/truffle/cmd.GitCommit={{.Commit}}
-      - -X github.com/scttfrdmn/mycelium/truffle/cmd.BuildDate={{.Date}}
+      - -X github.com/scttfrdmn/spore-host/truffle/cmd.Version={{.Version}}
+      - -X github.com/scttfrdmn/spore-host/truffle/cmd.GitCommit={{.Commit}}
+      - -X github.com/scttfrdmn/spore-host/truffle/cmd.BuildDate={{.Date}}
     mod_timestamp: '{{ .CommitTimestamp }}'
 
   # spawn - EC2 instance launcher
@@ -47,7 +47,7 @@ builds:
       - arm64
     ldflags:
       - -s -w
-      - -X github.com/scttfrdmn/mycelium/spawn/cmd.Version={{.Version}}
+      - -X github.com/scttfrdmn/spore-host/spawn/cmd.Version={{.Version}}
     mod_timestamp: '{{ .CommitTimestamp }}'
 
   # spored - Daemon (Linux only)
@@ -194,7 +194,7 @@ brews:
       branch: main
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
     directory: Formula
-    homepage: https://github.com/scttfrdmn/mycelium
+    homepage: https://github.com/scttfrdmn/spore-host
     description: "Find and discover AWS EC2 instance types"
     license: MIT
     test: |
@@ -211,7 +211,7 @@ brews:
       branch: main
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
     directory: Formula
-    homepage: https://github.com/scttfrdmn/mycelium
+    homepage: https://github.com/scttfrdmn/spore-host
     description: "Launch ephemeral AWS EC2 instances effortlessly"
     license: MIT
     dependencies:
@@ -233,7 +233,7 @@ scoops:
       branch: main
       token: "{{ .Env.SCOOP_BUCKET_GITHUB_TOKEN }}"
     directory: bucket
-    homepage: https://github.com/scttfrdmn/mycelium
+    homepage: https://github.com/scttfrdmn/spore-host
     description: "Find and discover AWS EC2 instance types"
     license: MIT
 
@@ -246,7 +246,7 @@ scoops:
       branch: main
       token: "{{ .Env.SCOOP_BUCKET_GITHUB_TOKEN }}"
     directory: bucket
-    homepage: https://github.com/scttfrdmn/mycelium
+    homepage: https://github.com/scttfrdmn/spore-host
     description: "Launch ephemeral AWS EC2 instances effortlessly"
     license: MIT
     depends:
@@ -256,12 +256,12 @@ scoops:
 release:
   github:
     owner: scttfrdmn
-    name: mycelium
+    name: spore-host
   draft: false
   prerelease: auto
   mode: replace
   header: |
-    ## mycelium {{ .Tag }}
+    ## spore-host {{ .Tag }}
 
     The underground network for AWS compute.
 
@@ -286,13 +286,13 @@ release:
 
     **Debian/Ubuntu (.deb):**
     ```bash
-    curl -LO https://github.com/scttfrdmn/mycelium/releases/download/{{ .Tag }}/truffle_{{ .Version }}_linux_amd64.deb
+    curl -LO https://github.com/scttfrdmn/spore-host/releases/download/{{ .Tag }}/truffle_{{ .Version }}_linux_amd64.deb
     sudo dpkg -i truffle_{{ .Version }}_linux_amd64.deb
     ```
 
     **RHEL/Fedora (.rpm):**
     ```bash
-    sudo rpm -i https://github.com/scttfrdmn/mycelium/releases/download/{{ .Tag }}/truffle_{{ .Version }}_linux_amd64.rpm
+    sudo rpm -i https://github.com/scttfrdmn/spore-host/releases/download/{{ .Tag }}/truffle_{{ .Version }}_linux_amd64.rpm
     ```
 
     **Manual Download:**
@@ -301,10 +301,10 @@ release:
     ---
 
     **Documentation:**
-    - [README](https://github.com/scttfrdmn/mycelium/blob/main/README.md)
-    - [Security Guide](https://github.com/scttfrdmn/mycelium/blob/main/SECURITY.md)
-    - [Deployment Guide](https://github.com/scttfrdmn/mycelium/blob/main/DEPLOYMENT_GUIDE.md)
-    - [IAM Permissions](https://github.com/scttfrdmn/mycelium/blob/main/spawn/IAM_PERMISSIONS.md)
+    - [README](https://github.com/scttfrdmn/spore-host/blob/main/README.md)
+    - [Security Guide](https://github.com/scttfrdmn/spore-host/blob/main/SECURITY.md)
+    - [Deployment Guide](https://github.com/scttfrdmn/spore-host/blob/main/DEPLOYMENT_GUIDE.md)
+    - [IAM Permissions](https://github.com/scttfrdmn/spore-host/blob/main/spawn/IAM_PERMISSIONS.md)
 
   name_template: "v{{.Version}}"
 
@@ -312,4 +312,4 @@ release:
 # announce:
 #   twitter:
 #     enabled: true
-#     message_template: 'mycelium {{ .Tag }} is out! Check it out at {{ .ReleaseURL }}'
+#     message_template: 'spore-host {{ .Tag }} is out! Check it out at {{ .ReleaseURL }}'

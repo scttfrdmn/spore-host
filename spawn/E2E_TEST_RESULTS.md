@@ -1,7 +1,7 @@
 # E2E Integration Test Results - Webhook Encryption
 
 **Date:** 2026-01-27
-**Environment:** Production (mycelium-infra account)
+**Environment:** Production (spore-host-infra account)
 **Test Type:** End-to-End Integration Test
 
 ---
@@ -250,7 +250,7 @@ The alert-handler Lambda is not yet deployed. For full production use:
      --zip-file fileb://alert-handler.zip \
      --role <lambda-execution-role-arn> \
      --environment Variables={WEBHOOK_KMS_KEY_ID=alias/spawn-webhook-encryption} \
-     --profile mycelium-infra \
+     --profile spore-host-infra \
      --region us-east-1
    ```
 

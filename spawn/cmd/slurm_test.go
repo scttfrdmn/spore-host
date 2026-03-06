@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/scttfrdmn/mycelium/spawn/pkg/slurm"
-	"github.com/scttfrdmn/mycelium/spawn/pkg/testutil"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/slurm"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/testutil"
 	"gopkg.in/yaml.v3"
 )
 

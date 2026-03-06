@@ -65,7 +65,7 @@ Technical guide to Lambda-orchestrated parameter sweeps in spawn CLI.
                                     │
                                     ▼
 ┌─────────────────────────────────────────────────────────────────────────┐
-│ mycelium-infra Account (966362334030)                                  │
+│ spore-host-infra Account (966362334030)                                  │
 ├─────────────────────────────────────────────────────────────────────────┤
 │                                                                          │
 │  S3: spawn-sweeps-us-east-1                                              │
@@ -87,7 +87,7 @@ Technical guide to Lambda-orchestrated parameter sweeps in spawn CLI.
 │         2. Download params from S3 (cache in /tmp)                       │
 │         3. If INITIALIZING: Setup resources, set status=RUNNING          │
 │         4. Polling loop (every 10s, up to 13 minutes):                   │
-│            ├─> AssumeRole to mycelium-dev                                │
+│            ├─> AssumeRole to spore-host-dev                                │
 │            ├─> Query EC2 instance states                                 │
 │            ├─> Calculate available slots                                 │
 │            ├─> Launch next batch (available slots)                       │
@@ -100,7 +100,7 @@ Technical guide to Lambda-orchestrated parameter sweeps in spawn CLI.
                                     │ AssumeRole(SpawnSweepCrossAccountRole)
                                     ▼
 ┌─────────────────────────────────────────────────────────────────────────┐
-│ mycelium-dev Account (435415984226)                                    │
+│ spore-host-dev Account (435415984226)                                    │
 ├─────────────────────────────────────────────────────────────────────────┤
 │                                                                          │
 │  EC2 Instances                                                           │
@@ -122,7 +122,7 @@ Technical guide to Lambda-orchestrated parameter sweeps in spawn CLI.
 
 **Trust relationship:**
 ```
-mycelium-infra (Lambda) → AssumeRole → mycelium-dev (EC2 launches)
+spore-host-infra (Lambda) → AssumeRole → spore-host-dev (EC2 launches)
 ```
 
 **Alternative:** Single account setup possible (use same account ID for both).
@@ -233,15 +233,15 @@ type SweepInstance struct {
 
 ### 4. IAM Roles
 
-**SpawnSweepOrchestratorRole** (mycelium-infra):
+**SpawnSweepOrchestratorRole** (spore-host-infra):
 - Trust: lambda.amazonaws.com
 - Permissions: DynamoDB, S3, Lambda invoke, STS AssumeRole
 
-**SpawnSweepCrossAccountRole** (mycelium-dev):
+**SpawnSweepCrossAccountRole** (spore-host-dev):
 - Trust: arn:aws:iam::966362334030:role/SpawnSweepOrchestratorRole
 - Permissions: EC2 RunInstances, DescribeInstances, TerminateInstances, IAM PassRole
 
-**spawnd-role** (mycelium-dev):
+**spawnd-role** (spore-host-dev):
 - Trust: ec2.amazonaws.com
 - Permissions: S3 GetObject (spored binary), Lambda invoke (DNS updater), EC2 describe/terminate (self)
 
@@ -628,32 +628,32 @@ All scripts in `scripts/` directory:
 
 **1. S3 Bucket:**
 ```bash
-AWS_PROFILE=mycelium-infra ./scripts/setup-sweep-s3-bucket.sh
+AWS_PROFILE=spore-host-infra ./scripts/setup-sweep-s3-bucket.sh
 ```
 
 **2. DynamoDB Table:**
 ```bash
-AWS_PROFILE=mycelium-infra ./scripts/setup-sweep-dynamodb.sh
+AWS_PROFILE=spore-host-infra ./scripts/setup-sweep-dynamodb.sh
 ```
 
 **3. Lambda IAM Role:**
 ```bash
-AWS_PROFILE=mycelium-infra ./scripts/setup-sweep-orchestrator-lambda-role.sh
+AWS_PROFILE=spore-host-infra ./scripts/setup-sweep-orchestrator-lambda-role.sh
 ```
 
 **4. Cross-Account IAM Role:**
 ```bash
-AWS_PROFILE=mycelium-dev ./scripts/setup-sweep-cross-account-role.sh
+AWS_PROFILE=spore-host-dev ./scripts/setup-sweep-cross-account-role.sh
 ```
 
 **5. Deploy Lambda:**
 ```bash
-AWS_PROFILE=mycelium-infra ./scripts/deploy-sweep-orchestrator.sh
+AWS_PROFILE=spore-host-infra ./scripts/deploy-sweep-orchestrator.sh
 ```
 
 **6. EC2 Instance IAM Role:**
 ```bash
-AWS_PROFILE=mycelium-dev ./scripts/setup-spawnd-iam-role.sh
+AWS_PROFILE=spore-host-dev ./scripts/setup-spawnd-iam-role.sh
 ```
 
 ### Verification
@@ -661,21 +661,21 @@ AWS_PROFILE=mycelium-dev ./scripts/setup-spawnd-iam-role.sh
 **Test infrastructure:**
 ```bash
 # 1. Check S3 bucket
-AWS_PROFILE=mycelium-infra aws s3 ls spawn-sweeps-us-east-1
+AWS_PROFILE=spore-host-infra aws s3 ls spawn-sweeps-us-east-1
 
 # 2. Check DynamoDB table
-AWS_PROFILE=mycelium-infra aws dynamodb describe-table \
+AWS_PROFILE=spore-host-infra aws dynamodb describe-table \
   --table-name spawn-sweep-orchestration
 
 # 3. Check Lambda function
-AWS_PROFILE=mycelium-infra aws lambda get-function \
+AWS_PROFILE=spore-host-infra aws lambda get-function \
   --function-name spawn-sweep-orchestrator
 
 # 4. Check IAM roles
-AWS_PROFILE=mycelium-infra aws iam get-role \
+AWS_PROFILE=spore-host-infra aws iam get-role \
   --role-name SpawnSweepOrchestratorRole
 
-AWS_PROFILE=mycelium-dev aws iam get-role \
+AWS_PROFILE=spore-host-dev aws iam get-role \
   --role-name SpawnSweepCrossAccountRole
 ```
 
@@ -699,7 +699,7 @@ spawn cancel --sweep-id <id>
 
 **Check Lambda logs:**
 ```bash
-AWS_PROFILE=mycelium-infra aws logs tail /aws/lambda/spawn-sweep-orchestrator --follow
+AWS_PROFILE=spore-host-infra aws logs tail /aws/lambda/spawn-sweep-orchestrator --follow
 ```
 
 **Common issues:**
@@ -719,7 +719,7 @@ AWS_PROFILE=mycelium-infra aws logs tail /aws/lambda/spawn-sweep-orchestrator --
 **Fix:**
 ```bash
 # Check Lambda role has DynamoDB permissions
-AWS_PROFILE=mycelium-infra aws iam get-role-policy \
+AWS_PROFILE=spore-host-infra aws iam get-role-policy \
   --role-name SpawnSweepOrchestratorRole \
   --policy-name SpawnSweepOrchestratorPolicy
 ```
@@ -744,7 +744,7 @@ Should include:
 **Fix:**
 ```bash
 # Check Lambda role has S3 permissions
-AWS_PROFILE=mycelium-infra aws iam get-role-policy \
+AWS_PROFILE=spore-host-infra aws iam get-role-policy \
   --role-name SpawnSweepOrchestratorRole \
   --policy-name SpawnSweepOrchestratorPolicy
 ```
@@ -763,7 +763,7 @@ Should include:
 **Check if Lambda is still running:**
 ```bash
 # Check recent invocations
-AWS_PROFILE=mycelium-infra aws lambda list-invocations \
+AWS_PROFILE=spore-host-infra aws lambda list-invocations \
   --function-name spawn-sweep-orchestrator \
   --max-items 10
 ```
@@ -785,7 +785,7 @@ AWS_PROFILE=mycelium-infra aws lambda list-invocations \
 
 **Workaround:** Cancel command terminates instances, Lambda will eventually mark as COMPLETED when activeCount=0.
 
-**Permanent fix:** See [Issue #26](https://github.com/scttfrdmn/mycelium/issues/26) - add cancellation flag check in Lambda polling loop.
+**Permanent fix:** See [Issue #26](https://github.com/scttfrdmn/spore-host/issues/26) - add cancellation flag check in Lambda polling loop.
 
 ### High Costs
 
@@ -861,17 +861,17 @@ aws dynamodb get-item \
 6. Iterate
 
 **Adding features:**
-- Multi-region support: See [Issue #24](https://github.com/scttfrdmn/mycelium/issues/24)
-- Cost tracking: See [Issue #25](https://github.com/scttfrdmn/mycelium/issues/25)
-- Cancellation flag: See [Issue #26](https://github.com/scttfrdmn/mycelium/issues/26)
+- Multi-region support: See [Issue #24](https://github.com/scttfrdmn/spore-host/issues/24)
+- Cost tracking: See [Issue #25](https://github.com/scttfrdmn/spore-host/issues/25)
+- Cancellation flag: See [Issue #26](https://github.com/scttfrdmn/spore-host/issues/26)
 
 ---
 
 ## Next Steps
 
 - **User guide:** See [PARAMETER_SWEEPS.md](PARAMETER_SWEEPS.md)
-- **Dashboard integration:** See [Issue #23](https://github.com/scttfrdmn/mycelium/issues/23)
-- **Report bugs:** [GitHub Issues](https://github.com/scttfrdmn/mycelium/issues)
+- **Dashboard integration:** See [Issue #23](https://github.com/scttfrdmn/spore-host/issues/23)
+- **Report bugs:** [GitHub Issues](https://github.com/scttfrdmn/spore-host/issues)
 
 ---
 

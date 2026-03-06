@@ -14,14 +14,14 @@
   - Can assume roles in sub-accounts
 
 - **Infrastructure Account** (966362334030)
-  - Email: scttfrdmn+mycelium-infra@gmail.com
+  - Email: scttfrdmn+spore-host-infra@gmail.com
   - Purpose: DNS, website, Lambda, Cognito
-  - CLI Profile: `mycelium-infra`
+  - CLI Profile: `spore-host-infra`
 
 - **Development Account** (435415984226)
-  - Email: scttfrdmn+mycelium-dev@gmail.com
+  - Email: scttfrdmn+spore-host-dev@gmail.com
   - Purpose: Test EC2 instances
-  - CLI Profile: `mycelium-dev`
+  - CLI Profile: `spore-host-dev`
 
 ### Phase 2: DNS Migration ✅
 - **New Hosted Zone** created in infrastructure account
@@ -51,9 +51,9 @@
 - **Action:** Retry creation in ~5 minutes:
   ```bash
   # Wait for propagation, then:
-  AWS_PROFILE=mycelium-infra aws s3 mb s3://spore-host-website --region us-east-1
-  AWS_PROFILE=mycelium-infra aws s3 sync /tmp/s3-migration/spore-host-website s3://spore-host-website
-  AWS_PROFILE=mycelium-infra aws s3 website s3://spore-host-website --index-document index.html
+  AWS_PROFILE=spore-host-infra aws s3 mb s3://spore-host-website --region us-east-1
+  AWS_PROFILE=spore-host-infra aws s3 sync /tmp/s3-migration/spore-host-website s3://spore-host-website
+  AWS_PROFILE=spore-host-infra aws s3 website s3://spore-host-website --index-document index.html
   ```
 
 **Binary Buckets:**
@@ -103,7 +103,7 @@
 **Current State:** Not yet created
 
 **Tasks:**
-1. Run `scripts/setup-dashboard-cognito.sh` using `mycelium-infra` profile
+1. Run `scripts/setup-dashboard-cognito.sh` using `spore-host-infra` profile
 2. Update `web/js/auth.js` with Identity Pool ID
 3. Test authentication flow
 
@@ -118,14 +118,14 @@
 
 **Commands:**
 ```bash
-# Replace default → mycelium-infra in scripts
-cd /Users/scttfrdmn/src/mycelium
+# Replace default → spore-host-infra in scripts
+cd /Users/scttfrdmn/src/spore-host
 grep -r "AWS_PROFILE=default" scripts/ --files-with-matches | \
-  xargs sed -i '' 's/AWS_PROFILE=default/AWS_PROFILE=mycelium-infra/g'
+  xargs sed -i '' 's/AWS_PROFILE=default/AWS_PROFILE=spore-host-infra/g'
 
-# Replace aws → mycelium-dev in scripts
+# Replace aws → spore-host-dev in scripts
 grep -r "AWS_PROFILE=aws" scripts/ --files-with-matches | \
-  xargs sed -i '' 's/AWS_PROFILE=aws/AWS_PROFILE=mycelium-dev/g'
+  xargs sed -i '' 's/AWS_PROFILE=aws/AWS_PROFILE=spore-host-dev/g'
 ```
 
 **Estimated Time:** 30 minutes
@@ -167,8 +167,8 @@ grep -r "AWS_PROFILE=aws" scripts/ --files-with-matches | \
 2. **Complete S3 migration:**
    ```bash
    # Website bucket
-   AWS_PROFILE=mycelium-infra aws s3 mb s3://spore-host-website --region us-east-1
-   AWS_PROFILE=mycelium-infra aws s3 sync /tmp/s3-migration/spore-host-website s3://spore-host-website
+   AWS_PROFILE=spore-host-infra aws s3 mb s3://spore-host-website --region us-east-1
+   AWS_PROFILE=spore-host-infra aws s3 sync /tmp/s3-migration/spore-host-website s3://spore-host-website
 
    # Binary buckets
    bash /tmp/migrate-binary-buckets.sh
@@ -191,9 +191,9 @@ grep -r "AWS_PROFILE=aws" scripts/ --files-with-matches | \
 
 ## Files Created
 
-- `/Users/scttfrdmn/src/mycelium/AWS_ACCOUNT_STRUCTURE.md` - Complete account structure and original migration plan
-- `/Users/scttfrdmn/src/mycelium/DNS_MIGRATION_STATUS.md` - DNS-specific migration details and nameserver info
-- `/Users/scttfrdmn/src/mycelium/MIGRATION_STATUS.md` - This file - overall migration progress
+- `/Users/scttfrdmn/src/spore-host/AWS_ACCOUNT_STRUCTURE.md` - Complete account structure and original migration plan
+- `/Users/scttfrdmn/src/spore-host/DNS_MIGRATION_STATUS.md` - DNS-specific migration details and nameserver info
+- `/Users/scttfrdmn/src/spore-host/MIGRATION_STATUS.md` - This file - overall migration progress
 - `/tmp/migrate-binary-buckets.sh` - Script to migrate binary S3 buckets
 - `/tmp/s3-migration/` - Local backup of S3 bucket contents
 
@@ -204,10 +204,10 @@ grep -r "AWS_PROFILE=aws" scripts/ --files-with-matches | \
 AWS_PROFILE=management aws sts get-caller-identity
 
 # Infrastructure account (for DNS, website, Lambda)
-AWS_PROFILE=mycelium-infra aws sts get-caller-identity
+AWS_PROFILE=spore-host-infra aws sts get-caller-identity
 
 # Development account (for test EC2 instances)
-AWS_PROFILE=mycelium-dev aws sts get-caller-identity
+AWS_PROFILE=spore-host-dev aws sts get-caller-identity
 ```
 
 ## Rollback Notes

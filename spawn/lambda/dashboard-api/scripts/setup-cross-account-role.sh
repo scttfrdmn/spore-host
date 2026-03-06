@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-PROFILE=${1:-mycelium-dev}
+PROFILE=${1:-spore-host-dev}
 ROLE_NAME="SpawnDashboardCrossAccountReadRole"
 INFRA_ACCOUNT_ID="966362334030"
 

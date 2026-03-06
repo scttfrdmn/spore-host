@@ -13,10 +13,10 @@ The integration tests verify the following features:
 
 ## Prerequisites
 
-1. **AWS Credentials**: Configure AWS profiles for `mycelium-infra` and `mycelium-dev`
+1. **AWS Credentials**: Configure AWS profiles for `spore-host-infra` and `spore-host-dev`
 2. **Permissions**: Ensure you have permissions to:
-   - Launch EC2 instances in `mycelium-dev` account
-   - Access DynamoDB in `mycelium-infra` account
+   - Launch EC2 instances in `spore-host-dev` account
+   - Access DynamoDB in `spore-host-infra` account
    - Invoke Lambda functions
 3. **Build**: Run `go build -o bin/spawn .` to build the CLI
 
@@ -74,7 +74,7 @@ Running the full test suite once:
 ## Troubleshooting
 
 ### "Failed to load AWS config"
-- Ensure AWS profiles are configured: `aws configure --profile mycelium-infra`
+- Ensure AWS profiles are configured: `aws configure --profile spore-host-infra`
 
 ### "Failed to query sweep status"
 - Check DynamoDB table exists: `spawn-sweep-orchestration`
@@ -82,7 +82,7 @@ Running the full test suite once:
 
 ### "Launch command failed"
 - Ensure `./bin/spawn` binary exists
-- Check EC2 launch permissions in `mycelium-dev` account
+- Check EC2 launch permissions in `spore-host-dev` account
 
 ### Tests timeout
 - Increase timeout: `go test -v -tags=integration -timeout 60m ./...`

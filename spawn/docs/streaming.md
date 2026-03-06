@@ -80,7 +80,7 @@ producer (PUSH) → processor (PULL → PUSH) → consumer (PULL)
 
 **Example:**
 ```go
-import "github.com/scttfrdmn/mycelium/spawn/pkg/streaming"
+import "github.com/scttfrdmn/spore-host/spawn/pkg/streaming"
 
 // Producer
 push, _ := streaming.NewZMQTransport(streaming.ZMQConfig{
@@ -247,8 +247,8 @@ while True:
 package main
 
 import (
-    "github.com/scttfrdmn/mycelium/spawn/pkg/streaming"
-    "github.com/scttfrdmn/mycelium/spawn/pkg/pipeline"
+    "github.com/scttfrdmn/spore-host/spawn/pkg/streaming"
+    "github.com/scttfrdmn/spore-host/spawn/pkg/pipeline"
 )
 
 func main() {

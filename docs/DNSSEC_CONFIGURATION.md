@@ -52,11 +52,11 @@ You need to add this DS (Delegation Signer) record to your domain registrar:
 **Route53 Registrar:**
 ```bash
 # If your domain is registered with Route53
-AWS_PROFILE=mycelium-infra aws route53domains enable-domain-auto-renew \
+AWS_PROFILE=spore-host-infra aws route53domains enable-domain-auto-renew \
   --domain-name spore.host
 
 # Get domain info
-AWS_PROFILE=mycelium-infra aws route53domains get-domain-detail \
+AWS_PROFILE=spore-host-infra aws route53domains get-domain-detail \
   --domain-name spore.host
 ```
 
@@ -90,7 +90,7 @@ Expected output should show `ad` (authenticated data) flag.
 
 **Check status:**
 ```bash
-AWS_PROFILE=mycelium-infra aws route53 get-dnssec \
+AWS_PROFILE=spore-host-infra aws route53 get-dnssec \
   --hosted-zone-id Z0341053304H0DQXF6U4X
 ```
 
@@ -131,13 +131,13 @@ AWS_PROFILE=mycelium-infra aws route53 get-dnssec \
 
 3. **Verify KMS key permissions:**
    ```bash
-   AWS_PROFILE=mycelium-infra aws kms describe-key \
+   AWS_PROFILE=spore-host-infra aws kms describe-key \
      --key-id 0e41f267-eec6-498e-a24a-094d5d56a228
    ```
 
 4. **Check DNSSEC status:**
    ```bash
-   AWS_PROFILE=mycelium-infra aws route53 get-dnssec \
+   AWS_PROFILE=spore-host-infra aws route53 get-dnssec \
      --hosted-zone-id Z0341053304H0DQXF6U4X \
      --query 'Status.ServeSignature'
    ```

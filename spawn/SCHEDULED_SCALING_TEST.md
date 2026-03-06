@@ -11,11 +11,11 @@ Test time-based scheduled actions that override desired capacity.
 make build
 
 # Verify Lambda is deployed (no code changes needed)
-AWS_PROFILE=mycelium-infra aws lambda get-function \
+AWS_PROFILE=spore-host-infra aws lambda get-function \
   --function-name spawn-autoscale-orchestrator-production
 
 # Set environment
-export AWS_PROFILE=mycelium-dev
+export AWS_PROFILE=spore-host-dev
 ```
 
 ### Test Setup
@@ -69,7 +69,7 @@ spawn autoscale status schedule-test --env production
 # Expected: Shows schedule in output
 
 # Check Lambda logs
-AWS_PROFILE=mycelium-infra aws logs tail \
+AWS_PROFILE=spore-host-infra aws logs tail \
   /aws/lambda/spawn-autoscale-orchestrator-production \
   --since 5m --follow
 # Expected: Log line "scheduled action \"immediate-test\" triggered"
@@ -139,7 +139,7 @@ spawn autoscale add-schedule schedule-test \
 sleep 60
 
 # Check which schedule won
-AWS_PROFILE=mycelium-infra aws logs tail \
+AWS_PROFILE=spore-host-infra aws logs tail \
   /aws/lambda/spawn-autoscale-orchestrator-production \
   --since 5m
 # Expected: Log shows one schedule triggered (most recent in DynamoDB)

@@ -1,10 +1,10 @@
 #!/bin/bash
 # setup-teams-tables.sh — Creates DynamoDB tables and GSIs for team-based resource sharing (Issue #137)
-# Uses mycelium-infra AWS profile. Safe to re-run (skips existing resources).
+# Uses spore-host-infra AWS profile. Safe to re-run (skips existing resources).
 
 set -euo pipefail
 
-AWS_PROFILE="${AWS_PROFILE:-mycelium-infra}"
+AWS_PROFILE="${AWS_PROFILE:-spore-host-infra}"
 AWS_REGION="${AWS_REGION:-us-east-1}"
 
 echo "==> Setting up teams tables (profile: $AWS_PROFILE, region: $AWS_REGION)"
@@ -139,4 +139,4 @@ fi
 
 echo ""
 echo "==> Done. Tables and GSIs are ready."
-echo "    Verify in AWS console: DynamoDB > Tables (account: mycelium-infra)"
+echo "    Verify in AWS console: DynamoDB > Tables (account: spore-host-infra)"

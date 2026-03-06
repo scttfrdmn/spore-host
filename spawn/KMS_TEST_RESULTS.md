@@ -3,7 +3,7 @@
 **Date:** 2026-01-27
 **KMS Key:** `alias/spawn-webhook-encryption` (999884b3-23ce-44dd-88e8-5f46300cbd54)
 **Region:** us-east-1
-**Account:** 966362334030 (mycelium-infra)
+**Account:** 966362334030 (spore-host-infra)
 
 ## Test Summary
 

@@ -1,4 +1,4 @@
-module github.com/scttfrdmn/mycelium/spawn/lambda/dashboard-websocket-processor
+module github.com/scttfrdmn/spore-host/spawn/lambda/dashboard-websocket-processor
 
 go 1.25.5
 

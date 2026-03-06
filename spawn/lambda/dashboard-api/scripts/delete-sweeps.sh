@@ -5,7 +5,7 @@ set -e
 # Usage: ./delete-sweeps.sh [aws-profile] [sweep-id1] [sweep-id2] ...
 #        ./delete-sweeps.sh [aws-profile] --all-completed
 
-PROFILE=${1:-mycelium-infra}
+PROFILE=${1:-spore-host-infra}
 shift  # Remove profile from args
 REGION=us-east-1
 TABLE=spawn-sweep-orchestration

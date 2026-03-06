@@ -363,7 +363,7 @@ spawn autoscale set-policy test-group --scaling-policy queue-depth --queue https
 spawn autoscale set-metric-policy test-group --metric-policy cpu --target-value 70
 
 # 4. Verify Lambda logs
-AWS_PROFILE=mycelium-infra aws logs tail /aws/lambda/spawn-autoscale-orchestrator-production --since 10m
+AWS_PROFILE=spore-host-infra aws logs tail /aws/lambda/spawn-autoscale-orchestrator-production --since 10m
 ```
 
 ### Infrastructure (Priority: Medium)

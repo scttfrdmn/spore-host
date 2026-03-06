@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/scttfrdmn/mycelium/spawn/pkg/staging"
-	"github.com/scttfrdmn/mycelium/spawn/pkg/testutil"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/staging"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/testutil"
 )
 
 // TestStageUpload tests the stage upload command logic

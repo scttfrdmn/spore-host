@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/scttfrdmn/mycelium/spawn/pkg/aws"
-	"github.com/scttfrdmn/mycelium/spawn/pkg/platform"
-	"github.com/scttfrdmn/mycelium/spawn/pkg/sweep"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/aws"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/platform"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/sweep"
 	"github.com/spf13/cobra"
 )
 
@@ -325,10 +325,10 @@ func resumeSweepDetached(ctx context.Context, sweepID string) error {
 	fmt.Fprintf(os.Stderr, "\n🔄 Resuming sweep in detached mode...\n")
 	fmt.Fprintf(os.Stderr, "   Sweep ID: %s\n\n", sweepID)
 
-	// Load mycelium-infra config for DynamoDB and Lambda
+	// Load spore-host-infra config for DynamoDB and Lambda
 	cfg, err := config.LoadDefaultConfig(ctx,
 		config.WithRegion("us-east-1"),
-		config.WithSharedConfigProfile("mycelium-infra"),
+		config.WithSharedConfigProfile("spore-host-infra"),
 	)
 	if err != nil {
 		return fmt.Errorf("failed to load AWS config: %w", err)

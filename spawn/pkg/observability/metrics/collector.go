@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/scttfrdmn/mycelium/spawn/pkg/provider"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/provider"
 )
 
 // MetricsSource provides data for metrics collection

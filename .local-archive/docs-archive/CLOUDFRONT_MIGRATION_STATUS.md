@@ -32,7 +32,7 @@
    - Currently: Pending DNS validation
    - Check status:
      ```bash
-     AWS_PROFILE=mycelium-infra aws acm describe-certificate \
+     AWS_PROFILE=spore-host-infra aws acm describe-certificate \
        --certificate-arn arn:aws:acm:us-east-1:966362334030:certificate/55203b10-e7cc-46d2-a3fd-d134d8f523d9 \
        --region us-east-1 \
        --query 'Certificate.Status'
@@ -46,7 +46,7 @@
 
 **Check status:**
 ```bash
-AWS_PROFILE=mycelium-infra aws acm describe-certificate \
+AWS_PROFILE=spore-host-infra aws acm describe-certificate \
   --certificate-arn arn:aws:acm:us-east-1:966362334030:certificate/55203b10-e7cc-46d2-a3fd-d134d8f523d9 \
   --region us-east-1 \
   --query 'Certificate.Status' \
@@ -59,7 +59,7 @@ AWS_PROFILE=mycelium-infra aws acm describe-certificate \
 
 **Ensure bucket exists:**
 ```bash
-AWS_PROFILE=mycelium-infra aws s3 ls s3://spore-host-website
+AWS_PROFILE=spore-host-infra aws s3 ls s3://spore-host-website
 ```
 
 **If not exists:** Run S3 migration completion script (see `S3_MIGRATION_STATUS.md`)
@@ -161,7 +161,7 @@ AWS_PROFILE=mycelium-infra aws s3 ls s3://spore-host-website
 
 **Create distribution:**
 ```bash
-AWS_PROFILE=mycelium-infra aws cloudfront create-distribution \
+AWS_PROFILE=spore-host-infra aws cloudfront create-distribution \
   --distribution-config file:///tmp/cloudfront-new-config.json \
   --output json > /tmp/cloudfront-new-distribution.json
 
@@ -177,7 +177,7 @@ echo "New Distribution Domain: $NEW_DIST_DOMAIN"
 
 **Check status:**
 ```bash
-AWS_PROFILE=mycelium-infra aws cloudfront get-distribution \
+AWS_PROFILE=spore-host-infra aws cloudfront get-distribution \
   --id $NEW_DIST_ID \
   --query 'Distribution.Status' \
   --output text
@@ -206,7 +206,7 @@ cat > /tmp/dns-update-cloudfront.json <<EOF
 }
 EOF
 
-AWS_PROFILE=mycelium-infra aws route53 change-resource-record-sets \
+AWS_PROFILE=spore-host-infra aws route53 change-resource-record-sets \
   --hosted-zone-id Z0341053304H0DQXF6U4X \
   --change-batch file:///tmp/dns-update-cloudfront.json
 ```
@@ -276,7 +276,7 @@ echo "=== CloudFront Migration Completion ==="
 
 # 1. Verify ACM certificate
 echo "Checking ACM certificate..."
-CERT_STATUS=$(AWS_PROFILE=mycelium-infra aws acm describe-certificate \
+CERT_STATUS=$(AWS_PROFILE=spore-host-infra aws acm describe-certificate \
   --certificate-arn arn:aws:acm:us-east-1:966362334030:certificate/55203b10-e7cc-46d2-a3fd-d134d8f523d9 \
   --region us-east-1 \
   --query 'Certificate.Status' \
@@ -290,7 +290,7 @@ echo "✓ Certificate issued"
 
 # 2. Verify S3 bucket exists
 echo "Checking S3 bucket..."
-if ! AWS_PROFILE=mycelium-infra aws s3 ls s3://spore-host-website > /dev/null 2>&1; then
+if ! AWS_PROFILE=spore-host-infra aws s3 ls s3://spore-host-website > /dev/null 2>&1; then
   echo "✗ S3 bucket does not exist"
   exit 1
 fi
@@ -298,7 +298,7 @@ echo "✓ S3 bucket exists"
 
 # 3. Create CloudFront distribution
 echo "Creating CloudFront distribution..."
-AWS_PROFILE=mycelium-infra aws cloudfront create-distribution \
+AWS_PROFILE=spore-host-infra aws cloudfront create-distribution \
   --distribution-config file:///tmp/cloudfront-new-config.json \
   --output json > /tmp/cloudfront-new-distribution.json
 
@@ -310,7 +310,7 @@ echo "  Domain: $NEW_DIST_DOMAIN"
 
 # 4. Wait for deployment
 echo "Waiting for distribution deployment (15-30 min)..."
-AWS_PROFILE=mycelium-infra aws cloudfront wait distribution-deployed --id $NEW_DIST_ID
+AWS_PROFILE=spore-host-infra aws cloudfront wait distribution-deployed --id $NEW_DIST_ID
 echo "✓ Distribution deployed"
 
 # 5. Update DNS
@@ -332,7 +332,7 @@ cat > /tmp/dns-update-cloudfront.json <<EOF
 }
 EOF
 
-AWS_PROFILE=mycelium-infra aws route53 change-resource-record-sets \
+AWS_PROFILE=spore-host-infra aws route53 change-resource-record-sets \
   --hosted-zone-id Z0341053304H0DQXF6U4X \
   --change-batch file:///tmp/dns-update-cloudfront.json
 

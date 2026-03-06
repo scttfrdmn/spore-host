@@ -9,8 +9,8 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
-	"github.com/scttfrdmn/mycelium/spawn/pkg/scheduler"
-	"github.com/scttfrdmn/mycelium/spawn/pkg/staging"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/scheduler"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/staging"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )
@@ -185,10 +185,10 @@ func runScheduleCreate(cmd *cobra.Command, args []string) error {
 
 	fmt.Fprintf(os.Stderr, "\n📅 Creating Scheduled Execution\n\n")
 
-	// Load AWS config for mycelium-infra
+	// Load AWS config for spore-host-infra
 	cfg, err := config.LoadDefaultConfig(ctx,
 		config.WithRegion("us-east-1"),
-		config.WithSharedConfigProfile("mycelium-infra"),
+		config.WithSharedConfigProfile("spore-host-infra"),
 	)
 	if err != nil {
 		return fmt.Errorf("failed to load AWS config: %w", err)
@@ -302,10 +302,10 @@ func runScheduleCreate(cmd *cobra.Command, args []string) error {
 func runScheduleList(cmd *cobra.Command, args []string) error {
 	ctx := cmd.Context()
 
-	// Load AWS config for mycelium-infra
+	// Load AWS config for spore-host-infra
 	cfg, err := config.LoadDefaultConfig(ctx,
 		config.WithRegion("us-east-1"),
-		config.WithSharedConfigProfile("mycelium-infra"),
+		config.WithSharedConfigProfile("spore-host-infra"),
 	)
 	if err != nil {
 		return fmt.Errorf("failed to load AWS config: %w", err)
@@ -364,10 +364,10 @@ func runScheduleDescribe(cmd *cobra.Command, args []string) error {
 	ctx := cmd.Context()
 	scheduleID := args[0]
 
-	// Load AWS config for mycelium-infra
+	// Load AWS config for spore-host-infra
 	cfg, err := config.LoadDefaultConfig(ctx,
 		config.WithRegion("us-east-1"),
-		config.WithSharedConfigProfile("mycelium-infra"),
+		config.WithSharedConfigProfile("spore-host-infra"),
 	)
 	if err != nil {
 		return fmt.Errorf("failed to load AWS config: %w", err)
@@ -450,10 +450,10 @@ func runScheduleCancel(cmd *cobra.Command, args []string) error {
 	fmt.Fprintf(os.Stderr, "\n🛑 Cancelling Schedule\n")
 	fmt.Fprintf(os.Stderr, "   Schedule ID: %s\n\n", scheduleID)
 
-	// Load AWS config for mycelium-infra
+	// Load AWS config for spore-host-infra
 	cfg, err := config.LoadDefaultConfig(ctx,
 		config.WithRegion("us-east-1"),
-		config.WithSharedConfigProfile("mycelium-infra"),
+		config.WithSharedConfigProfile("spore-host-infra"),
 	)
 	if err != nil {
 		return fmt.Errorf("failed to load AWS config: %w", err)
@@ -501,10 +501,10 @@ func updateScheduleStatusCmd(ctx context.Context, scheduleID string, status sche
 	fmt.Fprintf(os.Stderr, "\n⏸️  %s Schedule\n", action)
 	fmt.Fprintf(os.Stderr, "   Schedule ID: %s\n\n", scheduleID)
 
-	// Load AWS config for mycelium-infra
+	// Load AWS config for spore-host-infra
 	cfg, err := config.LoadDefaultConfig(ctx,
 		config.WithRegion("us-east-1"),
-		config.WithSharedConfigProfile("mycelium-infra"),
+		config.WithSharedConfigProfile("spore-host-infra"),
 	)
 	if err != nil {
 		return fmt.Errorf("failed to load AWS config: %w", err)

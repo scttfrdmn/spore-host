@@ -3,7 +3,7 @@ package compliance
 import (
 	"fmt"
 
-	"github.com/scttfrdmn/mycelium/spawn/pkg/aws"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/aws"
 )
 
 // Control represents a single security control requirement

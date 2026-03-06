@@ -6,7 +6,7 @@
 
 ```bash
 # Download latest release
-curl -L https://github.com/scttfrdmn/mycelium/releases/latest/download/spawn-$(uname -s)-$(uname -m) -o spawn
+curl -L https://github.com/scttfrdmn/spore-host/releases/latest/download/spawn-$(uname -s)-$(uname -m) -o spawn
 chmod +x spawn
 sudo mv spawn /usr/local/bin/
 ```
@@ -479,7 +479,7 @@ regions:
 
 ```bash
 # AWS profile
-export AWS_PROFILE=mycelium-dev
+export AWS_PROFILE=spore-host-dev
 
 # AWS region (override default)
 export AWS_REGION=us-east-1
@@ -686,5 +686,5 @@ spawn launch --params sweep.yaml --debug
 
 ## Support
 
-- **GitHub Issues**: https://github.com/scttfrdmn/mycelium/issues
-- **Discussions**: https://github.com/scttfrdmn/mycelium/discussions
+- **GitHub Issues**: https://github.com/scttfrdmn/spore-host/issues
+- **Discussions**: https://github.com/scttfrdmn/spore-host/discussions

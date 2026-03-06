@@ -6,7 +6,7 @@ set -e
 #
 # This is a ONE-TIME setup script for the default account (752123829273)
 
-PROFILE=${1:-mycelium-infra}
+PROFILE=${1:-spore-host-infra}
 TABLE_NAME="spawn-user-accounts"
 REGION="us-east-1"
 

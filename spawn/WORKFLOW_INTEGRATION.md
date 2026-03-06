@@ -15,7 +15,7 @@ spawn launch --params sweep.yaml --detach
 ```
 
 **How it works:**
-- Sweep orchestration runs in Lambda (mycelium-infra account)
+- Sweep orchestration runs in Lambda (spore-host-infra account)
 - Your workflow continues immediately
 - Sweep survives disconnects and workflow restarts
 - Perfect for long-running sweeps
@@ -1080,8 +1080,8 @@ done
 ## Support
 
 For issues or questions:
-- GitHub: https://github.com/scttfrdmn/mycelium/issues
-- Documentation: https://github.com/scttfrdmn/mycelium/tree/main/spawn
+- GitHub: https://github.com/scttfrdmn/spore-host/issues
+- Documentation: https://github.com/scttfrdmn/spore-host/tree/main/spawn
 
 ## See Also
 

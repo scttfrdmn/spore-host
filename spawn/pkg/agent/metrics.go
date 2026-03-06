@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/scttfrdmn/mycelium/spawn/pkg/observability/metrics"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/observability/metrics"
 )
 
 // GetStartTime returns when the agent started

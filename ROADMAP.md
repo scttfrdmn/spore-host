@@ -1,6 +1,6 @@
-# mycelium Roadmap
+# spore-host Roadmap
 
-Feature ideas and planned enhancements for the mycelium project (truffle, spawn, spawnd).
+Feature ideas and planned enhancements for the spore-host project (truffle, spawn, spawnd).
 
 ## In Progress / Next Up
 

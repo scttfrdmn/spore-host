@@ -1,4 +1,4 @@
-module github.com/scttfrdmn/mycelium/spawn/lambda/cost-history-collector
+module github.com/scttfrdmn/spore-host/spawn/lambda/cost-history-collector
 
 go 1.25.0
 

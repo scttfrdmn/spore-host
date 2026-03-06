@@ -7,7 +7,7 @@ set -e
 # This is a ONE-TIME setup script for Cloud Administrators.
 # After running this, developers only need PowerUserAccess to use spawn.
 
-PROFILE=${1:-mycelium-infra}
+PROFILE=${1:-spore-host-infra}
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "  Setting up spawnd IAM Role (One-Time Setup)"

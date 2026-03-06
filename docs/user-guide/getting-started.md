@@ -18,7 +18,7 @@ brew install spawn
 
 **Linux (pre-built binary):**
 ```bash
-curl -Lo spawn https://github.com/scttfrdmn/mycelium/releases/latest/download/spawn-linux-amd64
+curl -Lo spawn https://github.com/scttfrdmn/spore-host/releases/latest/download/spawn-linux-amd64
 chmod +x spawn
 sudo mv spawn /usr/local/bin/
 ```

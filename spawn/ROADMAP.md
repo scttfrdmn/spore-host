@@ -154,7 +154,7 @@ Spawn has evolved from a single-instance tool into a **production-ready cloud or
 - **Phase 4.3**: Multi-queue support with weighted priorities (0.0-1.0)
 - **Phase 4.4**: Hybrid policies (queue + metric + schedule) with intelligent combination
 - **Drain Enhancement**: Job registry integration for intelligent drain detection
-- **Cross-Account**: Lambda in mycelium-infra orchestrating EC2 in mycelium-dev
+- **Cross-Account**: Lambda in spore-host-infra orchestrating EC2 in spore-host-dev
 - **Production Ready**: Deployed and validated in production with E2E testing
 - **Delivered:** v0.20.0
 

@@ -5,7 +5,7 @@ set -e
 # Supports: Globus Auth, Google, GitHub
 # Usage: ./setup-dashboard-cognito.sh [aws-profile]
 
-PROFILE=${1:-mycelium-infra}
+PROFILE=${1:-spore-host-infra}
 IDENTITY_POOL_NAME="spawn-dashboard-identity-pool"
 REGION="us-east-1"
 

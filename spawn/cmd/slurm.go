@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/scttfrdmn/mycelium/spawn/pkg/slurm"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/slurm"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )

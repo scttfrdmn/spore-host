@@ -8,7 +8,7 @@ set -e
 #   ./upload_spawnd.sh my-spawn-account us-east-1 us-west-2
 #   ./upload_spawnd.sh my-spawn-account all  # All regions
 
-PROFILE=${1:-mycelium-infra}
+PROFILE=${1:-spore-host-infra}
 shift
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

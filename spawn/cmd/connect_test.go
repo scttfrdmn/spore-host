@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/scttfrdmn/mycelium/pkg/i18n"
+	"github.com/scttfrdmn/spore-host/pkg/i18n"
 )
 
 // TestConnectCommand_HasSSHAlias validates that 'ssh' is an alias for 'connect'

@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/scttfrdmn/mycelium/spawn/pkg/dns"
-	"github.com/scttfrdmn/mycelium/spawn/pkg/provider"
-	"github.com/scttfrdmn/mycelium/spawn/pkg/registry"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/dns"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/provider"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/registry"
 )
 
 type Agent struct {

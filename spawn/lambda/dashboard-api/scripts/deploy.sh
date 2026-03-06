@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-PROFILE=${1:-mycelium-infra}
+PROFILE=${1:-spore-host-infra}
 FUNCTION_NAME="spawn-dashboard-api"
 
 echo "Building Lambda function..."

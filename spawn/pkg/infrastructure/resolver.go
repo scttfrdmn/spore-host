@@ -3,11 +3,11 @@ package infrastructure
 import (
 	"fmt"
 
-	"github.com/scttfrdmn/mycelium/spawn/pkg/config"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/config"
 )
 
 // Resolver resolves infrastructure resource names and ARNs
-// It handles both shared (mycelium-infra account) and self-hosted modes
+// It handles both shared (spore-host-infra account) and self-hosted modes
 type Resolver struct {
 	config    *config.InfrastructureConfig
 	region    string
@@ -84,7 +84,7 @@ func (r *Resolver) GetSchedulerHandlerARN() string {
 	if r.config.Lambda.SchedulerHandlerARN != "" {
 		return r.config.Lambda.SchedulerHandlerARN
 	}
-	// Default to mycelium-infra account (966362334030)
+	// Default to spore-host-infra account (966362334030)
 	return fmt.Sprintf("arn:aws:lambda:%s:966362334030:function:spawn-scheduler-handler", r.region)
 }
 
@@ -93,7 +93,7 @@ func (r *Resolver) GetSweepOrchestratorARN() string {
 	if r.config.Lambda.SweepOrchestratorARN != "" {
 		return r.config.Lambda.SweepOrchestratorARN
 	}
-	// Default to mycelium-infra account
+	// Default to spore-host-infra account
 	return fmt.Sprintf("arn:aws:lambda:%s:966362334030:function:spawn-sweep-orchestrator", r.region)
 }
 
@@ -102,7 +102,7 @@ func (r *Resolver) GetAlertHandlerARN() string {
 	if r.config.Lambda.AlertHandlerARN != "" {
 		return r.config.Lambda.AlertHandlerARN
 	}
-	// Default to mycelium-infra account
+	// Default to spore-host-infra account
 	return fmt.Sprintf("arn:aws:lambda:%s:966362334030:function:spawn-alert-handler", r.region)
 }
 
@@ -111,7 +111,7 @@ func (r *Resolver) GetDashboardAPIARN() string {
 	if r.config.Lambda.DashboardAPIARN != "" {
 		return r.config.Lambda.DashboardAPIARN
 	}
-	// Default to mycelium-infra account
+	// Default to spore-host-infra account
 	return fmt.Sprintf("arn:aws:lambda:%s:966362334030:function:spawn-dashboard-api", r.region)
 }
 
@@ -144,13 +144,13 @@ func (r *Resolver) GetRegion() string {
 }
 
 // GetInfrastructureAccount returns the infrastructure account ID
-// For shared mode, returns mycelium-infra (966362334030)
+// For shared mode, returns spore-host-infra (966362334030)
 // For self-hosted mode, returns the current account ID
 func (r *Resolver) GetInfrastructureAccount() string {
 	if r.IsSelfHosted() {
 		return r.accountID
 	}
-	return "966362334030" // mycelium-infra account
+	return "966362334030" // spore-host-infra account
 }
 
 // GetResourceSummary returns a summary of resolved resource names for display

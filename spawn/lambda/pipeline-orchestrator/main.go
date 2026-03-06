@@ -22,8 +22,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/sns"
 	snstypes "github.com/aws/aws-sdk-go-v2/service/sns/types"
-	spawnaws "github.com/scttfrdmn/mycelium/spawn/pkg/aws"
-	"github.com/scttfrdmn/mycelium/spawn/pkg/pipeline"
+	spawnaws "github.com/scttfrdmn/spore-host/spawn/pkg/aws"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/pipeline"
 )
 
 const (

@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/scttfrdmn/mycelium/spawn/pkg/provider"
-	"github.com/scttfrdmn/mycelium/spawn/pkg/registry"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/provider"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/registry"
 )
 
 // TestHybridWorkflow tests the complete hybrid compute workflow

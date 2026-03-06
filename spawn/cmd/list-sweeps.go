@@ -78,10 +78,10 @@ type SweepSummary struct {
 func runListSweeps(cmd *cobra.Command, args []string) error {
 	ctx := context.Background()
 
-	// Load AWS config for mycelium-infra (where DynamoDB lives)
+	// Load AWS config for spore-host-infra (where DynamoDB lives)
 	cfg, err := config.LoadDefaultConfig(ctx,
 		config.WithRegion("us-east-1"),
-		config.WithSharedConfigProfile("mycelium-infra"),
+		config.WithSharedConfigProfile("spore-host-infra"),
 	)
 	if err != nil {
 		return fmt.Errorf("failed to load AWS config: %w", err)

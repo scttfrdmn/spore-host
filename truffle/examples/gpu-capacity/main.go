@@ -6,7 +6,7 @@ import (
 	"log"
 	"sort"
 
-	"github.com/scttfrdmn/mycelium/truffle/pkg/aws"
+	"github.com/scttfrdmn/spore-host/truffle/pkg/aws"
 )
 
 // Example: Check capacity reservations for GPU instances

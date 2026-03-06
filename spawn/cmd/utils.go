@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/scttfrdmn/mycelium/spawn/pkg/aws"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/aws"
 )
 
 // resolveInstance finds an instance by ID or name

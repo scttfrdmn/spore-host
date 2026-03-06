@@ -1,4 +1,4 @@
-module github.com/myceliumnetwork/mycelium/spawn/lambda/sweep-orchestrator
+module github.com/scttfrdmn/spore-host/spawn/lambda/sweep-orchestrator
 
 go 1.24.0
 
@@ -12,7 +12,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/lambda v1.87.1
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.95.1
 	github.com/aws/aws-sdk-go-v2/service/sts v1.41.6
-	github.com/scttfrdmn/mycelium/spawn v0.0.0
+	github.com/scttfrdmn/spore-host/spawn v0.0.0
 )
 
 require (
@@ -35,4 +35,4 @@ require (
 	github.com/aws/smithy-go v1.24.0 // indirect
 )
 
-replace github.com/scttfrdmn/mycelium/spawn => ../..
+replace github.com/scttfrdmn/spore-host/spawn => ../..

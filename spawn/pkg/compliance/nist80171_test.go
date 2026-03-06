@@ -3,7 +3,7 @@ package compliance
 import (
 	"testing"
 
-	"github.com/scttfrdmn/mycelium/spawn/pkg/aws"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/aws"
 )
 
 func TestNIST80171ControlSet(t *testing.T) {

@@ -1,8 +1,8 @@
-module github.com/scttfrdmn/mycelium/spawn/lambda/autoscale-orchestrator
+module github.com/scttfrdmn/spore-host/spawn/lambda/autoscale-orchestrator
 
 go 1.25.6
 
-replace github.com/scttfrdmn/mycelium/spawn => ../..
+replace github.com/scttfrdmn/spore-host/spawn => ../..
 
 require (
 	github.com/aws/aws-lambda-go v1.52.0
@@ -15,7 +15,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/lambda v1.88.0
 	github.com/aws/aws-sdk-go-v2/service/sqs v1.42.21
 	github.com/aws/aws-sdk-go-v2/service/sts v1.41.6
-	github.com/scttfrdmn/mycelium/spawn v0.0.0-00010101000000-000000000000
+	github.com/scttfrdmn/spore-host/spawn v0.0.0-00010101000000-000000000000
 )
 
 require (

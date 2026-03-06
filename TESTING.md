@@ -1,6 +1,6 @@
 # Testing Guide
 
-This guide covers testing practices for the mycelium project (spawn and truffle).
+This guide covers testing practices for the spore-host project (spawn and truffle).
 
 ## Running Tests
 
@@ -59,7 +59,7 @@ go tool cover -func=coverage.out
 ## Test Organization
 
 ```
-mycelium/
+spore-host/
 ├── pkg/
 │   └── i18n/
 │       ├── i18n.go

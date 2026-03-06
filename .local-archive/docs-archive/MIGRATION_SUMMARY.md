@@ -11,10 +11,10 @@
 **Status:** Complete
 
 - Created 2 new sub-accounts:
-  - **Infrastructure Account** (966362334030): mycelium-infra
-  - **Development Account** (435415984226): mycelium-dev
+  - **Infrastructure Account** (966362334030): spore-host-infra
+  - **Development Account** (435415984226): spore-host-dev
 - Created IAM user `scott-admin` in management account
-- Configured AWS CLI profiles (management, mycelium-infra, mycelium-dev)
+- Configured AWS CLI profiles (management, spore-host-infra, spore-host-dev)
 - Set up cross-account role assumptions
 
 ### Phase 2: DNS Migration ✅
@@ -82,7 +82,7 @@ See: `CLOUDFRONT_MIGRATION_STATUS.md`
 
 **Tasks:**
 1. Register OAuth applications (Globus Auth, Google, GitHub)
-2. Run `scripts/setup-dashboard-cognito.sh` with mycelium-infra profile
+2. Run `scripts/setup-dashboard-cognito.sh` with spore-host-infra profile
 3. Update `web/js/auth.js` with Identity Pool ID and Client IDs
 4. Redeploy website
 
@@ -95,8 +95,8 @@ See: `DASHBOARD_STATUS.md`
 
 **Tasks:**
 1. Update `spawn/CLAUDE.md` with new account references
-2. Replace `AWS_PROFILE=default` → `AWS_PROFILE=mycelium-infra` in scripts
-3. Replace `AWS_PROFILE=aws` → `AWS_PROFILE=mycelium-dev` in scripts
+2. Replace `AWS_PROFILE=default` → `AWS_PROFILE=spore-host-infra` in scripts
+3. Replace `AWS_PROFILE=aws` → `AWS_PROFILE=spore-host-dev` in scripts
 4. Update deployment scripts (`web/deploy.sh`, `scripts/upload_spawnd.sh`)
 5. Update documentation
 
@@ -141,12 +141,12 @@ See: `DASHBOARD_STATUS.md`
 2. **Wait for S3 propagation** (check status)
    ```bash
    # Test if bucket names are available
-   AWS_PROFILE=mycelium-infra aws s3 mb s3://spore-host-website --region us-east-1
+   AWS_PROFILE=spore-host-infra aws s3 mb s3://spore-host-website --region us-east-1
    ```
 
 3. **Check ACM certificate validation**
    ```bash
-   AWS_PROFILE=mycelium-infra aws acm describe-certificate \
+   AWS_PROFILE=spore-host-infra aws acm describe-certificate \
      --certificate-arn arn:aws:acm:us-east-1:966362334030:certificate/55203b10-e7cc-46d2-a3fd-d134d8f523d9 \
      --region us-east-1 \
      --query 'Certificate.Status'
@@ -203,8 +203,8 @@ See: `DASHBOARD_STATUS.md`
 | Account | ID | Profile | Purpose |
 |---------|-----|---------|---------|
 | **Management** | 752123829273 | `management` | Organization admin only |
-| **Infrastructure** | 966362334030 | `mycelium-infra` | DNS, website, Lambda, Cognito |
-| **Development** | 435415984226 | `mycelium-dev` | Test EC2 instances |
+| **Infrastructure** | 966362334030 | `spore-host-infra` | DNS, website, Lambda, Cognito |
+| **Development** | 435415984226 | `spore-host-dev` | Test EC2 instances |
 | ~~AWS (deprecated)~~ | 942542972736 | ~~`aws`~~ | No longer used |
 
 ## Test Commands
@@ -212,16 +212,16 @@ See: `DASHBOARD_STATUS.md`
 ```bash
 # Check current identity
 AWS_PROFILE=management aws sts get-caller-identity
-AWS_PROFILE=mycelium-infra aws sts get-caller-identity
-AWS_PROFILE=mycelium-dev aws sts get-caller-identity
+AWS_PROFILE=spore-host-infra aws sts get-caller-identity
+AWS_PROFILE=spore-host-dev aws sts get-caller-identity
 
 # List resources in infrastructure account
-AWS_PROFILE=mycelium-infra aws s3 ls
-AWS_PROFILE=mycelium-infra aws route53 list-hosted-zones
-AWS_PROFILE=mycelium-infra aws lambda list-functions
+AWS_PROFILE=spore-host-infra aws s3 ls
+AWS_PROFILE=spore-host-infra aws route53 list-hosted-zones
+AWS_PROFILE=spore-host-infra aws lambda list-functions
 
 # Test launch in dev account (when scripts updated)
-AWS_PROFILE=mycelium-dev ./bin/spawn launch --instance-type t3.micro --name test --ttl 1h
+AWS_PROFILE=spore-host-dev ./bin/spawn launch --instance-type t3.micro --name test --ttl 1h
 ```
 
 ---

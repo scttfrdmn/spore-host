@@ -2,7 +2,7 @@
 
 ## Overview
 
-Self-hosted mode allows you to run spawn infrastructure (Lambda, DynamoDB, S3) in your own AWS account instead of the shared mycelium-infra account.
+Self-hosted mode allows you to run spawn infrastructure (Lambda, DynamoDB, S3) in your own AWS account instead of the shared spore-host-infra account.
 
 **When you need this:**
 - NIST 800-53 Moderate or High baseline compliance
@@ -608,6 +608,6 @@ aws cloudwatch put-metric-alarm \
 
 ## Support
 
-- GitHub Issues: https://github.com/scttfrdmn/mycelium/issues
+- GitHub Issues: https://github.com/scttfrdmn/spore-host/issues
 - Infrastructure validation: `spawn validate --infrastructure`
 - Config help: `spawn config --help`

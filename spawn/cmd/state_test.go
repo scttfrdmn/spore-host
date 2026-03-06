@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/scttfrdmn/mycelium/spawn/pkg/testutil"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/testutil"
 )
 
 // TestParseDuration tests TTL duration parsing with various formats

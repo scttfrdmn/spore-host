@@ -7,8 +7,8 @@ set -e
 #
 # Usage: ./setup-dashboard-cross-account-role.sh [profile]
 
-PROFILE=${1:-mycelium-dev}
-INFRA_ACCOUNT_ID="966362334030"  # mycelium-infra account
+PROFILE=${1:-spore-host-dev}
+INFRA_ACCOUNT_ID="966362334030"  # spore-host-infra account
 REGION="us-east-1"
 ROLE_NAME="SpawnDashboardCrossAccountReadRole"
 
@@ -33,14 +33,14 @@ if [ -z "$ACCOUNT_ID" ]; then
     echo -e "${RED}✗ Failed to get AWS identity. Check your credentials.${NC}"
     exit 1
 fi
-echo -e "  ${GREEN}✓${NC} Account: $ACCOUNT_ID (mycelium-dev)"
+echo -e "  ${GREEN}✓${NC} Account: $ACCOUNT_ID (spore-host-dev)"
 echo ""
 
 # Get Cognito Identity Pool ID from infrastructure account
 echo "→ Getting Cognito Identity Pool ID from infrastructure account..."
 IDENTITY_POOL_ID=$(aws cognito-identity list-identity-pools \
     --max-results 60 \
-    --profile mycelium-infra \
+    --profile spore-host-infra \
     --region "$REGION" \
     --query "IdentityPools[?IdentityPoolName=='spawn-dashboard-identity-pool'].IdentityPoolId" \
     --output text 2>/dev/null || echo "")

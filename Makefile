@@ -1,9 +1,9 @@
-# Makefile for mycelium suite
+# Makefile for spore-host suite
 .PHONY: all build build-all clean install test test-i18n test-coverage test-coverage-report help
 
 # Build for current platform
 build:
-	@echo "Building mycelium suite..."
+	@echo "Building spore-host suite..."
 	@cd truffle && $(MAKE) build
 	@cd spawn && $(MAKE) build
 	@echo "✅ Build complete!"
@@ -15,7 +15,7 @@ build:
 
 # Build for all platforms
 build-all:
-	@echo "Building mycelium suite for all platforms..."
+	@echo "Building spore-host suite for all platforms..."
 	@cd truffle && $(MAKE) build-all
 	@cd spawn && $(MAKE) build-all
 	@echo "✅ Build complete for all platforms!"
@@ -31,7 +31,7 @@ clean:
 
 # Install locally (requires sudo)
 install:
-	@echo "Installing mycelium suite..."
+	@echo "Installing spore-host suite..."
 	@cd truffle && $(MAKE) install
 	@cd spawn && $(MAKE) install
 	@echo "✅ Installed to /usr/local/bin"
@@ -97,7 +97,7 @@ test-coverage-report:
 
 # Show help
 help:
-	@echo "mycelium - The underground network for AWS compute"
+	@echo "spore-host - The underground network for AWS compute"
 	@echo ""
 	@echo "Targets:"
 	@echo "  make build                  - Build for current platform"

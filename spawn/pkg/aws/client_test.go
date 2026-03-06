@@ -8,8 +8,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
-	"github.com/scttfrdmn/mycelium/spawn/pkg/aws/mock"
-	"github.com/scttfrdmn/mycelium/spawn/pkg/testutil"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/aws/mock"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/testutil"
 )
 
 // TestClientCreation tests creating a new AWS client

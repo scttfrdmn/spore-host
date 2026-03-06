@@ -3,7 +3,7 @@ package infrastructure
 import (
 	"testing"
 
-	"github.com/scttfrdmn/mycelium/spawn/pkg/config"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/config"
 )
 
 func TestResolver_DynamoDBTables(t *testing.T) {
@@ -124,7 +124,7 @@ func TestResolver_LambdaFunctions(t *testing.T) {
 		wantFunctions map[string]string
 	}{
 		{
-			name: "default shared infrastructure (mycelium-infra account)",
+			name: "default shared infrastructure (spore-host-infra account)",
 			cfg: &config.InfrastructureConfig{
 				Mode:   config.InfrastructureModeShared,
 				Lambda: config.LambdaConfig{},
@@ -235,7 +235,7 @@ func TestResolver_Helpers(t *testing.T) {
 			region:           "us-east-1",
 			accountID:        "123456789012",
 			wantSelfHosted:   false,
-			wantInfraAccount: "966362334030", // mycelium-infra
+			wantInfraAccount: "966362334030", // spore-host-infra
 		},
 		{
 			name: "self-hosted infrastructure",

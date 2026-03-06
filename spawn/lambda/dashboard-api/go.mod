@@ -1,4 +1,4 @@
-module github.com/scttfrdmn/mycelium/spawn/lambda/dashboard-api
+module github.com/scttfrdmn/spore-host/spawn/lambda/dashboard-api
 
 go 1.25.5
 

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/scttfrdmn/mycelium/spawn/cmd"
+	"github.com/scttfrdmn/spore-host/spawn/cmd"
 )
 
 func main() {

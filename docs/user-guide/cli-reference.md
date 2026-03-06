@@ -1,6 +1,6 @@
 # CLI Reference
 
-spawn and truffle are the two CLI tools in the mycelium suite.
+spawn and truffle are the two CLI tools in the spore-host suite.
 
 ## spawn — Launch and Manage Instances
 

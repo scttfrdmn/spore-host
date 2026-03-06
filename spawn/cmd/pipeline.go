@@ -19,7 +19,7 @@ import (
 	lambdatypes "github.com/aws/aws-sdk-go-v2/service/lambda/types"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
-	"github.com/scttfrdmn/mycelium/spawn/pkg/pipeline"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/pipeline"
 	"github.com/spf13/cobra"
 )
 
@@ -295,7 +295,7 @@ func runLaunchPipeline(cmd *cobra.Command, args []string) error {
 
 	cfg, err := config.LoadDefaultConfig(ctx,
 		config.WithRegion(region),
-		config.WithSharedConfigProfile("mycelium-infra"), // Infrastructure account
+		config.WithSharedConfigProfile("spore-host-infra"), // Infrastructure account
 	)
 	if err != nil {
 		return fmt.Errorf("load AWS config: %w", err)
@@ -418,7 +418,7 @@ func runStatusPipeline(cmd *cobra.Command, args []string) error {
 
 	// Load AWS config
 	cfg, err := config.LoadDefaultConfig(ctx,
-		config.WithSharedConfigProfile("mycelium-infra"),
+		config.WithSharedConfigProfile("spore-host-infra"),
 	)
 	if err != nil {
 		return fmt.Errorf("load AWS config: %w", err)
@@ -544,7 +544,7 @@ func runCollectPipeline(cmd *cobra.Command, args []string) error {
 
 	// Load AWS config
 	cfg, err := config.LoadDefaultConfig(ctx,
-		config.WithSharedConfigProfile("mycelium-infra"),
+		config.WithSharedConfigProfile("spore-host-infra"),
 	)
 	if err != nil {
 		return fmt.Errorf("load AWS config: %w", err)
@@ -674,7 +674,7 @@ func runListPipeline(cmd *cobra.Command, args []string) error {
 
 	// Load AWS config
 	cfg, err := config.LoadDefaultConfig(ctx,
-		config.WithSharedConfigProfile("mycelium-infra"),
+		config.WithSharedConfigProfile("spore-host-infra"),
 	)
 	if err != nil {
 		return fmt.Errorf("load AWS config: %w", err)
@@ -775,7 +775,7 @@ func runCancelPipeline(cmd *cobra.Command, args []string) error {
 
 	// Load AWS config
 	cfg, err := config.LoadDefaultConfig(ctx,
-		config.WithSharedConfigProfile("mycelium-infra"),
+		config.WithSharedConfigProfile("spore-host-infra"),
 	)
 	if err != nil {
 		return fmt.Errorf("load AWS config: %w", err)

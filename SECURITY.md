@@ -1,14 +1,14 @@
-# Security Overview for mycelium (truffle + spawn)
+# Security Overview for spore-host (truffle + spawn)
 
 **Audience:** CISOs, Cloud Administrators, Security Engineers
 
-**Purpose:** Comprehensive security assessment and operational guidance for deploying mycelium tools in enterprise AWS environments.
+**Purpose:** Comprehensive security assessment and operational guidance for deploying spore-host tools in enterprise AWS environments.
 
 ---
 
 ## Executive Summary
 
-**mycelium** is a command-line toolset for AWS EC2 instance discovery and ephemeral compute provisioning. It consists of two components:
+**spore-host** is a command-line toolset for AWS EC2 instance discovery and ephemeral compute provisioning. It consists of two components:
 
 - **truffle**: EC2 instance type search tool (read-only)
 - **spawn**: EC2 instance launcher with auto-termination (read/write)

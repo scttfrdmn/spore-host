@@ -21,7 +21,7 @@ var versionCmd = &cobra.Command{
 		fmt.Printf("Version:    %s\n", Version)
 		fmt.Printf("Git Commit: %s\n", GitCommit)
 		fmt.Printf("Build Date: %s\n", BuildDate)
-		fmt.Printf("\nProject:    https://github.com/scttfrdmn/mycelium\n")
+		fmt.Printf("\nProject:    https://github.com/scttfrdmn/spore-host\n")
 	},
 }
 

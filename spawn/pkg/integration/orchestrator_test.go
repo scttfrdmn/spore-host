@@ -9,8 +9,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/scttfrdmn/mycelium/spawn/pkg/orchestrator"
-	"github.com/scttfrdmn/mycelium/spawn/pkg/registry"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/orchestrator"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/registry"
 )
 
 // TestOrchestratorLoadConfig tests loading orchestrator config from file

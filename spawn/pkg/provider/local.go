@@ -16,8 +16,8 @@ import (
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
-	"github.com/scttfrdmn/mycelium/spawn/pkg/config"
-	"github.com/scttfrdmn/mycelium/spawn/pkg/observability"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/config"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/observability"
 )
 
 // LocalProvider implements Provider for local (non-EC2) systems

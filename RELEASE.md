@@ -1,16 +1,16 @@
-# Release Process for mycelium
+# Release Process for spore-host
 
-This document describes how to create releases for mycelium using GoReleaser.
+This document describes how to create releases for spore-host using GoReleaser.
 
 ## Prerequisites
 
 1. **GitHub Repository Setup**
    ```bash
    # Create GitHub repo (if not already created)
-   gh repo create scttfrdmn/mycelium --public --source=. --remote=origin
+   gh repo create scttfrdmn/spore-host --public --source=. --remote=origin
 
    # Or set remote manually
-   git remote add origin git@github.com:scttfrdmn/mycelium.git
+   git remote add origin git@github.com:scttfrdmn/spore-host.git
    ```
 
 2. **Tap and Bucket Repositories**
@@ -30,7 +30,7 @@ This document describes how to create releases for mycelium using GoReleaser.
    # Scopes: repo (full control)
 
    # Add as GitHub secret
-   gh secret set HOMEBREW_TAP_GITHUB_TOKEN --repo scttfrdmn/mycelium
+   gh secret set HOMEBREW_TAP_GITHUB_TOKEN --repo scttfrdmn/spore-host
    ```
 
    **For Scoop Bucket:**
@@ -40,7 +40,7 @@ This document describes how to create releases for mycelium using GoReleaser.
    # Scopes: repo (full control)
 
    # Add as GitHub secret
-   gh secret set SCOOP_BUCKET_GITHUB_TOKEN --repo scttfrdmn/mycelium
+   gh secret set SCOOP_BUCKET_GITHUB_TOKEN --repo scttfrdmn/spore-host
    ```
 
    **Note:** The `GITHUB_TOKEN` is automatically provided by GitHub Actions.
@@ -95,7 +95,7 @@ The GitHub Actions workflow will:
 5. Update Homebrew tap formulas
 6. Update Scoop bucket manifests
 
-Monitor at: https://github.com/scttfrdmn/mycelium/actions
+Monitor at: https://github.com/scttfrdmn/spore-host/actions
 
 ### 5. Verify Release
 
@@ -103,7 +103,7 @@ After workflow completes:
 
 **Check GitHub Release:**
 ```bash
-gh release view v0.1.0 --repo scttfrdmn/mycelium
+gh release view v0.1.0 --repo scttfrdmn/spore-host
 ```
 
 **Test Homebrew Installation:**
@@ -165,7 +165,7 @@ ls -la dist/
 **Fix:**
 1. Verify secrets exist:
    ```bash
-   gh secret list --repo scttfrdmn/mycelium
+   gh secret list --repo scttfrdmn/spore-host
    ```
 
 2. Recreate PATs if needed (see Prerequisites above)
@@ -178,7 +178,7 @@ ls -la dist/
 1. Check token has `repo` scope
 2. Verify token is set as secret:
    ```bash
-   gh secret set HOMEBREW_TAP_GITHUB_TOKEN --repo scttfrdmn/mycelium
+   gh secret set HOMEBREW_TAP_GITHUB_TOKEN --repo scttfrdmn/spore-host
    ```
 
 ### Build Fails: "cannot find module"

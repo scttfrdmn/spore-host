@@ -575,7 +575,7 @@ Shows recent metric-based scaling decisions.
 ### Lambda Logs
 
 ```bash
-AWS_PROFILE=mycelium-infra aws logs tail \
+AWS_PROFILE=spore-host-infra aws logs tail \
   /aws/lambda/spawn-autoscale-orchestrator-production \
   --since 10m --follow
 ```
@@ -680,27 +680,27 @@ autoscale orchestrator initialized
 - Stores autoscale group configuration
 - Tracks scaling state and history
 
-**EC2 Instances:** (mycelium-dev account)
+**EC2 Instances:** (spore-host-dev account)
 - Tagged with autoscale group ID
 - Launched/terminated by Lambda
 - Health monitored via EC2 API
 
-**SQS Queues:** (mycelium-infra account)
+**SQS Queues:** (spore-host-infra account)
 - Monitored for queue depth
 - Supports multi-queue with weights
 
-**CloudWatch:** (mycelium-dev account)
+**CloudWatch:** (spore-host-dev account)
 - Metrics for CPU, memory, custom metrics
 - Used by metric-based policies
 
 ### Cross-Account Setup
 
-**Infrastructure Account (mycelium-infra):**
+**Infrastructure Account (spore-host-infra):**
 - Lambda function
 - DynamoDB tables
 - SQS queues (for monitoring)
 
-**Development Account (mycelium-dev):**
+**Development Account (spore-host-dev):**
 - EC2 instances
 - CloudWatch metrics
 
@@ -986,6 +986,6 @@ A: Just add the queue policy: `spawn autoscale set-policy <group> --scaling-poli
 
 ## Support
 
-- **Issues**: https://github.com/scttfrdmn/mycelium/issues
-- **Documentation**: https://github.com/scttfrdmn/mycelium/tree/main/spawn/docs
+- **Issues**: https://github.com/scttfrdmn/spore-host/issues
+- **Documentation**: https://github.com/scttfrdmn/spore-host/tree/main/spawn/docs
 - **Examples**: See PHASE_4_COMPLETION.md for detailed E2E test examples

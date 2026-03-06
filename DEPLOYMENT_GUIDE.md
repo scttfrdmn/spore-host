@@ -1,6 +1,6 @@
 # Deployment Guide for Organizations
 
-This guide is for Cloud Administrators deploying mycelium (truffle + spawn) across their organization.
+This guide is for Cloud Administrators deploying spore-host (truffle + spawn) across their organization.
 
 ---
 

@@ -40,7 +40,7 @@ docker run --rm \
 
 ### Option 3: Use AWS profiles
 
-The image defaults to the `mycelium-dev` profile. Override with:
+The image defaults to the `spore-host-dev` profile. Override with:
 
 ```bash
 docker run --rm \
@@ -358,4 +358,4 @@ docker run --rm --entrypoint truffle sporedothost/spawn:latest version
 - Spawn documentation: [spawn/README.md](spawn/README.md)
 - Truffle documentation: [truffle/README.md](truffle/README.md)
 - Docker Hub: https://hub.docker.com/r/sporedothost/spawn
-- GitHub: https://github.com/scttfrdmn/mycelium
+- GitHub: https://github.com/scttfrdmn/spore-host

@@ -273,7 +273,7 @@ truffle find "amd medium"
 
 The newly built binary is at:
 ```
-/Users/scttfrdmn/src/mycelium/truffle/bin/truffle
+/Users/scttfrdmn/src/spore-host/truffle/bin/truffle
 ```
 
 ## Test Without AWS Credentials

@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/scttfrdmn/mycelium/spawn/pkg/queue"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/queue"
 )
 
 func TestCalculateBackoff(t *testing.T) {

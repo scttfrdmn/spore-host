@@ -8,10 +8,10 @@ import (
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/scttfrdmn/mycelium/spawn/pkg/aws"
-	"github.com/scttfrdmn/mycelium/spawn/pkg/compliance"
-	spawnconfig "github.com/scttfrdmn/mycelium/spawn/pkg/config"
-	"github.com/scttfrdmn/mycelium/spawn/pkg/infrastructure"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/aws"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/compliance"
+	spawnconfig "github.com/scttfrdmn/spore-host/spawn/pkg/config"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/infrastructure"
 	"github.com/spf13/cobra"
 )
 
@@ -334,7 +334,7 @@ func outputInfrastructureText(result *infrastructure.ValidationResult, resolver 
 	if resolver.IsSelfHosted() {
 		fmt.Println("Mode: Self-hosted infrastructure (customer account)")
 	} else {
-		fmt.Println("Mode: Shared infrastructure (mycelium-infra account)")
+		fmt.Println("Mode: Shared infrastructure (spore-host-infra account)")
 	}
 	fmt.Println()
 

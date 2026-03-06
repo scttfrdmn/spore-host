@@ -68,8 +68,8 @@ spawn is provided "AS IS" without warranty of any kind, express or implied, incl
 ### DO NOT create public GitHub issues for security vulnerabilities.
 
 **Instead, please email:**
-- **Security Contact:** scott@mycelium.dev
-- **PGP Key:** Available at https://mycelium.dev/pgp-key.txt
+- **Security Contact:** scott@spore-host.dev
+- **PGP Key:** Available at https://spore-host.dev/pgp-key.txt
 - **Subject Line:** `[SECURITY] spawn vulnerability report`
 
 ### What to Include
@@ -1203,7 +1203,7 @@ Organizations must engage a HITRUST assessor and pursue their own HITRUST certif
 
 Subscribe to security updates:
 - **GitHub Watch:** "Releases only" or "All activity"
-- **Security Advisories:** https://github.com/scttfrdmn/mycelium/security/advisories
+- **Security Advisories:** https://github.com/scttfrdmn/spore-host/security/advisories
 
 ### Release Notes Format
 

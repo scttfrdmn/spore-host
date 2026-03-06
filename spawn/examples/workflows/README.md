@@ -121,4 +121,4 @@ cd argo && kubectl apply -f workflows/spawn-sweep.yaml
 
 For issues or questions:
 - Main documentation: [WORKFLOW_INTEGRATION.md](../../WORKFLOW_INTEGRATION.md)
-- GitHub Issues: https://github.com/scttfrdmn/mycelium/issues
+- GitHub Issues: https://github.com/scttfrdmn/spore-host/issues

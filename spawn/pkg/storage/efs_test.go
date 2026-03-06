@@ -3,7 +3,7 @@ package storage
 import (
 	"testing"
 
-	"github.com/scttfrdmn/mycelium/spawn/pkg/testutil"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/testutil"
 )
 
 // TestGetEFSProfile tests EFS profile retrieval

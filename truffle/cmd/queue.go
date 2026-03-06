@@ -179,7 +179,7 @@ func runQueueResults(cmd *cobra.Command, args []string) error {
 	// Load AWS config
 	cfg, err := config.LoadDefaultConfig(ctx,
 		config.WithRegion(region),
-		config.WithSharedConfigProfile("mycelium-dev"),
+		config.WithSharedConfigProfile("spore-host-dev"),
 	)
 	if err != nil {
 		return fmt.Errorf("failed to load AWS config: %w", err)

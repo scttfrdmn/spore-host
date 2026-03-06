@@ -2,7 +2,7 @@
 
 **Research Date:** 2026-01-27
 **Issue:** #75
-**Prepared For:** spawn/mycelium project evaluation
+**Prepared For:** spawn/spore-host project evaluation
 
 ---
 

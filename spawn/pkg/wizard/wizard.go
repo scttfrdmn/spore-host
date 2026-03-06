@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/scttfrdmn/mycelium/pkg/i18n"
-	"github.com/scttfrdmn/mycelium/spawn/pkg/aws"
-	"github.com/scttfrdmn/mycelium/spawn/pkg/platform"
+	"github.com/scttfrdmn/spore-host/pkg/i18n"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/aws"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/platform"
 )
 
 // Wizard guides users through spawning an instance

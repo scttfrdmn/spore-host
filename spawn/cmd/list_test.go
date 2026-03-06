@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/scttfrdmn/mycelium/spawn/pkg/aws"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/aws"
 )
 
 // TestFormatDuration validates duration formatting for various time ranges

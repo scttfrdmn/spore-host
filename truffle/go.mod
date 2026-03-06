@@ -1,4 +1,4 @@
-module github.com/scttfrdmn/mycelium/truffle
+module github.com/scttfrdmn/spore-host/truffle
 
 go 1.23
 
@@ -37,7 +37,7 @@ require (
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.9 // indirect
 	github.com/nicksnyder/go-i18n/v2 v2.4.1 // indirect
-	github.com/scttfrdmn/mycelium/pkg/i18n v0.0.0-00010101000000-000000000000 // indirect
+	github.com/scttfrdmn/spore-host/pkg/i18n v0.0.0-00010101000000-000000000000 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	golang.org/x/sys v0.14.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
@@ -48,13 +48,13 @@ require (
 // This module can be used both as a CLI tool and as a library in other Go applications.
 //
 // Key packages:
-//   - github.com/scttfrdmn/mycelium/truffle/pkg/aws: AWS EC2 client and data structures
-//   - github.com/scttfrdmn/mycelium/truffle/pkg/output: Output formatting utilities
+//   - github.com/scttfrdmn/spore-host/truffle/pkg/aws: AWS EC2 client and data structures
+//   - github.com/scttfrdmn/spore-host/truffle/pkg/output: Output formatting utilities
 //
 // Example usage as a library:
-//   import "github.com/scttfrdmn/mycelium/truffle/pkg/aws"
+//   import "github.com/scttfrdmn/spore-host/truffle/pkg/aws"
 //
 //   client, _ := aws.NewClient(ctx)
 //   results, _ := client.SearchInstanceTypes(ctx, regions, matcher, opts)
 
-replace github.com/scttfrdmn/mycelium/pkg/i18n => ../pkg/i18n
+replace github.com/scttfrdmn/spore-host/pkg/i18n => ../pkg/i18n

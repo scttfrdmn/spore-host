@@ -23,7 +23,7 @@ AWS Organization (752123829273 - management account)
 ├── Management Account (752123829273)
 │   └── IAM User: scott-admin (replaces root access)
 │
-├── Infrastructure Account (966362334030) - mycelium-infra
+├── Infrastructure Account (966362334030) - spore-host-infra
 │   ├── Route53 DNS (spore.host - Z0341053304H0DQXF6U4X)
 │   ├── S3 Buckets (website + 8 regional binary buckets)
 │   ├── CloudFront Distribution (EY67INS5HDFLU)
@@ -32,7 +32,7 @@ AWS Organization (752123829273 - management account)
 │   ├── KMS Key (DNSSEC signing)
 │   └── DNSSEC Enabled
 │
-└── Development Account (435415984226) - mycelium-dev
+└── Development Account (435415984226) - spore-host-dev
     └── EC2 Instances (spawn-managed instances)
 ```
 
@@ -162,14 +162,14 @@ region = us-east-1
 output = json
 # Management account - organization admin only
 
-[profile mycelium-infra]
+[profile spore-host-infra]
 region = us-east-1
 output = json
 source_profile = management
 role_arn = arn:aws:iam::966362334030:role/OrganizationAccountAccessRole
 # Infrastructure account - DNS, website, Lambda, S3
 
-[profile mycelium-dev]
+[profile spore-host-dev]
 region = us-east-1
 output = json
 source_profile = management
@@ -179,16 +179,16 @@ role_arn = arn:aws:iam::435415984226:role/OrganizationAccountAccessRole
 
 ### Updated Scripts (10 files)
 ```
-✅ scripts/setup_s3_buckets.sh → mycelium-infra
-✅ scripts/setup-dashboard-api-gateway.sh → mycelium-infra
-✅ scripts/setup-dashboard-cognito.sh → mycelium-infra
-✅ scripts/setup-dashboard-dynamodb.sh → mycelium-infra
-✅ scripts/setup-dashboard-lambda-role.sh → mycelium-infra
-✅ scripts/setup-spawnd-iam-role.sh → mycelium-infra
-✅ scripts/upload_spawnd.sh → mycelium-infra
-✅ scripts/validate-permissions.sh → mycelium-infra
-✅ scripts/setup-dashboard-cross-account-role.sh → mycelium-dev
-✅ web/deploy.sh → mycelium-infra
+✅ scripts/setup_s3_buckets.sh → spore-host-infra
+✅ scripts/setup-dashboard-api-gateway.sh → spore-host-infra
+✅ scripts/setup-dashboard-cognito.sh → spore-host-infra
+✅ scripts/setup-dashboard-dynamodb.sh → spore-host-infra
+✅ scripts/setup-dashboard-lambda-role.sh → spore-host-infra
+✅ scripts/setup-spawnd-iam-role.sh → spore-host-infra
+✅ scripts/upload_spawnd.sh → spore-host-infra
+✅ scripts/validate-permissions.sh → spore-host-infra
+✅ scripts/setup-dashboard-cross-account-role.sh → spore-host-dev
+✅ web/deploy.sh → spore-host-infra
 ```
 
 ---
@@ -262,7 +262,7 @@ echo "$(cat spawnd-linux-amd64.sha256)  spawnd-linux-amd64" | sha256sum --check
 
 ### Test Lambda
 ```bash
-AWS_PROFILE=mycelium-infra aws lambda get-function \
+AWS_PROFILE=spore-host-infra aws lambda get-function \
   --function-name spawn-dns-updater \
   --query 'Configuration.Environment.Variables.HOSTED_ZONE_ID'
 # Expected: "Z0341053304H0DQXF6U4X"
@@ -270,7 +270,7 @@ AWS_PROFILE=mycelium-infra aws lambda get-function \
 
 ### Check DNSSEC
 ```bash
-AWS_PROFILE=mycelium-infra aws route53 get-dnssec \
+AWS_PROFILE=spore-host-infra aws route53 get-dnssec \
   --hosted-zone-id Z0341053304H0DQXF6U4X \
   --query 'Status.ServeSignature'
 # Expected: "SIGNING"
@@ -329,10 +329,10 @@ AWS_PROFILE=mycelium-infra aws route53 get-dnssec \
 **Profile Usage:**
 ```bash
 # Infrastructure operations
-AWS_PROFILE=mycelium-infra aws s3 ls
+AWS_PROFILE=spore-host-infra aws s3 ls
 
 # Development operations (EC2)
-AWS_PROFILE=mycelium-dev aws ec2 describe-instances
+AWS_PROFILE=spore-host-dev aws ec2 describe-instances
 
 # Organization management
 AWS_PROFILE=management aws organizations describe-organization

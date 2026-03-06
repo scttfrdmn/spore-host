@@ -9,9 +9,9 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/scttfrdmn/mycelium/pkg/i18n"
-	"github.com/scttfrdmn/mycelium/spawn/pkg/aws"
-	"github.com/scttfrdmn/mycelium/spawn/pkg/sweep"
+	"github.com/scttfrdmn/spore-host/pkg/i18n"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/aws"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/sweep"
 	"github.com/spf13/cobra"
 )
 
@@ -94,10 +94,10 @@ func runStatus(cmd *cobra.Command, args []string) error {
 }
 
 func runSweepStatus(ctx context.Context, sweepID string) error {
-	// Load AWS SDK config for mycelium-infra (where DynamoDB table lives)
+	// Load AWS SDK config for spore-host-infra (where DynamoDB table lives)
 	cfg, err := config.LoadDefaultConfig(ctx,
 		config.WithRegion("us-east-1"),
-		config.WithSharedConfigProfile("mycelium-infra"),
+		config.WithSharedConfigProfile("spore-host-infra"),
 	)
 	if err != nil {
 		return fmt.Errorf("failed to load AWS config: %w", err)

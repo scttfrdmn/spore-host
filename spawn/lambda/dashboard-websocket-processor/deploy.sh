@@ -6,7 +6,7 @@ set -euo pipefail
 
 if [ $# -lt 2 ]; then
     echo "Usage: $0 <aws-profile> <websocket-api-id>"
-    echo "Example: $0 mycelium-infra abc123xyz"
+    echo "Example: $0 spore-host-infra abc123xyz"
     echo ""
     echo "To get WebSocket API ID, run:"
     echo "aws apigatewayv2 get-apis --query \"Items[?Name=='spawn-dashboard-websocket'].ApiId\" --output text --profile <aws-profile>"

@@ -104,13 +104,13 @@ test-integration:
 # Run scheduler integration tests only
 test-integration-scheduler:
 	@echo "Running scheduler integration tests..."
-	@echo "Note: Requires AWS credentials (mycelium-dev profile)"
+	@echo "Note: Requires AWS credentials (spore-host-dev profile)"
 	go test -v -tags=integration -run TestScheduler -timeout 20m ./...
 
 # Run queue integration tests only
 test-integration-queue:
 	@echo "Running queue integration tests..."
-	@echo "Note: Requires AWS credentials (mycelium-dev profile)"
+	@echo "Note: Requires AWS credentials (spore-host-dev profile)"
 	go test -v -tags=integration -run TestQueue -timeout 20m ./...
 
 # Pre-commit checks (fast)

@@ -6,7 +6,7 @@ set -euo pipefail
 
 if [ $# -lt 1 ]; then
     echo "Usage: $0 <aws-profile>"
-    echo "Example: $0 mycelium-infra"
+    echo "Example: $0 spore-host-infra"
     exit 1
 fi
 

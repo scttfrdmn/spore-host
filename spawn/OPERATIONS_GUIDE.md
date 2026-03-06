@@ -875,6 +875,6 @@ aws iam delete-access-key --access-key-id AKIAIOSFODNN7EXAMPLE --user-name spawn
 
 ## Support
 
-- **Issues:** https://github.com/scttfrdmn/mycelium/issues
-- **Discussions:** https://github.com/scttfrdmn/mycelium/discussions
-- **Email:** support@mycelium.dev
+- **Issues:** https://github.com/scttfrdmn/spore-host/issues
+- **Discussions:** https://github.com/scttfrdmn/spore-host/discussions
+- **Email:** support@spore-host.dev

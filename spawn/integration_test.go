@@ -852,7 +852,7 @@ func TestScheduledBatchQueue(t *testing.T) {
 func createTestSchedule(t *testing.T, ctx context.Context, scheduleID, paramFileKey, scheduleType string, executionTime time.Time, cronExpr string, maxExecutions int) {
 	t.Helper()
 
-	cfg, err := config.LoadDefaultConfig(ctx, config.WithSharedConfigProfile("mycelium-dev"))
+	cfg, err := config.LoadDefaultConfig(ctx, config.WithSharedConfigProfile("spore-host-dev"))
 	if err != nil {
 		t.Fatalf("failed to load AWS config: %v", err)
 	}
@@ -890,7 +890,7 @@ func createTestSchedule(t *testing.T, ctx context.Context, scheduleID, paramFile
 func uploadParamFileToS3(t *testing.T, ctx context.Context, content, bucket, key string) {
 	t.Helper()
 
-	cfg, err := config.LoadDefaultConfig(ctx, config.WithSharedConfigProfile("mycelium-infra"))
+	cfg, err := config.LoadDefaultConfig(ctx, config.WithSharedConfigProfile("spore-host-infra"))
 	if err != nil {
 		t.Fatalf("failed to load AWS config: %v", err)
 	}
@@ -910,7 +910,7 @@ func uploadParamFileToS3(t *testing.T, ctx context.Context, content, bucket, key
 func cleanupS3File(t *testing.T, ctx context.Context, bucket, key string) {
 	t.Helper()
 
-	cfg, err := config.LoadDefaultConfig(ctx, config.WithSharedConfigProfile("mycelium-infra"))
+	cfg, err := config.LoadDefaultConfig(ctx, config.WithSharedConfigProfile("spore-host-infra"))
 	if err != nil {
 		t.Logf("Warning: failed to load AWS config: %v", err)
 		return
@@ -930,7 +930,7 @@ func cleanupS3File(t *testing.T, ctx context.Context, bucket, key string) {
 func updateScheduleExecutionTime(t *testing.T, ctx context.Context, scheduleID string, nextTime time.Time) {
 	t.Helper()
 
-	cfg, err := config.LoadDefaultConfig(ctx, config.WithSharedConfigProfile("mycelium-dev"))
+	cfg, err := config.LoadDefaultConfig(ctx, config.WithSharedConfigProfile("spore-host-dev"))
 	if err != nil {
 		t.Fatalf("failed to load AWS config: %v", err)
 	}
@@ -966,7 +966,7 @@ func updateScheduleExecutionTime(t *testing.T, ctx context.Context, scheduleID s
 func updateScheduleStatus(t *testing.T, ctx context.Context, scheduleID, status string) {
 	t.Helper()
 
-	cfg, err := config.LoadDefaultConfig(ctx, config.WithSharedConfigProfile("mycelium-dev"))
+	cfg, err := config.LoadDefaultConfig(ctx, config.WithSharedConfigProfile("spore-host-dev"))
 	if err != nil {
 		t.Fatalf("failed to load AWS config: %v", err)
 	}
@@ -1019,7 +1019,7 @@ func waitForScheduleExecution(t *testing.T, ctx context.Context, scheduleID stri
 func getScheduleHistory(t *testing.T, ctx context.Context, scheduleID string) []ScheduleExecution {
 	t.Helper()
 
-	cfg, err := config.LoadDefaultConfig(ctx, config.WithSharedConfigProfile("mycelium-dev"))
+	cfg, err := config.LoadDefaultConfig(ctx, config.WithSharedConfigProfile("spore-host-dev"))
 	if err != nil {
 		t.Logf("Warning: failed to load AWS config: %v", err)
 		return nil
@@ -1059,7 +1059,7 @@ func getScheduleHistory(t *testing.T, ctx context.Context, scheduleID string) []
 func getScheduleRecord(t *testing.T, ctx context.Context, scheduleID string) map[string]types.AttributeValue {
 	t.Helper()
 
-	cfg, err := config.LoadDefaultConfig(ctx, config.WithSharedConfigProfile("mycelium-dev"))
+	cfg, err := config.LoadDefaultConfig(ctx, config.WithSharedConfigProfile("spore-host-dev"))
 	if err != nil {
 		t.Fatalf("failed to load AWS config: %v", err)
 	}
@@ -1082,7 +1082,7 @@ func getScheduleRecord(t *testing.T, ctx context.Context, scheduleID string) map
 func cleanupTestSchedule(t *testing.T, ctx context.Context, scheduleID string) {
 	t.Helper()
 
-	cfg, err := config.LoadDefaultConfig(ctx, config.WithSharedConfigProfile("mycelium-dev"))
+	cfg, err := config.LoadDefaultConfig(ctx, config.WithSharedConfigProfile("spore-host-dev"))
 	if err != nil {
 		t.Logf("Warning: failed to load AWS config: %v", err)
 		return
@@ -1120,7 +1120,7 @@ func getAttributeNumber(item map[string]types.AttributeValue, key string) int {
 func createTestScheduleWithEndAfter(t *testing.T, ctx context.Context, scheduleID, paramFileKey string, endAfter time.Time) {
 	t.Helper()
 
-	cfg, err := config.LoadDefaultConfig(ctx, config.WithSharedConfigProfile("mycelium-dev"))
+	cfg, err := config.LoadDefaultConfig(ctx, config.WithSharedConfigProfile("spore-host-dev"))
 	if err != nil {
 		t.Fatalf("failed to load AWS config: %v", err)
 	}

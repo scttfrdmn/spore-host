@@ -14,11 +14,11 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
-	"github.com/scttfrdmn/mycelium/spawn/pkg/agent"
-	"github.com/scttfrdmn/mycelium/spawn/pkg/observability/metrics"
-	"github.com/scttfrdmn/mycelium/spawn/pkg/observability/tracing"
-	"github.com/scttfrdmn/mycelium/spawn/pkg/pipeline"
-	"github.com/scttfrdmn/mycelium/spawn/pkg/provider"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/agent"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/observability/metrics"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/observability/tracing"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/pipeline"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/provider"
 )
 
 var Version = "0.1.0"
@@ -796,7 +796,7 @@ func printHelp() {
 	fmt.Println("    spored complete --status success")
 	fmt.Println("    spored complete --status success --message 'Job completed'")
 	fmt.Println()
-	fmt.Println("For more information: https://github.com/scttfrdmn/mycelium")
+	fmt.Println("For more information: https://github.com/scttfrdmn/spore-host")
 }
 
 func handleRunPipelineStage() {

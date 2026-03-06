@@ -25,7 +25,7 @@ const (
 	defaultHistoryTable         = "spawn-schedule-history"
 	defaultSchedulesBucketTmpl  = "spawn-schedules-%s" // %s = region
 	defaultOrchestratorFuncName = "sweep-orchestrator"
-	defaultAccountID            = "966362334030" // mycelium-infra account
+	defaultAccountID            = "966362334030" // spore-host-infra account
 )
 
 // Event is the input from EventBridge Scheduler

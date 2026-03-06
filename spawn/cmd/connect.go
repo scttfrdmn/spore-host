@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/scttfrdmn/mycelium/pkg/i18n"
-	"github.com/scttfrdmn/mycelium/spawn/pkg/aws"
+	"github.com/scttfrdmn/spore-host/pkg/i18n"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/aws"
 	"github.com/spf13/cobra"
 )
 

@@ -288,7 +288,7 @@ truffle --accessibility search m7i.large
 ## 📦 Project Structure
 
 ```
-mycelium/
+spore-host/
 ├── README.md                    ← You are here
 ├── QUICK_REFERENCE.md          
 ├── COMPLETE_ECOSYSTEM.md       

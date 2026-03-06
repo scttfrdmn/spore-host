@@ -299,7 +299,7 @@ Sweep Name:        sweep
 Total Parameters:  50
 Max Concurrent:    5
 Region:            us-east-1
-Orchestration:     Lambda (mycelium-infra account)
+Orchestration:     Lambda (spore-host-infra account)
 
 The sweep is now running in Lambda. You can disconnect safely.
 
@@ -633,10 +633,10 @@ spawn status --sweep-id <id>
 **Check:**
 ```bash
 # For detached sweeps:
-AWS_PROFILE=mycelium-infra aws logs tail /aws/lambda/spawn-sweep-orchestrator --follow
+AWS_PROFILE=spore-host-infra aws logs tail /aws/lambda/spawn-sweep-orchestrator --follow
 
 # Check Lambda is running
-AWS_PROFILE=mycelium-infra aws lambda get-function \
+AWS_PROFILE=spore-host-infra aws lambda get-function \
   --function-name spawn-sweep-orchestrator
 ```
 
@@ -809,8 +809,8 @@ git commit -m "Initial hyperparameter sweep config"
 ## Next Steps
 
 - **Architecture details:** See [DETACHED_MODE.md](DETACHED_MODE.md)
-- **Report issues:** [GitHub Issues](https://github.com/scttfrdmn/mycelium/issues)
-- **Feature requests:** [Issue #23 (Dashboard)](https://github.com/scttfrdmn/mycelium/issues/23), [#24 (Multi-region)](https://github.com/scttfrdmn/mycelium/issues/24), [#25 (Cost estimation)](https://github.com/scttfrdmn/mycelium/issues/25)
+- **Report issues:** [GitHub Issues](https://github.com/scttfrdmn/spore-host/issues)
+- **Feature requests:** [Issue #23 (Dashboard)](https://github.com/scttfrdmn/spore-host/issues/23), [#24 (Multi-region)](https://github.com/scttfrdmn/spore-host/issues/24), [#25 (Cost estimation)](https://github.com/scttfrdmn/spore-host/issues/25)
 
 ---
 

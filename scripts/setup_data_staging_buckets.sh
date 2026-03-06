@@ -11,7 +11,7 @@ REGIONS=(
     "ap-northeast-1"
 )
 
-ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text --profile mycelium-infra)
+ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text --profile spore-host-infra)
 
 echo "Setting up spawn data staging buckets..."
 echo "Account ID: ${ACCOUNT_ID}"
@@ -27,13 +27,13 @@ for REGION in "${REGIONS[@]}"; do
         aws s3api create-bucket \
             --bucket "$BUCKET" \
             --region "$REGION" \
-            --profile mycelium-infra 2>/dev/null || echo "  (bucket already exists)"
+            --profile spore-host-infra 2>/dev/null || echo "  (bucket already exists)"
     else
         aws s3api create-bucket \
             --bucket "$BUCKET" \
             --region "$REGION" \
             --create-bucket-configuration LocationConstraint="$REGION" \
-            --profile mycelium-infra 2>/dev/null || echo "  (bucket already exists)"
+            --profile spore-host-infra 2>/dev/null || echo "  (bucket already exists)"
     fi
 
     # Enable versioning
@@ -41,13 +41,13 @@ for REGION in "${REGIONS[@]}"; do
         --bucket "$BUCKET" \
         --versioning-configuration Status=Enabled \
         --region "$REGION" \
-        --profile mycelium-infra
+        --profile spore-host-infra
 
     # Add lifecycle policy (delete after 7 days)
     aws s3api put-bucket-lifecycle-configuration \
         --bucket "$BUCKET" \
         --region "$REGION" \
-        --profile mycelium-infra \
+        --profile spore-host-infra \
         --lifecycle-configuration '{
             "Rules": [{
                 "Id": "DeleteOldStaging",
@@ -68,7 +68,7 @@ for REGION in "${REGIONS[@]}"; do
     aws s3api put-bucket-tagging \
         --bucket "$BUCKET" \
         --region "$REGION" \
-        --profile mycelium-infra \
+        --profile spore-host-infra \
         --tagging 'TagSet=[
             {Key=Project,Value=spawn},
             {Key=Component,Value=data-staging},

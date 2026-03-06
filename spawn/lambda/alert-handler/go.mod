@@ -1,4 +1,4 @@
-module github.com/scttfrdmn/mycelium/spawn/lambda/alert-handler
+module github.com/scttfrdmn/spore-host/spawn/lambda/alert-handler
 
 go 1.24.0
 
@@ -10,7 +10,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/dynamodb v1.53.6
 	github.com/aws/aws-sdk-go-v2/service/kms v1.49.5
 	github.com/aws/aws-sdk-go-v2/service/sns v1.39.11
-	github.com/scttfrdmn/mycelium/spawn v0.0.0
+	github.com/scttfrdmn/spore-host/spawn v0.0.0
 )
 
 require (
@@ -30,4 +30,4 @@ require (
 	github.com/aws/smithy-go v1.24.0 // indirect
 )
 
-replace github.com/scttfrdmn/mycelium/spawn => ../../
+replace github.com/scttfrdmn/spore-host/spawn => ../../

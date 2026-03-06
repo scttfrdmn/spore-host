@@ -10,7 +10,7 @@ spawn respects several environment variables for configuration and behavior cont
 **Description:** AWS profile name to use for credentials and configuration.
 
 ```bash
-export AWS_PROFILE=mycelium-dev
+export AWS_PROFILE=spore-host-dev
 spawn launch --instance-type m7i.large
 ```
 

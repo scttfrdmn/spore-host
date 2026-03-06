@@ -42,7 +42,7 @@
 
 **Wait for deployment to complete:**
 ```bash
-AWS_PROFILE=mycelium-infra aws cloudfront wait distribution-deployed --id EY67INS5HDFLU
+AWS_PROFILE=spore-host-infra aws cloudfront wait distribution-deployed --id EY67INS5HDFLU
 ```
 
 **Test the CloudFront domain:**
@@ -52,7 +52,7 @@ curl -I https://d1hcjyt3z5xzq4.cloudfront.net
 
 **Check deployment status:**
 ```bash
-AWS_PROFILE=mycelium-infra aws cloudfront get-distribution \
+AWS_PROFILE=spore-host-infra aws cloudfront get-distribution \
   --id EY67INS5HDFLU \
   --query 'Distribution.Status' \
   --output text
@@ -88,7 +88,7 @@ Once nameservers are updated (24-48 hour propagation):
 
 ```bash
 # Check certificate status
-AWS_PROFILE=mycelium-infra aws acm describe-certificate \
+AWS_PROFILE=spore-host-infra aws acm describe-certificate \
   --certificate-arn arn:aws:acm:us-east-1:966362334030:certificate/55203b10-e7cc-46d2-a3fd-d134d8f523d9 \
   --query 'Certificate.Status' \
   --output text
@@ -102,7 +102,7 @@ Once certificate is validated, update the distribution:
 
 ```bash
 # Get current config
-AWS_PROFILE=mycelium-infra aws cloudfront get-distribution-config \
+AWS_PROFILE=spore-host-infra aws cloudfront get-distribution-config \
   --id EY67INS5HDFLU \
   --output json > /tmp/cloudfront-current-config.json
 
@@ -124,7 +124,7 @@ cat /tmp/cloudfront-current-config.json | jq '
 ' | jq '.DistributionConfig' > /tmp/cloudfront-updated-config.json
 
 # Apply update
-AWS_PROFILE=mycelium-infra aws cloudfront update-distribution \
+AWS_PROFILE=spore-host-infra aws cloudfront update-distribution \
   --id EY67INS5HDFLU \
   --distribution-config file:///tmp/cloudfront-updated-config.json \
   --if-match "$ETAG"
@@ -152,7 +152,7 @@ cat > /tmp/dns-update-cloudfront.json <<'EOF'
 }
 EOF
 
-AWS_PROFILE=mycelium-infra aws route53 change-resource-record-sets \
+AWS_PROFILE=spore-host-infra aws route53 change-resource-record-sets \
   --hosted-zone-id Z0341053304H0DQXF6U4X \
   --change-batch file:///tmp/dns-update-cloudfront.json
 ```

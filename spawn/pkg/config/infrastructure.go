@@ -11,7 +11,7 @@ import (
 type InfrastructureMode string
 
 const (
-	InfrastructureModeShared     InfrastructureMode = "shared"      // Use mycelium-infra account resources
+	InfrastructureModeShared     InfrastructureMode = "shared"      // Use spore-host-infra account resources
 	InfrastructureModeSelfHosted InfrastructureMode = "self-hosted" // Use customer's own AWS resources
 )
 
@@ -68,7 +68,7 @@ type CloudWatchConfig struct {
 // 1. CLI flags (passed as parameters)
 // 2. Environment variables
 // 3. Config file
-// 4. Defaults (shared infrastructure in mycelium-infra account)
+// 4. Defaults (shared infrastructure in spore-host-infra account)
 func LoadInfrastructureConfig(ctx context.Context, flagMode string) (*InfrastructureConfig, error) {
 	cfg := &InfrastructureConfig{
 		Mode: InfrastructureModeShared,
@@ -83,7 +83,7 @@ func LoadInfrastructureConfig(ctx context.Context, flagMode string) (*Infrastruc
 			SchedulesBucketPrefix: "spawn-schedules",
 		},
 		Lambda: LambdaConfig{
-			// Default ARNs point to mycelium-infra account (966362334030)
+			// Default ARNs point to spore-host-infra account (966362334030)
 			// These will be constructed at runtime based on region
 			SchedulerHandlerARN:  "", // Constructed: arn:aws:lambda:{region}:966362334030:function:spawn-scheduler-handler
 			SweepOrchestratorARN: "", // Constructed: arn:aws:lambda:{region}:966362334030:function:spawn-sweep-orchestrator
@@ -207,7 +207,7 @@ func (c *InfrastructureConfig) IsSelfHosted() bool {
 func (c *InfrastructureConfig) GetModeDisplayName() string {
 	switch c.Mode {
 	case InfrastructureModeShared:
-		return "Shared (mycelium-infra account)"
+		return "Shared (spore-host-infra account)"
 	case InfrastructureModeSelfHosted:
 		return "Self-Hosted (customer account)"
 	default:

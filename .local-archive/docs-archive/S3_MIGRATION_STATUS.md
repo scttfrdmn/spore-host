@@ -66,12 +66,12 @@ bash /tmp/recreate-all-buckets.sh
 **Implementation:**
 ```bash
 # Use temporary names with -new suffix
-AWS_PROFILE=mycelium-infra aws s3 mb s3://spore-host-website-infra --region us-east-1
-AWS_PROFILE=mycelium-infra aws s3 sync /tmp/s3-migration/spore-host-website s3://spore-host-website-infra
+AWS_PROFILE=spore-host-infra aws s3 mb s3://spore-host-website-infra --region us-east-1
+AWS_PROFILE=spore-host-infra aws s3 sync /tmp/s3-migration/spore-host-website s3://spore-host-website-infra
 
 # For binaries:
-AWS_PROFILE=mycelium-infra aws s3 mb s3://spawn-binaries-us-east-1-infra --region us-east-1
-AWS_PROFILE=mycelium-infra aws s3 sync /tmp/s3-migration/spawn-binaries-us-east-1 s3://spawn-binaries-us-east-1-infra
+AWS_PROFILE=spore-host-infra aws s3 mb s3://spawn-binaries-us-east-1-infra --region us-east-1
+AWS_PROFILE=spore-host-infra aws s3 sync /tmp/s3-migration/spawn-binaries-us-east-1 s3://spawn-binaries-us-east-1-infra
 # ... repeat for other regions
 ```
 
@@ -115,10 +115,10 @@ If propagation completes, run these commands:
 
 ```bash
 # Website bucket
-AWS_PROFILE=mycelium-infra aws s3 mb s3://spore-host-website --region us-east-1
-AWS_PROFILE=mycelium-infra aws s3 sync /tmp/s3-migration/spore-host-website s3://spore-host-website
-AWS_PROFILE=mycelium-infra aws s3 website s3://spore-host-website --index-document index.html
-AWS_PROFILE=mycelium-infra aws s3api put-bucket-policy --bucket spore-host-website --policy '{
+AWS_PROFILE=spore-host-infra aws s3 mb s3://spore-host-website --region us-east-1
+AWS_PROFILE=spore-host-infra aws s3 sync /tmp/s3-migration/spore-host-website s3://spore-host-website
+AWS_PROFILE=spore-host-infra aws s3 website s3://spore-host-website --index-document index.html
+AWS_PROFILE=spore-host-infra aws s3api put-bucket-policy --bucket spore-host-website --policy '{
   "Version": "2012-10-17",
   "Statement": [{
     "Sid": "PublicReadGetObject",
@@ -130,9 +130,9 @@ AWS_PROFILE=mycelium-infra aws s3api put-bucket-policy --bucket spore-host-websi
 }'
 
 # Binary buckets (example for us-east-1)
-AWS_PROFILE=mycelium-infra aws s3 mb s3://spawn-binaries-us-east-1 --region us-east-1
-AWS_PROFILE=mycelium-infra aws s3 sync /tmp/s3-migration/spawn-binaries-us-east-1 s3://spawn-binaries-us-east-1
-AWS_PROFILE=mycelium-infra aws s3api put-bucket-policy --bucket spawn-binaries-us-east-1 --policy '{
+AWS_PROFILE=spore-host-infra aws s3 mb s3://spawn-binaries-us-east-1 --region us-east-1
+AWS_PROFILE=spore-host-infra aws s3 sync /tmp/s3-migration/spawn-binaries-us-east-1 s3://spawn-binaries-us-east-1
+AWS_PROFILE=spore-host-infra aws s3api put-bucket-policy --bucket spawn-binaries-us-east-1 --policy '{
   "Version": "2012-10-17",
   "Statement": [{
     "Sid": "PublicReadGetObject",
@@ -159,7 +159,7 @@ Check if bucket names are available:
 
 ```bash
 # Try creating website bucket
-AWS_PROFILE=mycelium-infra aws s3 mb s3://spore-host-website --region us-east-1 2>&1
+AWS_PROFILE=spore-host-infra aws s3 mb s3://spore-host-website --region us-east-1 2>&1
 
 # Expected when still propagating:
 # "An error occurred (OperationAborted) when calling the CreateBucket operation"

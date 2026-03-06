@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-PROFILE=${1:-mycelium-infra}
+PROFILE=${1:-spore-host-infra}
 TABLE_NAME="spawn-autoscale-groups-production"
 
 echo "Adding user_id GSI to $TABLE_NAME..."

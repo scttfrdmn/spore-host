@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"text/template"
 
-	"github.com/scttfrdmn/mycelium/spawn/pkg/security"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/security"
 )
 
 // MPIConfig contains configuration for MPI user-data generation

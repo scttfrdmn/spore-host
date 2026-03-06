@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/scttfrdmn/mycelium/spawn/pkg/aws"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/aws"
 )
 
 // NIST80171ControlSet returns the control set for NIST 800-171 Rev 3

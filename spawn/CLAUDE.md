@@ -9,7 +9,7 @@
   - IAM user: scott-admin
   - **NO application workloads**
 
-- **`mycelium-infra` profile** (Account: 966362334030)
+- **`spore-host-infra` profile** (Account: 966362334030)
   - S3 buckets (spawn-binaries-*, spore-host-website)
   - Lambda functions (spawn-dns-updater)
   - Route53 DNS (spore.host hosted zone)
@@ -18,7 +18,7 @@
   - **Production infrastructure**
   - **NO EC2 instances**
 
-- **`mycelium-dev` profile** (Account: 435415984226)
+- **`spore-host-dev` profile** (Account: 435415984226)
   - **ALL EC2 instance provisioning**
   - Test instances
   - Development/testing instances
@@ -28,23 +28,23 @@
 - **DEPRECATED: `aws` profile** - DO NOT USE (Account 942542972736 no longer used)
 
 **Cross-Account Requirements**:
-- EC2 instances in mycelium-dev account need access to:
-  - S3 bucket in mycelium-infra account (for spored binary downloads)
-  - Lambda DNS API in mycelium-infra account (for DNS registration)
+- EC2 instances in spore-host-dev account need access to:
+  - S3 bucket in spore-host-infra account (for spored binary downloads)
+  - Lambda DNS API in spore-host-infra account (for DNS registration)
 
 **Usage Examples**:
 ```bash
-# Upload spored binary to S3 (use mycelium-infra profile)
-AWS_PROFILE=mycelium-infra aws s3 cp bin/spored s3://spawn-binaries-us-east-1/spored-linux-amd64
+# Upload spored binary to S3 (use spore-host-infra profile)
+AWS_PROFILE=spore-host-infra aws s3 cp bin/spored s3://spawn-binaries-us-east-1/spored-linux-amd64
 
-# Launch instances (use mycelium-dev profile ONLY)
-AWS_PROFILE=mycelium-dev ./bin/spawn launch --instance-type t3.micro ...
+# Launch instances (use spore-host-dev profile ONLY)
+AWS_PROFILE=spore-host-dev ./bin/spawn launch --instance-type t3.micro ...
 
-# Deploy Lambda function (use mycelium-infra profile)
-AWS_PROFILE=mycelium-infra aws lambda update-function-code --function-name spawn-dns-updater ...
+# Deploy Lambda function (use spore-host-infra profile)
+AWS_PROFILE=spore-host-infra aws lambda update-function-code --function-name spawn-dns-updater ...
 
-# Deploy website (use mycelium-infra profile)
-cd web && AWS_PROFILE=mycelium-infra ./deploy.sh
+# Deploy website (use spore-host-infra profile)
+cd web && AWS_PROFILE=spore-host-infra ./deploy.sh
 ```
 
 ## DNS Implementation

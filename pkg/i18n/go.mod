@@ -1,4 +1,4 @@
-module github.com/scttfrdmn/mycelium/pkg/i18n
+module github.com/scttfrdmn/spore-host/pkg/i18n
 
 go 1.23
 

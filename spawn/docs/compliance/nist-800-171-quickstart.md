@@ -70,7 +70,7 @@ spawn implements these NIST 800-171 requirements:
 ### Basic Launch (Shared Infrastructure)
 
 ```bash
-# Default: uses shared mycelium-infra infrastructure
+# Default: uses shared spore-host-infra infrastructure
 spawn launch \
   --instance-type t3.micro \
   --nist-800-171 \
@@ -303,6 +303,6 @@ See [FedRAMP documentation](fedramp-quickstart.md) for details.
 ## Support
 
 Questions or issues:
-- GitHub Issues: https://github.com/scttfrdmn/mycelium/issues
+- GitHub Issues: https://github.com/scttfrdmn/spore-host/issues
 - Command help: `spawn validate --help`
 - Config help: `spawn config --help`

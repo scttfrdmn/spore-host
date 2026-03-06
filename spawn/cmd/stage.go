@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/scttfrdmn/mycelium/spawn/pkg/staging"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/staging"
 	"github.com/spf13/cobra"
 )
 
@@ -150,7 +150,7 @@ func runStageUpload(cmd *cobra.Command, args []string) error {
 	// Load AWS config for primary region (use infra account for data staging)
 	awsConfig, err := config.LoadDefaultConfig(ctx,
 		config.WithRegion(regions[0]),
-		config.WithSharedConfigProfile("mycelium-infra"),
+		config.WithSharedConfigProfile("spore-host-infra"),
 	)
 	if err != nil {
 		return fmt.Errorf("load AWS config: %w", err)
@@ -237,7 +237,7 @@ func runStageList(cmd *cobra.Command, args []string) error {
 	// Load AWS config (infra account for DynamoDB access)
 	awsConfig, err := config.LoadDefaultConfig(ctx,
 		config.WithRegion("us-east-1"),
-		config.WithSharedConfigProfile("mycelium-infra"),
+		config.WithSharedConfigProfile("spore-host-infra"),
 	)
 	if err != nil {
 		return fmt.Errorf("load AWS config: %w", err)
@@ -330,7 +330,7 @@ func runStageDelete(cmd *cobra.Command, args []string) error {
 	// Load AWS config (infra account for DynamoDB and S3 access)
 	awsConfig, err := config.LoadDefaultConfig(ctx,
 		config.WithRegion("us-east-1"),
-		config.WithSharedConfigProfile("mycelium-infra"),
+		config.WithSharedConfigProfile("spore-host-infra"),
 	)
 	if err != nil {
 		return fmt.Errorf("load AWS config: %w", err)

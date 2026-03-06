@@ -88,8 +88,8 @@ Documentation improvements are always welcome:
 
 ```bash
 # Clone repository
-git clone https://github.com/scttfrdmn/mycelium.git
-cd mycelium/spawn
+git clone https://github.com/scttfrdmn/spore-host.git
+cd spore-host/spawn
 
 # Install dependencies
 go mod download

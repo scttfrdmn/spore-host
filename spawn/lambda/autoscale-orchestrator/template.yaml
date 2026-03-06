@@ -11,7 +11,7 @@ Parameters:
   EC2RoleArn:
     Type: String
     Default: 'arn:aws:iam::435415984226:role/spawn-autoscale-ec2'
-    Description: ARN of the cross-account EC2 management role in mycelium-dev
+    Description: ARN of the cross-account EC2 management role in spore-host-dev
 
 Resources:
   AutoScaleOrchestratorFunction:
@@ -79,7 +79,7 @@ Resources:
         - Key: Environment
           Value: !Ref Environment
         - Key: Project
-          Value: mycelium
+          Value: spore-host
 
   LogGroup:
     Type: AWS::Logs::LogGroup

@@ -2,7 +2,7 @@
 set -e
 
 REGION="${AWS_REGION:-us-east-1}"
-PROFILE="${AWS_PROFILE:-mycelium-infra}"
+PROFILE="${AWS_PROFILE:-spore-host-infra}"
 TABLE_NAME="spawn-availability-stats"
 
 echo "Creating DynamoDB table: $TABLE_NAME in $REGION (profile: $PROFILE)"

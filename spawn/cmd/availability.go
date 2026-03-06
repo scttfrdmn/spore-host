@@ -10,7 +10,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
-	"github.com/scttfrdmn/mycelium/spawn/pkg/availability"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/availability"
 	"github.com/spf13/cobra"
 )
 
@@ -59,7 +59,7 @@ func runAvailability(cmd *cobra.Command, args []string) error {
 	// Load AWS config (infra account for DynamoDB access)
 	cfg, err := config.LoadDefaultConfig(ctx,
 		config.WithRegion("us-east-1"),
-		config.WithSharedConfigProfile("mycelium-infra"),
+		config.WithSharedConfigProfile("spore-host-infra"),
 	)
 	if err != nil {
 		return fmt.Errorf("failed to load AWS config: %w", err)

@@ -4,7 +4,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/scttfrdmn/mycelium/truffle/pkg/aws"
+	"github.com/scttfrdmn/spore-host/truffle/pkg/aws"
 )
 
 // SearchCriteria contains the compiled search criteria from a parsed query

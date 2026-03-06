@@ -1,4 +1,4 @@
-module github.com/scttfrdmn/mycelium/spawn/lambda/alert-evaluator
+module github.com/scttfrdmn/spore-host/spawn/lambda/alert-evaluator
 
 go 1.25.0
 

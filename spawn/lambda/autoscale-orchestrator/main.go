@@ -18,7 +18,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/lambda/types"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
-	"github.com/scttfrdmn/mycelium/spawn/pkg/autoscaler"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/autoscaler"
 )
 
 // AutoScaleEvent is the Lambda event payload

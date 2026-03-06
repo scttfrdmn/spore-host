@@ -1297,7 +1297,7 @@ spawn cancel --sweep-id sweep-20260116-abc123
 ### Architecture
 
 ```
-User Workstation          mycelium-infra (966362334030)    mycelium-dev (435415984226)
+User Workstation          spore-host-infra (966362334030)    spore-host-dev (435415984226)
 ───────────────          ──────────────────────────────    ───────────────────────────
 spawn CLI                S3: spawn-sweeps-us-east-1        EC2 Instances
   --detach ────────────> Upload params.json                  (Launched by Lambda)

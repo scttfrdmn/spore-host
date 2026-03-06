@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/scttfrdmn/mycelium/spawn/pkg/observability"
-	"github.com/scttfrdmn/mycelium/spawn/pkg/observability/tracing/exporters"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/observability"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/observability/tracing/exporters"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/sdk/resource"

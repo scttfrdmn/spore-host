@@ -19,12 +19,12 @@ Update: `brew upgrade spawn truffle`
 
 ### Pre-built Binary
 
-Download from [GitHub Releases](https://github.com/scttfrdmn/mycelium/releases):
+Download from [GitHub Releases](https://github.com/scttfrdmn/spore-host/releases):
 
 ```bash
 # macOS arm64 (Apple Silicon)
-curl -Lo spawn https://github.com/scttfrdmn/mycelium/releases/latest/download/spawn-darwin-arm64
-curl -Lo truffle https://github.com/scttfrdmn/mycelium/releases/latest/download/truffle-darwin-arm64
+curl -Lo spawn https://github.com/scttfrdmn/spore-host/releases/latest/download/spawn-darwin-arm64
+curl -Lo truffle https://github.com/scttfrdmn/spore-host/releases/latest/download/truffle-darwin-arm64
 
 chmod +x spawn truffle
 sudo mv spawn truffle /usr/local/bin/
@@ -36,8 +36,8 @@ sudo mv spawn truffle /usr/local/bin/
 
 ```bash
 # x86_64
-curl -Lo spawn https://github.com/scttfrdmn/mycelium/releases/latest/download/spawn-linux-amd64
-curl -Lo truffle https://github.com/scttfrdmn/mycelium/releases/latest/download/truffle-linux-amd64
+curl -Lo spawn https://github.com/scttfrdmn/spore-host/releases/latest/download/spawn-linux-amd64
+curl -Lo truffle https://github.com/scttfrdmn/spore-host/releases/latest/download/truffle-linux-amd64
 
 chmod +x spawn truffle
 sudo mv spawn truffle /usr/local/bin/
@@ -45,8 +45,8 @@ sudo mv spawn truffle /usr/local/bin/
 
 ```bash
 # arm64
-curl -Lo spawn https://github.com/scttfrdmn/mycelium/releases/latest/download/spawn-linux-arm64
-curl -Lo truffle https://github.com/scttfrdmn/mycelium/releases/latest/download/truffle-linux-arm64
+curl -Lo spawn https://github.com/scttfrdmn/spore-host/releases/latest/download/spawn-linux-arm64
+curl -Lo truffle https://github.com/scttfrdmn/spore-host/releases/latest/download/truffle-linux-arm64
 
 chmod +x spawn truffle
 sudo mv spawn truffle /usr/local/bin/
@@ -56,11 +56,11 @@ sudo mv spawn truffle /usr/local/bin/
 
 ```bash
 # Debian/Ubuntu (.deb)
-curl -Lo spawn.deb https://github.com/scttfrdmn/mycelium/releases/latest/download/spawn_linux_amd64.deb
+curl -Lo spawn.deb https://github.com/scttfrdmn/spore-host/releases/latest/download/spawn_linux_amd64.deb
 sudo dpkg -i spawn.deb
 
 # Red Hat/CentOS (.rpm)
-curl -Lo spawn.rpm https://github.com/scttfrdmn/mycelium/releases/latest/download/spawn_linux_amd64.rpm
+curl -Lo spawn.rpm https://github.com/scttfrdmn/spore-host/releases/latest/download/spawn_linux_amd64.rpm
 sudo rpm -i spawn.rpm
 ```
 
@@ -69,8 +69,8 @@ sudo rpm -i spawn.rpm
 Requires Go 1.21+:
 
 ```bash
-git clone https://github.com/scttfrdmn/mycelium.git
-cd mycelium
+git clone https://github.com/scttfrdmn/spore-host.git
+cd spore-host
 
 # Build spawn
 cd spawn && make build && sudo cp dist/spawn /usr/local/bin/

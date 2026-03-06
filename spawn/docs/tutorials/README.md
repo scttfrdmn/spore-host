@@ -204,4 +204,4 @@ Each tutorial follows a consistent structure:
 
 ## Feedback
 
-Found an issue or have suggestions? [Open an issue](https://github.com/scttfrdmn/mycelium/issues/new?labels=type:docs,component:spawn)
+Found an issue or have suggestions? [Open an issue](https://github.com/scttfrdmn/spore-host/issues/new?labels=type:docs,component:spawn)

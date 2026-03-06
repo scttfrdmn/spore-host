@@ -7,7 +7,7 @@ set -e
 # This is a ONE-TIME setup script for the default account (752123829273)
 # where the Lambda function runs.
 
-PROFILE=${1:-mycelium-infra}
+PROFILE=${1:-spore-host-infra}
 AWS_ACCOUNT_ID="942542972736"  # Account with EC2 instances
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

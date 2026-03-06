@@ -8,7 +8,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/scttfrdmn/mycelium/spawn/pkg/orchestrator"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/orchestrator"
 )
 
 const Version = "0.1.0"

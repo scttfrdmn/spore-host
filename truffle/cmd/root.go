@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/scttfrdmn/mycelium/pkg/i18n"
+	"github.com/scttfrdmn/spore-host/pkg/i18n"
 	"github.com/spf13/cobra"
 )
 

@@ -12,7 +12,7 @@ import (
 	ec2types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	sqstypes "github.com/aws/aws-sdk-go-v2/service/sqs/types"
-	"github.com/scttfrdmn/mycelium/spawn/pkg/registry"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/registry"
 )
 
 // Orchestrator manages automatic cloud bursting

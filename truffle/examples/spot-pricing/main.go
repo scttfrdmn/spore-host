@@ -6,7 +6,7 @@ import (
 	"log"
 	"regexp"
 
-	"github.com/scttfrdmn/mycelium/truffle/pkg/aws"
+	"github.com/scttfrdmn/spore-host/truffle/pkg/aws"
 )
 
 // Example: Get Spot pricing for instance types

@@ -1,4 +1,4 @@
-module github.com/scttfrdmn/mycelium
+module github.com/scttfrdmn/spore-host
 
 go 1.24.0
 
@@ -10,7 +10,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/dynamodb v1.54.0
 	github.com/aws/aws-sdk-go-v2/service/ec2 v1.285.0
 	github.com/aws/aws-sdk-go-v2/service/lambda v1.88.0
-	github.com/scttfrdmn/mycelium/spawn v0.0.0-20260131045720-9a653c6fe0d0
+	github.com/scttfrdmn/spore-host/spawn v0.0.0-20260131045720-9a653c6fe0d0
 )
 
 require (

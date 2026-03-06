@@ -62,7 +62,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Health checks and capacity reconciliation
 - Automatic instance replacement for failures
 - Min/max/desired capacity management
-- Cross-account orchestration (Lambda in mycelium-infra, EC2 in mycelium-dev)
+- Cross-account orchestration (Lambda in spore-host-infra, EC2 in spore-host-dev)
 - DynamoDB state tracking (`spawn-autoscale-groups-production`)
 
 **Phase 2: Queue-Based Scaling**
@@ -565,7 +565,7 @@ This release completes Phase 4 of security hardening (issue #67) with IAM policy
 - **Alias**: `alias/spawn-webhook-encryption`
 - **Key ID**: `999884b3-23ce-44dd-88e8-5f46300cbd54`
 - **Region**: `us-east-1`
-- **Account**: `966362334030` (mycelium-infra)
+- **Account**: `966362334030` (spore-host-infra)
 
 **Test Results**: All encryption, decryption, masking, and backward compatibility tests passed (see `KMS_TEST_RESULTS.md`)
 
@@ -1000,7 +1000,7 @@ Each example includes:
 - **Lambda Function**: `scheduler-handler` for EventBridge trigger processing
 - **S3 Buckets**: `spawn-schedules-{region}` for parameter file storage
 - **EventBridge Scheduler**: Dynamic schedule creation per user request
-- Cross-account IAM: Lambda in mycelium-infra → EC2 in mycelium-dev
+- Cross-account IAM: Lambda in spore-host-infra → EC2 in spore-host-dev
 
 #### Features
 - Parameter file uploaded to S3 once, reused for each execution
@@ -1222,9 +1222,9 @@ Each example includes:
   - Now: uses the region specified in parameters
   - Fixes issue where single-region sweeps launched in wrong region
 
-- Cross-account role assumption now uses explicit mycelium-dev profile
+- Cross-account role assumption now uses explicit spore-host-dev profile
   - Previously: used default AWS profile for account ID lookup
-  - Now: explicitly loads mycelium-dev profile (435415984226)
+  - Now: explicitly loads spore-host-dev profile (435415984226)
   - Ensures instances launch in correct account
 
 - Lambda orchestrator fallback logic extended to single-region sweeps
@@ -1268,7 +1268,7 @@ Each example includes:
 
 See git history for changes prior to v0.8.0.
 
-[0.11.0]: https://github.com/scttfrdmn/mycelium/compare/v0.10.0...v0.11.0
-[0.10.0]: https://github.com/scttfrdmn/mycelium/compare/v0.9.0...v0.10.0
-[0.9.0]: https://github.com/scttfrdmn/mycelium/compare/v0.8.0...v0.9.0
-[0.8.0]: https://github.com/scttfrdmn/mycelium/compare/v0.7.0...v0.8.0
+[0.11.0]: https://github.com/scttfrdmn/spore-host/compare/v0.10.0...v0.11.0
+[0.10.0]: https://github.com/scttfrdmn/spore-host/compare/v0.9.0...v0.10.0
+[0.9.0]: https://github.com/scttfrdmn/spore-host/compare/v0.8.0...v0.9.0
+[0.8.0]: https://github.com/scttfrdmn/spore-host/compare/v0.7.0...v0.8.0

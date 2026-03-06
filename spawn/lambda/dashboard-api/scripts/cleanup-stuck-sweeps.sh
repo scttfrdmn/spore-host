@@ -4,7 +4,7 @@ set -e
 # Cleanup stuck sweeps that haven't been updated in 1+ hours
 # Usage: ./cleanup-stuck-sweeps.sh [aws-profile]
 
-PROFILE=${1:-mycelium-infra}
+PROFILE=${1:-spore-host-infra}
 REGION=us-east-1
 TABLE=spawn-sweep-orchestration
 STALE_THRESHOLD_SECONDS=3600  # 1 hour

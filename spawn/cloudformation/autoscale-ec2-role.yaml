@@ -5,7 +5,7 @@ Parameters:
   OrchestratorAccountId:
     Type: String
     Default: '966362334030'
-    Description: AWS account ID of the mycelium-infra account where Lambda runs
+    Description: AWS account ID of the spore-host-infra account where Lambda runs
 
 Resources:
   AutoScaleEC2Role:
@@ -45,7 +45,7 @@ Resources:
                     iam:PassedToService: ec2.amazonaws.com
       Tags:
         - Key: Project
-          Value: mycelium
+          Value: spore-host
         - Key: Component
           Value: spawn-autoscale
 

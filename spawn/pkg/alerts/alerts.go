@@ -11,7 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/aws/aws-sdk-go-v2/service/kms"
 	"github.com/google/uuid"
-	"github.com/scttfrdmn/mycelium/spawn/pkg/security"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/security"
 )
 
 const (

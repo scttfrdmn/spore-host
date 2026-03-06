@@ -4,7 +4,7 @@ set -e
 # Setup API Gateway for Dashboard API
 # Usage: ./setup-dashboard-api-gateway.sh [aws-profile]
 
-PROFILE=${1:-mycelium-infra}
+PROFILE=${1:-spore-host-infra}
 API_NAME="spawn-dashboard-api"
 FUNCTION_NAME="spawn-dashboard-api"
 REGION="us-east-1"

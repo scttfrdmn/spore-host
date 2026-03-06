@@ -657,7 +657,7 @@ If stuck, gather this information:
 6. **What you tried**
 
 Post to:
-- [GitHub Issues](https://github.com/scttfrdmn/mycelium/issues)
+- [GitHub Issues](https://github.com/scttfrdmn/spore-host/issues)
 - Include all information above
 
 ---

@@ -5,7 +5,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/scttfrdmn/mycelium/spawn/pkg/observability"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/observability"
 )
 
 // Identity represents the instance's identity information

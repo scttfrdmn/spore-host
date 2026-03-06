@@ -1,8 +1,8 @@
-# mycelium v0.1.0 - Download Package
+# spore-host v0.1.0 - Download Package
 
 ## 📦 What's Included
 
-This package contains the complete **mycelium** suite - tools that make AWS EC2 accessible to everyone.
+This package contains the complete **spore-host** suite - tools that make AWS EC2 accessible to everyone.
 
 ### The Tools
 
@@ -13,7 +13,7 @@ This package contains the complete **mycelium** suite - tools that make AWS EC2 
 ### Package Contents
 
 ```
-mycelium-v0.1.0/
+spore-host-v0.1.0/
 ├── README.md                    ← Start here!
 ├── QUICK_REFERENCE.md          ← Command cheat sheet
 ├── COMPLETE_ECOSYSTEM.md       ← Full overview
@@ -57,14 +57,14 @@ mycelium-v0.1.0/
 
 **Linux/macOS:**
 ```bash
-tar -xzf mycelium-v0.1.0.tar.gz
-cd mycelium
+tar -xzf spore-host-v0.1.0.tar.gz
+cd spore-host
 ```
 
 **Windows:**
 ```powershell
-# Extract mycelium-v0.1.0.zip
-cd mycelium
+# Extract spore-host-v0.1.0.zip
+cd spore-host
 ```
 
 ### 2. Build the Tools
@@ -153,7 +153,7 @@ aws configure
 go version  # Should be 1.21+
 
 # Install dependencies
-cd mycelium
+cd spore-host
 go mod download
 ```
 
@@ -393,4 +393,4 @@ This creates buckets in 10 regions for fast regional downloads.
 
 ---
 
-**Welcome to the mycelium network!** 🌱
+**Welcome to the spore-host network!** 🌱

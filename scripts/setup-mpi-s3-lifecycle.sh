@@ -7,7 +7,7 @@ set -e
 # This sets up automatic cleanup of temporary MPI SSH keys stored in S3.
 # Keys are automatically deleted after 1 day.
 
-PROFILE=${1:-mycelium-infra}
+PROFILE=${1:-spore-host-infra}
 REGION=${2:-us-east-1}
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

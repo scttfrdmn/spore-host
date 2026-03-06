@@ -7,7 +7,7 @@ set -e  # Exit on error
 BUCKET_NAME="spore-host-website"
 REGION="us-east-1"
 DOMAIN="spore.host"
-AWS_PROFILE="${AWS_PROFILE:-mycelium-infra}"
+AWS_PROFILE="${AWS_PROFILE:-spore-host-infra}"
 
 # Colors for output
 GREEN='\033[0;32m'

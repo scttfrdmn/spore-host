@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/scttfrdmn/mycelium/spawn/pkg/observability"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/observability"
 )
 
 func TestNewTracer_Disabled(t *testing.T) {

@@ -765,6 +765,6 @@ A: Hybrid compute is designed for batch workloads. There's ~30s latency for peer
 
 ## Support
 
-- **Issues**: https://github.com/scttfrdmn/mycelium/issues
-- **Discussions**: https://github.com/scttfrdmn/mycelium/discussions
-- **Email**: support@mycelium.dev
+- **Issues**: https://github.com/scttfrdmn/spore-host/issues
+- **Discussions**: https://github.com/scttfrdmn/spore-host/discussions
+- **Email**: support@spore-host.dev

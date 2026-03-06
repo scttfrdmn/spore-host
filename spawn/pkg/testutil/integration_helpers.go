@@ -62,7 +62,7 @@ func NewTestEC2Client(ctx context.Context, region string) *ec2.Client {
 func loadTestAWSConfig(ctx context.Context) aws.Config {
 	cfg, err := config.LoadDefaultConfig(ctx,
 		config.WithRegion(TestRegion),
-		config.WithSharedConfigProfile("mycelium-dev"),
+		config.WithSharedConfigProfile("spore-host-dev"),
 	)
 	if err != nil {
 		panic(fmt.Sprintf("failed to load AWS config: %v", err))

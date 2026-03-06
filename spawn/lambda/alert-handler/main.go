@@ -20,7 +20,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/kms"
 	"github.com/aws/aws-sdk-go-v2/service/sns"
 	snstypes "github.com/aws/aws-sdk-go-v2/service/sns/types"
-	"github.com/scttfrdmn/mycelium/spawn/pkg/security"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/security"
 )
 
 // Default configuration for shared infrastructure (with environment variable overrides)
@@ -28,7 +28,7 @@ const (
 	defaultAlertsTable             = "spawn-alerts"
 	defaultAlertHistoryTable       = "spawn-alert-history"
 	defaultSweepAlertsTopicArnTmpl = "arn:aws:sns:%s:%s:spawn-sweep-alerts"
-	defaultAccountID               = "966362334030" // mycelium-infra account
+	defaultAccountID               = "966362334030" // spore-host-infra account
 )
 
 // TriggerType represents the type of event that triggers an alert

@@ -18,7 +18,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/lambda"
 	lambdaTypes "github.com/aws/aws-sdk-go-v2/service/lambda/types"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
-	"github.com/scttfrdmn/mycelium/spawn/pkg/autoscaler"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/autoscaler"
 	"github.com/spf13/cobra"
 )
 

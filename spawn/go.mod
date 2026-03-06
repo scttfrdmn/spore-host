@@ -1,4 +1,4 @@
-module github.com/scttfrdmn/mycelium/spawn
+module github.com/scttfrdmn/spore-host/spawn
 
 go 1.24.0
 
@@ -29,7 +29,7 @@ require (
 	github.com/pebbe/zmq4 v1.4.0
 	github.com/prometheus/client_golang v1.23.2
 	github.com/robfig/cron/v3 v3.0.1
-	github.com/scttfrdmn/mycelium/pkg/i18n v0.0.0-00010101000000-000000000000
+	github.com/scttfrdmn/spore-host/pkg/i18n v0.0.0-00010101000000-000000000000
 	github.com/spf13/cobra v1.8.0
 	go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-sdk-go-v2/otelaws v0.49.0
 	go.opentelemetry.io/otel v1.39.0
@@ -76,4 +76,4 @@ require (
 	google.golang.org/protobuf v1.36.10 // indirect
 )
 
-replace github.com/scttfrdmn/mycelium/pkg/i18n => ../pkg/i18n
+replace github.com/scttfrdmn/spore-host/pkg/i18n => ../pkg/i18n

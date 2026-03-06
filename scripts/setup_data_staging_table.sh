@@ -16,7 +16,7 @@ aws dynamodb create-table \
         AttributeName=staging_id,KeyType=HASH \
     --billing-mode PAY_PER_REQUEST \
     --region "$REGION" \
-    --profile mycelium-infra \
+    --profile spore-host-infra \
     --tags \
         Key=Project,Value=spawn \
         Key=Component,Value=data-staging \
@@ -28,7 +28,7 @@ aws dynamodb update-time-to-live \
     --table-name spawn-staged-data \
     --time-to-live-specification "Enabled=true,AttributeName=ttl" \
     --region "$REGION" \
-    --profile mycelium-infra \
+    --profile spore-host-infra \
     2>/dev/null || echo "(TTL already configured)"
 
 echo "✓ Created spawn-staged-data table in ${REGION}"

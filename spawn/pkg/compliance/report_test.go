@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/scttfrdmn/mycelium/spawn/pkg/aws"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/aws"
 )
 
 func TestGenerateComplianceReport(t *testing.T) {

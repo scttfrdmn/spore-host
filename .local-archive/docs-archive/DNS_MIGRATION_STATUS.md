@@ -127,7 +127,7 @@ Once DNS has fully propagated (verify with `dig` commands above), you can:
 **New Hosted Zone (Infrastructure Account):**
 - Account: 966362334030
 - Zone ID: Z0341053304H0DQXF6U4X
-- Profile: `mycelium-infra`
+- Profile: `spore-host-infra`
 
 **Commands:**
 ```bash
@@ -136,11 +136,11 @@ AWS_PROFILE=management aws route53 list-resource-record-sets \
   --hosted-zone-id Z048907324UNXKEK9KX93
 
 # View new zone records
-AWS_PROFILE=mycelium-infra aws route53 list-resource-record-sets \
+AWS_PROFILE=spore-host-infra aws route53 list-resource-record-sets \
   --hosted-zone-id Z0341053304H0DQXF6U4X
 
 # Check nameservers from new zone
-AWS_PROFILE=mycelium-infra aws route53 get-hosted-zone \
+AWS_PROFILE=spore-host-infra aws route53 get-hosted-zone \
   --id Z0341053304H0DQXF6U4X \
   --query 'DelegationSet.NameServers'
 ```

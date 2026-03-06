@@ -30,15 +30,15 @@ Your laptop can sleep, disconnect, or shut down.
 
 **macOS/Linux:**
 ```bash
-curl -LO https://github.com/scttfrdmn/mycelium/releases/latest/download/spawn-$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m)
+curl -LO https://github.com/scttfrdmn/spore-host/releases/latest/download/spawn-$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m)
 chmod +x spawn-*
 sudo mv spawn-* /usr/local/bin/spawn
 ```
 
 **Build from source:**
 ```bash
-git clone https://github.com/scttfrdmn/mycelium
-cd mycelium/spawn
+git clone https://github.com/scttfrdmn/spore-host
+cd spore-host/spawn
 make build && sudo make install
 ```
 
@@ -326,7 +326,7 @@ spawn status <instance-id> --region us-west-2
 
 1. **Documentation:** Read [tutorials](tutorials/) and [how-to guides](how-to/)
 2. **Command help:** `spawn launch --help`
-3. **GitHub Issues:** [Open an issue](https://github.com/scttfrdmn/mycelium/issues)
+3. **GitHub Issues:** [Open an issue](https://github.com/scttfrdmn/spore-host/issues)
 
 ## Best Practices
 
@@ -452,20 +452,20 @@ Use both: Terraform for infrastructure, spawn for temporary compute.
 - **Tutorials:** [docs/tutorials/](tutorials/)
 - **How-To Guides:** [docs/how-to/](how-to/)
 - **Command Reference:** [docs/reference/](reference/)
-- **GitHub:** https://github.com/scttfrdmn/mycelium
+- **GitHub:** https://github.com/scttfrdmn/spore-host
 
 ### How do I report bugs?
 
-[Open a GitHub issue](https://github.com/scttfrdmn/mycelium/issues/new)
+[Open a GitHub issue](https://github.com/scttfrdmn/spore-host/issues/new)
 
 ### How do I request features?
 
-[Open a GitHub issue](https://github.com/scttfrdmn/mycelium/issues/new) with the "enhancement" label
+[Open a GitHub issue](https://github.com/scttfrdmn/spore-host/issues/new) with the "enhancement" label
 
 ### Is there a community?
 
-Check the [GitHub Discussions](https://github.com/scttfrdmn/mycelium/discussions)
+Check the [GitHub Discussions](https://github.com/scttfrdmn/spore-host/discussions)
 
 ---
 
-**Didn't find your question?** [Open an issue](https://github.com/scttfrdmn/mycelium/issues/new?labels=question)
+**Didn't find your question?** [Open an issue](https://github.com/scttfrdmn/spore-host/issues/new?labels=question)
