@@ -8,6 +8,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/olekukonko/tablewriter"
+	"github.com/olekukonko/tablewriter/tw"
 	"github.com/spf13/cobra"
 	"github.com/scttfrdmn/spore-host/truffle/pkg/quotas"
 )
@@ -124,9 +125,11 @@ func displayRegionQuotas(region string, info *quotas.QuotaInfo, filterFamily str
 	fmt.Println()
 
 	// Prepare table data
-	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"Family", "Type", "Quota", "Usage", "Available", "Status"})
-	table.SetBorder(true)
+	table := tablewriter.NewTable(os.Stdout,
+		tablewriter.WithHeader([]string{"Family", "Type", "Quota", "Usage", "Available", "Status"}),
+		tablewriter.WithHeaderAlignment(tw.AlignLeft),
+		tablewriter.WithRowAlignment(tw.AlignLeft),
+	)
 
 	families := []quotas.QuotaFamily{
 		quotas.FamilyStandard,
@@ -199,7 +202,9 @@ func displayRegionQuotas(region string, info *quotas.QuotaInfo, filterFamily str
 		}
 	}
 
-	table.Render()
+	if err := table.Render(); err != nil {
+		fmt.Fprintf(os.Stderr, "table render error: %v\n", err)
+	}
 
 	// Show instance count
 	fmt.Println()
