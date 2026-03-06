@@ -1,7 +1,7 @@
 # Multi-stage build for spawn and truffle CLI tools
 # Produces minimal container with spawn, truffle binaries and AWS tools
 
-FROM golang:1.24-alpine AS builder
+FROM golang:1.26-alpine AS builder
 
 # Use Docker's automatic platform ARGs for multi-platform builds
 ARG TARGETARCH
