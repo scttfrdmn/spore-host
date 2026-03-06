@@ -130,6 +130,26 @@ func (a *Agent) Monitor(ctx context.Context) {
 
 	log.Printf("Monitoring started")
 
+	// Dedicated spot interruption monitor: polls every 5s independent of the
+	// main 1-minute lifecycle ticker, ensuring we detect the 2-minute AWS
+	// warning with maximum lead time.
+	if a.provider.IsSpotInstance(ctx) {
+		go func() {
+			spotTicker := time.NewTicker(5 * time.Second)
+			defer spotTicker.Stop()
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case <-spotTicker.C:
+					if a.checkSpotInterruption(ctx) {
+						return
+					}
+				}
+			}
+		}()
+	}
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -143,13 +163,8 @@ func (a *Agent) Monitor(ctx context.Context) {
 }
 
 func (a *Agent) checkAndAct(ctx context.Context) {
-	// 0. Check for Spot interruption (HIGHEST PRIORITY - EC2 only)
-	if a.provider.IsSpotInstance(ctx) {
-		if a.checkSpotInterruption(ctx) {
-			// Spot interruption detected - handled in checkSpotInterruption
-			return
-		}
-	}
+	// 0. Spot interruption is handled by the dedicated goroutine in Monitor.
+	// Skip here to avoid duplicate processing on the slow path.
 
 	// 1. Check for completion signal (HIGH PRIORITY)
 	if a.config.OnComplete != "" {
