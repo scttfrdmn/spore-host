@@ -35,6 +35,21 @@ scoop install truffle
 scoop install spawn
 ```
 
+**Debian / Ubuntu (.deb)**
+
+```bash
+curl -LO https://github.com/scttfrdmn/spore-host/releases/latest/download/truffle_linux_amd64.deb
+curl -LO https://github.com/scttfrdmn/spore-host/releases/latest/download/spawn_linux_amd64.deb
+sudo dpkg -i truffle_linux_amd64.deb spawn_linux_amd64.deb
+```
+
+**RHEL / Fedora (.rpm)**
+
+```bash
+sudo rpm -i https://github.com/scttfrdmn/spore-host/releases/latest/download/truffle_linux_amd64.rpm
+sudo rpm -i https://github.com/scttfrdmn/spore-host/releases/latest/download/spawn_linux_amd64.rpm
+```
+
 **Direct download**
 
 Pre-built binaries for Linux, macOS, and Windows (amd64/arm64) on the [releases page](https://github.com/scttfrdmn/spore-host/releases/latest).
