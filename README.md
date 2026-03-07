@@ -12,333 +12,263 @@
   <a href="https://snyk.io/test/github/scttfrdmn/spore-host"><img src="https://snyk.io/test/github/scttfrdmn/spore-host/badge.svg" alt="Known Vulnerabilities"></a>
 </p>
 
-**spore.host** is a suite of tools that makes AWS EC2 accessible to everyone - from complete beginners to ML engineers.
+**spore.host** is a suite of CLI tools for launching and managing AWS EC2 instances — with automatic lifecycle management so instances clean up after themselves.
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│  🔍 truffle  - Find instances, check quotas            │
-│  🚀 spawn    - Launch effortlessly                      │
-│  🤖 spawnd   - Monitor automatically                    │
+│  🔍 truffle  - Find capacity, check spot prices         │
+│  🚀 spawn    - Launch and manage instances              │
+│  🤖 spored   - Lifecycle daemon (runs on instance)      │
 └─────────────────────────────────────────────────────────┘
-
-Making AWS accessible to everyone.
 ```
 
 ---
 
-## 🚀 Quick Start
+## Installation
 
-### Installation
+**macOS / Linux (Homebrew)**
 
 ```bash
-# Clone or extract the archive
-cd spore
-
-# Build all tools
-make build-all
-
-# Or build individually
-cd truffle && make build
-cd spawn && make build
+brew install scttfrdmn/tap/truffle
+brew install scttfrdmn/tap/spawn
 ```
 
-### First Launch (2 minutes!)
+**Windows (Scoop)**
 
-```bash
-# Interactive wizard - perfect for beginners
-./spawn/bin/spawn
-
-# Press Enter 6 times → Instance ready!
+```powershell
+scoop bucket add scttfrdmn https://github.com/scttfrdmn/scoop-bucket
+scoop install truffle
+scoop install spawn
 ```
 
-### Power User Flow
+**Direct download**
+
+Pre-built binaries for Linux, macOS, and Windows (amd64/arm64) on the [releases page](https://github.com/scttfrdmn/spore-host/releases/latest).
+
+**Build from source**
 
 ```bash
-# Find cheapest Spot instance
-./truffle/bin/truffle spot "m7i.*" --sort-by-price --pick-first | \
-  ./spawn/bin/spawn --ttl 8h
+git clone https://github.com/scttfrdmn/spore-host
+cd spore-host/truffle && make build && sudo make install
+cd ../spawn && make build && sudo make install
 ```
 
 ---
 
-## 🍄 The Tools
-
-### truffle - Find & Discover
-
-Search instance types, check Spot prices, find GPU capacity, manage quotas.
-
-**Works without AWS account!** (credentials optional for quota checking)
+## Quick Start
 
 ```bash
-truffle search m7i.large           # Search instances
-truffle spot m7i.large             # Check Spot prices
-truffle capacity --gpu-only        # Find GPU capacity
-truffle quotas                     # Check quotas (needs AWS creds)
+# Find the cheapest spot instance across regions
+truffle spot c6a.xlarge c7g.xlarge --sort-by-price --active-only
+
+# Launch with a name — gets DNS at my-job.spore.host automatically
+spawn launch --name my-job --instance-type c6a.xlarge --ttl 4h --on-complete terminate
+
+# Connect by name
+spawn connect my-job
+
+# Check status (TTL remaining, idle state)
+spawn status my-job
+
+# Extend TTL if the job is running long
+spawn extend my-job 2h
+
+# List all running instances
+spawn list
 ```
 
-[Full documentation →](truffle/README.md)
+---
 
-### spawn - Launch Effortlessly
+## The Tools
 
-Launch instances with wizard, direct commands, or pipe from truffle.
+### truffle — Find Capacity
+
+Search instance types, compare spot prices across regions and architectures, check quotas.
+
+**Works without AWS credentials** — credentials only needed for `truffle quotas`.
+
+```bash
+# Compare spot prices across Intel, AMD, and Graviton
+truffle spot c6i.xlarge c6a.xlarge c7g.xlarge --sort-by-price --active-only
+
+# Find GPU capacity
+truffle capacity --gpu-only
+
+# Check your account quotas
+truffle quotas
+
+# Search by spec
+truffle search --min-vcpus 8 --min-memory 32 --arch arm64
+```
+
+Output formats: `--output table` (default), `--output json`, `--output yaml`, `--output csv`
+
+[truffle documentation →](truffle/README.md)
+
+---
+
+### spawn — Launch and Manage
+
+Launch EC2 instances with automatic lifecycle management. Instances terminate themselves — no forgotten bills.
 
 **Requires AWS credentials.**
 
 ```bash
-spawn                              # Wizard mode
-spawn --instance-type m7i.large    # Direct launch
-truffle search ... | spawn         # Pipe mode
+# Name your spore — sets EC2 Name tag and registers <name>.spore.host DNS
+spawn launch --name my-analysis --instance-type t4g.medium
+
+# With full lifecycle controls
+spawn launch \
+  --name my-job \
+  --instance-type c6a.xlarge \
+  --ttl 4h \
+  --idle-timeout 20m \
+  --on-complete terminate
+
+# Connect, check, extend
+spawn connect my-analysis          # SSH by name
+spawn status my-analysis           # TTL remaining, idle state
+spawn extend my-analysis 2h        # Extend TTL live
+spawn list                         # All running instances
+
+# Spot instances
+spawn launch --name my-job --instance-type c6a.xlarge --spot --ttl 8h
 ```
 
-[Full documentation →](spawn/README.md)
+**Default safety net:** if you set neither `--ttl` nor `--idle-timeout`, spawn automatically applies `--idle-timeout 1h` to prevent runaway instances.
 
-### spawnd - Monitor Automatically
-
-Runs on your instance as a systemd service. Monitors TTL and idle time, auto-terminates or hibernates.
-
-**No user interaction needed** - spawnd reads its configuration from AWS tags.
+[spawn documentation →](spawn/README.md)
 
 ---
 
-## 🎯 Who Is This For?
+### spored — Lifecycle Daemon
 
-- **Beginners**: Interactive wizard, no AWS knowledge needed
-- **Data Scientists**: GPU access without DevOps, quota management
-- **Developers**: Quick dev boxes, cost-effective Spot instances
-- **ML Engineers**: Capacity discovery, hibernation, auto-termination
-- **Windows Users**: Native support (finally!)
+spored runs inside your instance as a systemd service. It watches for three termination triggers — whichever fires first wins:
 
----
+| Trigger | How to set | What happens |
+|---------|-----------|--------------|
+| **Completion signal** | `touch /tmp/SPAWN_COMPLETE` | Terminates immediately (after 30s grace period) |
+| **Idle timeout** | `--idle-timeout 20m` | Terminates after N minutes below CPU threshold |
+| **TTL** | `--ttl 4h` | Terminates at deadline, no matter what |
 
-## 📚 Documentation
-
-### User Guides
-- **QUICK_REFERENCE.md** - Command cheat sheet
-- **COMPLETE_ECOSYSTEM.md** - Full overview
-- **truffle/README.md** - truffle user guide
-- **truffle/QUOTAS.md** - Quota checking guide
-- **spawn/README.md** - spawn user guide
-- **spawn/ENHANCEMENTS.md** - S3/Windows/Wizard details
-
-### Deployment & Security (For Organizations)
-- **DEPLOYMENT_GUIDE.md** - Enterprise deployment strategies
-- **SECURITY.md** - Comprehensive security documentation for CISOs
-- **spawn/IAM_PERMISSIONS.md** - Required IAM permissions
-- **scripts/setup-spawnd-iam-role.sh** - One-time IAM role setup script
-- **scripts/validate-permissions.sh** - Permission validation tool
+Configuration is read from EC2 instance tags — no SSH required to reconfigure. Use `spawn extend` to update the TTL on a running instance.
 
 ---
 
-## 🔧 Building
+## Examples
 
-### Prerequisites
-
-- Go 1.21+
-- AWS account (for spawn)
-- AWS credentials (optional for truffle)
-
-### Build Commands
+### Find cheapest capacity, then launch
 
 ```bash
-# Build everything (current platform)
-make build-all
+# Check spot prices across instance families
+truffle spot c6i.xlarge c6a.xlarge c7g.xlarge --sort-by-price --active-only
 
-# Build for all platforms
-cd truffle && make build-all
-cd spawn && make build-all
+# Launch into a specific region with spot pricing
+spawn launch \
+  --name my-analysis \
+  --instance-type c6a.xlarge \
+  --region us-east-2 \
+  --spot \
+  --ttl 4h \
+  --on-complete terminate
+```
 
-# Install locally
-cd truffle && sudo make install
-cd spawn && sudo make install
+### Job with completion signal
+
+```bash
+# job.sh — runs on the instance
+#!/bin/bash
+python analyze.py --input data.csv --output results/
+touch /tmp/SPAWN_COMPLETE   # signals spored to terminate
+```
+
+```bash
+spawn launch \
+  --name my-analysis \
+  --instance-type t4g.medium \
+  --ttl 4h \
+  --on-complete terminate \
+  --script job.sh
+```
+
+### Parameter sweep
+
+```bash
+spawn sweep --params grid.yaml --job-array-name my-sweep
+spawn list --array my-sweep
+spawn extend --job-array-name my-sweep 2h
+```
+
+### GPU instance
+
+```bash
+truffle quotas --family P          # Check P-instance quota
+truffle capacity --gpu-only        # Find available GPU capacity
+spawn launch --name gpu-job --instance-type g4dn.xlarge --ttl 24h
 ```
 
 ---
 
-## 🔑 AWS Credentials
+## Key Features
 
-### For spawn (Required)
+- **Auto-termination** — TTL, idle detection, and completion signal keep bills predictable
+- **Named instances** — `--name my-job` sets an EC2 Name tag and registers `my-job.spore.host` DNS
+- **Connect by name** — `spawn connect my-job` instead of hunting instance IDs
+- **Live TTL extension** — `spawn extend my-job 2h` reloads config on the running instance
+- **Spot-aware** — spored listens for spot interruption notices and terminates cleanly
+- **Multi-arch** — Intel, AMD, and Graviton (ARM) all work out of the box
+- **Cross-platform** — binaries for Linux, macOS, and Windows
+- **Multilingual** — `--lang es/fr/de/ja/pt` for non-English output
+- **Quota-aware** — truffle checks your service quotas before you hit a launch error
+
+---
+
+## AWS Credentials
+
+spawn requires AWS credentials. truffle works without them for most commands.
 
 ```bash
-export AWS_ACCESS_KEY_ID=your_key
-export AWS_SECRET_ACCESS_KEY=your_secret
+# Standard AWS credential setup
+aws configure
+
+# Or environment variables
+export AWS_ACCESS_KEY_ID=...
+export AWS_SECRET_ACCESS_KEY=...
 export AWS_DEFAULT_REGION=us-east-1
-
-# Or use: aws configure
 ```
 
-### For truffle (Optional)
-
-Most truffle features work **without credentials**:
-- `truffle search` ✅
-- `truffle spot` ✅
-- `truffle capacity` ✅
-
-Credentials only needed for:
-- `truffle quotas`
-- `truffle search --check-quotas`
+truffle commands that work **without** credentials: `search`, `spot`, `capacity`, `find`
+truffle commands that **require** credentials: `quotas`
 
 ---
 
-## 🎨 Examples
+## Documentation
 
-### Absolute Beginner (First Time)
-
-```bash
-$ spawn
-
-🧙 spawn Setup Wizard
-[Press Enter 6 times with defaults]
-
-🎉 Instance ready in 60 seconds!
-ssh -i ~/.ssh/id_rsa ec2-user@54.123.45.67
-```
-
-### GPU Training
-
-```bash
-# Check GPU quota
-$ truffle quotas --family P
-🔴 P: 0/0 vCPUs (zero quota)
-
-# Request increase
-$ truffle quotas --family P --request
-[Copy/paste AWS command, wait 24h]
-
-# Launch GPU instance
-$ truffle capacity --instance-types p5.48xlarge --check-quotas | \
-    spawn --ttl 24h --hibernate-on-idle
-```
-
-### Cheapest Dev Box
-
-```bash
-$ truffle spot "t3.*" --sort-by-price --pick-first | \
-    spawn --spot --ttl 8h
-
-# Cost: ~$0.01/hr
-# Auto-terminates after 8h
-```
+- [QUICK_REFERENCE.md](QUICK_REFERENCE.md) — command cheat sheet
+- [spawn/README.md](spawn/README.md) — full spawn reference
+- [truffle/README.md](truffle/README.md) — full truffle reference
+- [spawn/PARAMETER_SWEEPS.md](spawn/PARAMETER_SWEEPS.md) — running parallel jobs
+- [spawn/SPOT_INSTANCES.md](spawn/SPOT_INSTANCES.md) — spot instance guide
+- [SECURITY.md](SECURITY.md) — security documentation
+- [spawn/IAM_PERMISSIONS.md](spawn/IAM_PERMISSIONS.md) — required IAM permissions
+- [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) — enterprise deployment
 
 ---
 
-## 🌟 Key Features
-
-- ✅ **Zero to instance in 2 minutes**
-- ✅ **No surprise bills** (auto-termination)
-- ✅ **Works on Windows** (native support)
-- ✅ **Quota-aware** (prevents failures)
-- ✅ **GPU support** (auto-detects AMI)
-- ✅ **Hibernation** (save 99% when idle)
-- ✅ **Cross-platform** (Windows/Linux/macOS)
-- ✅ **Production-ready** (error handling, logging)
-- ✅ **Multilingual** (6 languages: English, Spanish, French, German, Japanese, Portuguese)
-
----
-
-## 🌍 Internationalization
-
-Both **spawn** and **truffle** support multiple languages for a better user experience worldwide.
-
-### Supported Languages
-
-- 🇬🇧 **English** (en) - Default
-- 🇪🇸 **Spanish** (es) - Español
-- 🇫🇷 **French** (fr) - Français
-- 🇩🇪 **German** (de) - Deutsch
-- 🇯🇵 **Japanese** (ja) - 日本語
-- 🇵🇹 **Portuguese** (pt) - Português
-
-### Quick Usage
-
-```bash
-# Use Spanish
-spawn --lang es
-truffle --lang es search m7i.large
-
-# Use Japanese
-spawn --lang ja launch
-truffle --lang ja search m7i.large
-
-# Use French
-spawn --lang fr --help
-truffle --lang fr spot m7i.large
-```
-
-### Environment Variables
-
-Set your preferred language globally:
-
-```bash
-# For spawn
-export SPAWN_LANG=es
-spawn launch
-
-# For truffle
-export TRUFFLE_LANG=fr
-truffle search m7i.large
-```
-
-### Accessibility Features
-
-Screen reader-friendly output with no emoji:
-
-```bash
-# Disable emoji only
-spawn --no-emoji launch
-
-# Full accessibility mode (no emoji, no color)
-spawn --accessibility launch
-truffle --accessibility search m7i.large
-```
-
-**All user-facing text is translated** - commands, help, errors, wizard, progress indicators, and table outputs.
-
----
-
-## 📦 Project Structure
+## Project Structure
 
 ```
 spore-host/
-├── README.md                    ← You are here
-├── QUICK_REFERENCE.md          
-├── COMPLETE_ECOSYSTEM.md       
-├── Makefile                    
-│
-├── truffle/                     ← Find instances
-│   ├── README.md
-│   ├── QUOTAS.md
-│   ├── cmd/
-│   ├── pkg/
-│   └── bindings/
-│
-└── spawn/                       ← Launch instances
-    ├── README.md
-    ├── ENHANCEMENTS.md
-    ├── cmd/
-    ├── pkg/
-    └── scripts/
+├── truffle/          # Instance discovery and quota management
+│   ├── cmd/          # CLI commands (search, spot, capacity, quotas, az)
+│   └── pkg/          # Core packages (aws, find, metadata, output, quotas)
+└── spawn/            # Instance launching and lifecycle management
+    ├── cmd/          # CLI commands (launch, connect, list, status, extend, sweep)
+    └── pkg/          # Core packages (agent, aws, dns, provider, cost, ...)
 ```
 
 ---
 
-## 💬 Quick Commands
+## License
 
-```bash
-# Discovery (no AWS account needed)
-truffle search m7i.large
-truffle spot m7i.large
-
-# With AWS credentials
-truffle quotas
-spawn                              # Wizard
-spawn --instance-type m7i.large    # Direct
-
-# Power user
-truffle search ... --check-quotas | spawn
-```
-
----
-
-**Making AWS accessible to everyone, one instance at a time.** 🍄✨
-
-**Ready to grow your cloud infrastructure naturally!** 🌱
+Apache 2.0 — Copyright 2025-2026 Scott Friedman. See [LICENSE](LICENSE).
