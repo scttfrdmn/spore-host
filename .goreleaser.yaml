@@ -131,7 +131,7 @@ nfpms:
     homepage: https://spore.host
     maintainer: "spore.host <hello@spore.host>"
     description: "Find and discover AWS EC2 instance types"
-    license: MIT
+    license: Apache-2.0
     formats:
       - deb
       - rpm
@@ -151,7 +151,7 @@ nfpms:
     homepage: https://spore.host
     maintainer: "spore.host <hello@spore.host>"
     description: "Launch ephemeral AWS EC2 instances effortlessly"
-    license: MIT
+    license: Apache-2.0
     formats:
       - deb
       - rpm
@@ -171,7 +171,7 @@ nfpms:
     homepage: https://spore.host
     maintainer: "spore.host <hello@spore.host>"
     description: "Background monitoring daemon for spawn-managed EC2 instances"
-    license: MIT
+    license: Apache-2.0
     formats:
       - deb
       - rpm
@@ -196,7 +196,7 @@ brews:
     directory: Formula
     homepage: https://github.com/scttfrdmn/spore-host
     description: "Find and discover AWS EC2 instance types"
-    license: MIT
+    license: Apache-2.0
     test: |
       system "#{bin}/truffle", "version"
     install: |
@@ -213,7 +213,7 @@ brews:
     directory: Formula
     homepage: https://github.com/scttfrdmn/spore-host
     description: "Launch ephemeral AWS EC2 instances effortlessly"
-    license: MIT
+    license: Apache-2.0
     dependencies:
       - name: scttfrdmn/tap/truffle
         type: runtime
@@ -235,7 +235,7 @@ scoops:
     directory: bucket
     homepage: https://github.com/scttfrdmn/spore-host
     description: "Find and discover AWS EC2 instance types"
-    license: MIT
+    license: Apache-2.0
 
   - name: spawn
     ids:
@@ -248,7 +248,7 @@ scoops:
     directory: bucket
     homepage: https://github.com/scttfrdmn/spore-host
     description: "Launch ephemeral AWS EC2 instances effortlessly"
-    license: MIT
+    license: Apache-2.0
     depends:
       - scttfrdmn/truffle
 
