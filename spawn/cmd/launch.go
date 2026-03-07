@@ -205,10 +205,10 @@ func init() {
 	launchCmd.Flags().StringVar(&sessionTimeout, "session-timeout", "30m", "Auto-logout idle shells (0 to disable)")
 
 	// Meta
-	launchCmd.Flags().StringVar(&name, "name", "", "Instance name tag")
+	launchCmd.Flags().StringVar(&name, "name", "", "Name your spore (sets Name tag and registers <name>.spore.host DNS)")
 	launchCmd.Flags().StringVar(&userData, "user-data", "", "User data (@file or inline)")
 	launchCmd.Flags().StringVar(&userDataFile, "user-data-file", "", "User data file")
-	launchCmd.Flags().StringVar(&dnsName, "dns", "", "Register DNS name (e.g., my-instance for my-instance.spore.host)")
+	launchCmd.Flags().StringVar(&dnsName, "dns", "", "Override DNS name if different from --name (advanced)")
 	launchCmd.Flags().StringVar(&dnsDomain, "dns-domain", "", "Custom DNS domain (overrides default)")
 	launchCmd.Flags().StringVar(&dnsAPIEndpoint, "dns-api-endpoint", "", "Custom DNS API endpoint (overrides default)")
 
@@ -1523,6 +1523,12 @@ func buildLaunchConfig(truffleInput *input.TruffleInput) (*aws.LaunchConfig, err
 	}
 	if ttl != "" {
 		config.TTL = ttl
+	}
+	// --name implies DNS registration; --dns overrides the DNS portion only.
+	if dnsName == "" && name != "" {
+		dnsName = name
+	} else if name == "" && dnsName != "" {
+		name = dnsName
 	}
 	if dnsName != "" {
 		config.DNSName = dnsName
