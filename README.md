@@ -1,7 +1,5 @@
 <h1 align="center">🍄 spore.host</h1>
 
-<p align="center"><em>Launch EC2 in 2 minutes. Auto-terminate. Zero surprise bills.</em></p>
-
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" alt="License: Apache 2.0"></a>
   <a href="https://github.com/scttfrdmn/spore-host/actions/workflows/ci.yml"><img src="https://github.com/scttfrdmn/spore-host/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
