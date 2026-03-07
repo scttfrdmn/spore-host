@@ -46,9 +46,9 @@
 
 **AWS Services Used:**
 - **EC2:** Launch, terminate, and query instances
-- **IAM:** Create service role for spawnd agent (once per account)
+- **IAM:** Create service role for spored agent (once per account)
 - **SSM Parameter Store:** Query latest Amazon Linux AMI IDs
-- **S3:** Download spawnd agent binary (public read, SHA256-verified)
+- **S3:** Download spored agent binary (public read, SHA256-verified)
 
 **Security Posture:** Requires EC2 launch permissions and limited IAM role creation
 
@@ -89,7 +89,7 @@ See `spawn/IAM_PERMISSIONS.md` for complete policy.
 
 **Summary:**
 - **EC2:** Launch, terminate, describe instances (standard compute access)
-- **IAM:** Create `spawnd-instance-role` and `spawnd-instance-profile` (one-time setup)
+- **IAM:** Create `spored-instance-role` and `spored-instance-profile` (one-time setup)
 - **SSM:** Read `/aws/service/ami-amazon-linux-latest/*` (AMI auto-detection)
 
 **Compatible with:** PowerUserAccess + spawn-specific IAM permissions (see below)
@@ -119,8 +119,8 @@ For organizations using AWS `PowerUser` managed policy, add this supplementary p
         "iam:PassRole"
       ],
       "Resource": [
-        "arn:aws:iam::*:role/spawnd-instance-role",
-        "arn:aws:iam::*:instance-profile/spawnd-instance-profile"
+        "arn:aws:iam::*:role/spored-instance-role",
+        "arn:aws:iam::*:instance-profile/spored-instance-profile"
       ]
     },
     {
@@ -131,8 +131,8 @@ For organizations using AWS `PowerUser` managed policy, add this supplementary p
         "iam:TagInstanceProfile"
       ],
       "Resource": [
-        "arn:aws:iam::*:role/spawnd-instance-role",
-        "arn:aws:iam::*:instance-profile/spawnd-instance-profile"
+        "arn:aws:iam::*:role/spored-instance-role",
+        "arn:aws:iam::*:instance-profile/spored-instance-profile"
       ]
     }
   ]
@@ -145,9 +145,9 @@ For organizations using AWS `PowerUser` managed policy, add this supplementary p
 
 ## 3. IAM Role Created by spawn
 
-### spawnd-instance-role
+### spored-instance-role
 
-**Purpose:** Allows spawnd agent (running on EC2 instances) to self-manage based on tags
+**Purpose:** Allows spored agent (running on EC2 instances) to self-manage based on tags
 
 **Trust Policy:**
 ```json
@@ -210,18 +210,18 @@ For organizations using AWS `PowerUser` managed policy, add this supplementary p
 
 **TTL (Time-To-Live):**
 - User specifies maximum instance lifetime (e.g., `--ttl 8h`)
-- spawnd agent monitors uptime
+- spored agent monitors uptime
 - Terminates instance when TTL expires
 - **Benefit:** Prevents forgotten instances running indefinitely
 
 **Idle Detection:**
 - User specifies idle timeout (e.g., `--idle-timeout 30m`)
-- spawnd monitors SSH sessions and CPU utilization
+- spored monitors SSH sessions and CPU utilization
 - Terminates or hibernates when idle threshold reached
 - **Benefit:** Reduces cost for intermittent workloads
 
 **Laptop Independence:**
-- spawnd runs as systemd service on the instance (not laptop)
+- spored runs as systemd service on the instance (not laptop)
 - Auto-termination works even if laptop is off or disconnected
 - **Benefit:** Prevents orphaned resources from VPN disconnections
 
@@ -250,15 +250,15 @@ spawn:idle-timeout = <duration>  (if specified)
 
 ### Binary Distribution Security
 
-**Problem:** How to securely distribute spawnd binary to instances?
+**Problem:** How to securely distribute spored binary to instances?
 
 **Solution:** Public S3 with SHA256 verification (industry standard)
 
 **Implementation:**
-1. spawnd binaries stored in public S3 buckets (one per region)
+1. spored binaries stored in public S3 buckets (one per region)
 2. Each binary has corresponding `.sha256` checksum file
 3. Instance user-data downloads both binary and checksum
-4. SHA256 verified before execution: `sha256sum --check spawnd-linux-amd64.sha256`
+4. SHA256 verified before execution: `sha256sum --check spored-linux-amd64.sha256`
 5. Installation fails if checksum mismatch
 
 **Why Public S3?**
@@ -282,7 +282,7 @@ spawn:idle-timeout = <duration>  (if specified)
       "Effect": "Allow",
       "Principal": "*",
       "Action": "s3:GetObject",
-      "Resource": "arn:aws:s3:::spawn-binaries-*/spawnd-*"
+      "Resource": "arn:aws:s3:::spawn-binaries-*/spored-*"
     }
   ]
 }
@@ -318,9 +318,9 @@ All spawn operations generate CloudTrail events:
 
 **IAM Role Creation:**
 ```
-CreateRole (spawnd-instance-role)
-PutRolePolicy (spawnd-policy)
-CreateInstanceProfile (spawnd-instance-profile)
+CreateRole (spored-instance-role)
+PutRolePolicy (spored-policy)
+CreateInstanceProfile (spored-instance-profile)
 AddRoleToInstanceProfile
 ```
 
@@ -328,14 +328,14 @@ AddRoleToInstanceProfile
 ```
 RunInstances
   - Tags: spawn:managed=true, spawn:ttl=8h
-  - IamInstanceProfile: spawnd-instance-profile
+  - IamInstanceProfile: spored-instance-profile
   - UserData: <base64-encoded script>
 ```
 
-**Instance Termination (by spawnd):**
+**Instance Termination (by spored):**
 ```
 TerminateInstances
-  - InitiatedBy: spawnd (via instance profile role)
+  - InitiatedBy: spored (via instance profile role)
   - Reason: TTL expired / idle timeout
 ```
 
@@ -348,11 +348,11 @@ aws cloudtrail lookup-events \
   --query 'Events[?contains(CloudTrailEvent, `spawn:managed`)]'
 ```
 
-Find instances terminated by spawnd:
+Find instances terminated by spored:
 ```bash
 aws cloudtrail lookup-events \
   --lookup-attributes AttributeKey=EventName,AttributeValue=TerminateInstances \
-  --query 'Events[?contains(CloudTrailEvent, `spawnd-instance-role`)]'
+  --query 'Events[?contains(CloudTrailEvent, `spored-instance-role`)]'
 ```
 
 ---
@@ -525,21 +525,21 @@ aws cloudtrail lookup-events \
 
 ---
 
-### Scenario: spawnd Role Privilege Escalation Attempt
+### Scenario: spored Role Privilege Escalation Attempt
 
 **Detection:** CloudWatch Logs Insights query:
 
 ```
 fields @timestamp, errorCode, errorMessage
 | filter eventSource = "ec2.amazonaws.com"
-| filter userIdentity.principalId like /spawnd-instance-role/
+| filter userIdentity.principalId like /spored-instance-role/
 | filter errorCode like /Unauthorized/
 ```
 
 **Response:**
 1. Identify instance: Extract instance ID from CloudTrail
 2. Terminate instance immediately
-3. Review spawnd role policy (should be read-only except for self-termination)
+3. Review spored role policy (should be read-only except for self-termination)
 4. Check for IAM policy modifications
 
 ---
@@ -560,10 +560,10 @@ fields @timestamp, errorCode, errorMessage
 ### Security Testing
 
 ```bash
-# Test 1: Verify spawnd cannot terminate non-spawn instances
+# Test 1: Verify spored cannot terminate non-spawn instances
 aws ec2 run-instances --image-id ami-xxxxx --instance-type t3.micro
 # (manually launched, no spawn:managed tag)
-# spawnd should fail to terminate this
+# spored should fail to terminate this
 
 # Test 2: Verify TTL enforcement
 echo '[{"instance_type":"t3.micro","region":"us-east-1"}]' | \
@@ -571,7 +571,7 @@ echo '[{"instance_type":"t3.micro","region":"us-east-1"}]' | \
 # Wait 6 minutes, verify instance terminated
 
 # Test 3: Verify SHA256 verification
-# Corrupt spawnd binary on S3, verify instance launch fails
+# Corrupt spored binary on S3, verify instance launch fails
 
 # Test 4: Verify CloudTrail logging
 aws cloudtrail lookup-events \
@@ -751,15 +751,15 @@ Response time: 48 hours
 
 **A:** None. spawn only communicates with:
 - AWS APIs (EC2, IAM, SSM)
-- S3 buckets for spawnd binary download (public, read-only)
+- S3 buckets for spored binary download (public, read-only)
 
 No telemetry, analytics, or user data leaves your AWS account.
 
 ---
 
-### Q: Can spawnd access my S3 buckets or databases?
+### Q: Can spored access my S3 buckets or databases?
 
-**A:** No. The `spawnd-instance-role` only has permissions for:
+**A:** No. The `spored-instance-role` only has permissions for:
 - Reading its own EC2 tags
 - Terminating/stopping itself
 
@@ -767,19 +767,21 @@ It cannot access S3, RDS, DynamoDB, or any other AWS services.
 
 ---
 
-### Q: What if someone modifies the spawnd binary on S3?
+### Q: What if someone modifies the spored binary on S3?
 
-**A:** The instance will fail to launch. User-data verifies SHA256 checksum before executing spawnd. If the binary is tampered, the checksum won't match and installation aborts.
+**A:** The instance will fail to launch. User-data verifies SHA256 checksum before executing spored. If the binary is tampered, the checksum won't match and installation aborts.
 
 ---
 
-### Q: Can users bypass TTL limits?
+### Q: Can users extend or bypass TTL limits?
 
-**A:** Users cannot extend TTL after launch. However, they could:
+**A:** Users can extend the TTL of a running instance with `spawn extend <name> <duration>`. This updates the EC2 tag and spored picks up the new deadline live. They cannot remove the TTL entirely once set.
+
+They could also:
 - Manually terminate the instance and launch a new one (new TTL starts)
-- SSH in and kill the spawnd service (instance won't auto-terminate)
+- SSH in and stop the spored service (instance won't auto-terminate)
 
-**Mitigation:** CloudWatch Events rule to detect spawnd service failures.
+**Mitigation:** CloudWatch Events rule to detect spored service failures.
 
 ---
 
