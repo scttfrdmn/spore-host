@@ -9,6 +9,7 @@
   <a href="https://goreportcard.com/report/github.com/scttfrdmn/spore-host/spawn"><img src="https://goreportcard.com/badge/github.com/scttfrdmn/spore-host/spawn" alt="Go Report Card"></a>
   <a href="https://github.com/scttfrdmn/spore-host/releases/latest"><img src="https://img.shields.io/github/v/release/scttfrdmn/spore-host" alt="Latest Release"></a>
   <a href="https://img.shields.io/badge/go-1.21+-00ADD8"><img src="https://img.shields.io/badge/go-1.21+-00ADD8?logo=go" alt="Go Version"></a>
+  <a href="https://snyk.io/test/github/scttfrdmn/spore-host"><img src="https://snyk.io/test/github/scttfrdmn/spore-host/badge.svg" alt="Known Vulnerabilities"></a>
 </p>
 
 **spore.host** is a suite of tools that makes AWS EC2 accessible to everyone - from complete beginners to ML engineers.
