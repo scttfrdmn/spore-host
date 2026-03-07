@@ -12,13 +12,9 @@
 
 **spore.host** is a suite of CLI tools for launching and managing AWS EC2 instances — with automatic lifecycle management so instances clean up after themselves.
 
-```
-┌─────────────────────────────────────────────────────────┐
-│  🔍 truffle  - Find capacity, check spot prices         │
-│  🚀 spawn    - Launch and manage instances              │
-│  🤖 spored   - Lifecycle daemon (runs on instance)      │
-└─────────────────────────────────────────────────────────┘
-```
+- 🔍 **truffle** — Find capacity, check spot prices
+- 🚀 **spawn** — Launch and manage instances
+- 🤖 **spored** — Lifecycle daemon (runs on instance)
 
 ---
 
