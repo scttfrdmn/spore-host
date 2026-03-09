@@ -33,7 +33,7 @@ jobs:
           tail -n +2 spawn/coverage.out >> coverage.out
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
           files: ./coverage.out
           token: ${{ secrets.CODECOV_TOKEN }}
