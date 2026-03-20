@@ -39,9 +39,23 @@ jobs:
             ./pkg/agent/... \
             ./pkg/pipeline/...
 
-      - name: Upload coverage
+      - name: Test truffle (Substrate-backed)
+        run: |
+          cd truffle
+          go test -v -coverprofile=coverage.out -covermode=atomic \
+            ./pkg/aws/... \
+            ./pkg/quotas/...
+
+      - name: Upload spawn coverage
         uses: codecov/codecov-action@v4
         with:
           files: spawn/coverage.out
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
+
+      - name: Upload truffle coverage
+        uses: codecov/codecov-action@v4
+        with:
+          files: truffle/coverage.out
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: false

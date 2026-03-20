@@ -74,13 +74,14 @@ type QuotaInfo struct {
 type Client struct {
 	sqClient  *servicequotas.Client
 	ec2Client *ec2.Client
+	baseCfg   aws.Config
 	cache     map[string]*QuotaInfo
 	cacheMu   sync.RWMutex
 	cacheTTL  time.Duration
 }
 
-// NewClient creates a quota client
-// Returns error if AWS credentials are not available
+// NewClient creates a quota client using the default credential chain.
+// Returns error if AWS credentials are not available.
 func NewClient(ctx context.Context) (*Client, error) {
 	cfg, err := config.LoadDefaultConfig(ctx,
 		config.WithDefaultRegion("us-east-1"),
@@ -88,13 +89,19 @@ func NewClient(ctx context.Context) (*Client, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to load AWS config (credentials required for quota checking): %w", err)
 	}
+	return NewClientFromConfig(cfg), nil
+}
 
+// NewClientFromConfig creates a quota client with an injected AWS config.
+// Use this in tests to point the client at a Substrate emulator.
+func NewClientFromConfig(cfg aws.Config) *Client {
 	return &Client{
-		sqClient: servicequotas.NewFromConfig(cfg),
+		sqClient:  servicequotas.NewFromConfig(cfg),
 		ec2Client: ec2.NewFromConfig(cfg),
-		cache:    make(map[string]*QuotaInfo),
-		cacheTTL: 5 * time.Minute,
-	}, nil
+		baseCfg:   cfg,
+		cache:     make(map[string]*QuotaInfo),
+		cacheTTL:  5 * time.Minute,
+	}
 }
 
 // GetQuotas retrieves quota information for a region
@@ -184,12 +191,9 @@ func (c *Client) GetQuotas(ctx context.Context, region string) (*QuotaInfo, erro
 
 // getQuotaValue retrieves a specific quota value
 func (c *Client) getQuotaValue(ctx context.Context, region, quotaCode string) (int32, error) {
-	// Update config for region
-	cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion(region))
-	if err != nil {
-		return 0, err
-	}
-	
+	// Clone base config with region override.
+	cfg := c.baseCfg
+	cfg.Region = region
 	sqClient := servicequotas.NewFromConfig(cfg)
 
 	output, err := sqClient.GetServiceQuota(ctx, &servicequotas.GetServiceQuotaInput{
@@ -209,12 +213,8 @@ func (c *Client) getQuotaValue(ctx context.Context, region, quotaCode string) (i
 
 // getCurrentUsage calculates current vCPU usage by family
 func (c *Client) getCurrentUsage(ctx context.Context, region string) (map[QuotaFamily]int32, error) {
-	// Update config for region
-	cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion(region))
-	if err != nil {
-		return nil, err
-	}
-	
+	cfg := c.baseCfg
+	cfg.Region = region
 	ec2Client := ec2.NewFromConfig(cfg)
 
 	// Get running instances
@@ -252,11 +252,8 @@ func (c *Client) getCurrentUsage(ctx context.Context, region string) (map[QuotaF
 
 // getRunningInstanceCount returns the number of running instances
 func (c *Client) getRunningInstanceCount(ctx context.Context, region string) (int32, error) {
-	cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion(region))
-	if err != nil {
-		return 0, err
-	}
-	
+	cfg := c.baseCfg
+	cfg.Region = region
 	ec2Client := ec2.NewFromConfig(cfg)
 
 	output, err := ec2Client.DescribeInstances(ctx, &ec2.DescribeInstancesInput{

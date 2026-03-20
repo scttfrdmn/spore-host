@@ -115,14 +115,19 @@ type CapacityBlockOptions struct {
 	Verbose       bool
 }
 
-// NewClient creates a new AWS client
+// NewClient creates a new AWS client using the default credential chain.
 func NewClient(ctx context.Context) (*Client, error) {
 	cfg, err := config.LoadDefaultConfig(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("unable to load AWS SDK config: %w", err)
 	}
+	return NewClientFromConfig(cfg), nil
+}
 
-	return &Client{cfg: cfg}, nil
+// NewClientFromConfig creates a new AWS client with an injected aws.Config.
+// Use this in tests to point the client at a Substrate emulator.
+func NewClientFromConfig(cfg aws.Config) *Client {
+	return &Client{cfg: cfg}
 }
 
 // GetEnabledRegions returns AWS regions enabled for this account.
