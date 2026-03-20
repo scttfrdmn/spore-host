@@ -158,8 +158,8 @@ github.com/rogpeppe/go-internal v1.14.1/go.mod h1:MaRKkUm5W0goXpeCfT7UZI6fk/L7L7
 github.com/russross/blackfriday/v2 v2.1.0/go.mod h1:+Rmxgy9KzJVeS9/2gXHxylqXiyQDYRxCVz55jmeOWTM=
 github.com/sagikazarmark/locafero v0.11.0 h1:1iurJgmM9G3PA/I+wWYIOw/5SyBtxapeHDcg+AAIFXc=
 github.com/sagikazarmark/locafero v0.11.0/go.mod h1:nVIGvgyzw595SUSUE6tvCp3YYTeHs15MvlmU87WwIik=
-github.com/scttfrdmn/substrate v0.43.4 h1:UBZOA4hDDUlL6gGefBYiRhPn472/OycBIOuV0s6m06k=
-github.com/scttfrdmn/substrate v0.43.4/go.mod h1:gKkftVt2MxQ465Rs/Na4SsEvm/SJMBypfCGmdKlvfro=
+github.com/scttfrdmn/substrate v0.44.2 h1:Dy6v3G6VZyIqr25ChO4Kw5pqT6VSozx5RRt8jS0Lin8=
+github.com/scttfrdmn/substrate v0.44.2/go.mod h1:gKkftVt2MxQ465Rs/Na4SsEvm/SJMBypfCGmdKlvfro=
 github.com/sourcegraph/conc v0.3.1-0.20240121214520-5f936abd7ae8 h1:+jumHNA0Wrelhe64i8F6HNlS8pkoyMv5sreGx2Ry5Rw=
 github.com/sourcegraph/conc v0.3.1-0.20240121214520-5f936abd7ae8/go.mod h1:3n1Cwaq1E1/1lhQhtRK2ts/ZwZEhjcQeJQ1RuC6Q/8U=
 github.com/spf13/afero v1.15.0 h1:b/YBCLWAJdFWJTN9cLhiXXcD7mzKn9Dm86dNnfyQw1I=
