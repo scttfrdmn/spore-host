@@ -16,8 +16,7 @@ func TestGetEnabledRegions(t *testing.T) {
 
 	regions, err := c.GetEnabledRegions(ctx)
 	if err != nil {
-		// DescribeRegions is not yet emulated by Substrate; skip gracefully.
-		t.Skipf("GetEnabledRegions() not supported by Substrate emulator: %v", err)
+		t.Fatalf("GetEnabledRegions() error = %v", err)
 	}
 	if len(regions) == 0 {
 		t.Error("GetEnabledRegions() returned 0 regions, want >= 1")
