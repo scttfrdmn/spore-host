@@ -30,6 +30,12 @@ func NewClient(ctx context.Context) (*Client, error) {
 	return &Client{cfg: cfg}, nil
 }
 
+// NewClientFromConfig creates a Client from an existing AWS config.
+// Used in tests to point all SDK calls at an emulator such as Substrate.
+func NewClientFromConfig(cfg aws.Config) *Client {
+	return &Client{cfg: cfg}
+}
+
 // EnableTracing instruments AWS SDK calls with OpenTelemetry tracing
 func (c *Client) EnableTracing() {
 	tracing.InstrumentAWSConfig(&c.cfg)

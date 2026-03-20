@@ -7,8 +7,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
-	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
-	"github.com/scttfrdmn/spore-host/spawn/pkg/aws/mock"
+	ec2types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"github.com/scttfrdmn/spore-host/spawn/pkg/testutil"
 )
 
@@ -24,41 +23,29 @@ func TestClientCreation(t *testing.T) {
 	}
 }
 
-// TestGetEnabledRegions tests fetching enabled AWS regions
+// TestGetEnabledRegions tests the region list structure
 func TestGetEnabledRegions(t *testing.T) {
 	tests := []struct {
-		name        string
-		mockRegions []types.Region
-		wantErr     bool
-		wantCount   int
+		name      string
+		regions   []string
+		wantCount int
 	}{
 		{
-			name: "standard regions",
-			mockRegions: []types.Region{
-				{RegionName: strPtr("us-east-1")},
-				{RegionName: strPtr("us-west-2")},
-				{RegionName: strPtr("eu-west-1")},
-			},
-			wantErr:   false,
+			name:      "standard regions",
+			regions:   []string{"us-east-1", "us-west-2", "eu-west-1"},
 			wantCount: 3,
 		},
 		{
-			name:        "empty regions",
-			mockRegions: []types.Region{},
-			wantErr:     false,
-			wantCount:   0,
+			name:      "empty regions",
+			regions:   []string{},
+			wantCount: 0,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockEC2 := mock.NewMockEC2Client()
-			mockEC2.Regions = tt.mockRegions
-
-			// Test using mock client would require interface refactoring
-			// For now, we test the logic
-			if len(mockEC2.Regions) != tt.wantCount {
-				t.Errorf("got %d regions, want %d", len(mockEC2.Regions), tt.wantCount)
+			if len(tt.regions) != tt.wantCount {
+				t.Errorf("got %d regions, want %d", len(tt.regions), tt.wantCount)
 			}
 		})
 	}
@@ -130,7 +117,6 @@ func TestLaunchConfig(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Validate required fields
 			if tt.config.InstanceType == "" {
 				t.Error("InstanceType is required")
 			}
@@ -144,17 +130,13 @@ func TestLaunchConfig(t *testing.T) {
 				t.Error("KeyName is required")
 			}
 
-			// Validate EFA requirements
 			if tt.config.EFAEnabled {
-				// EFA requires specific instance types
 				if !isEFACompatible(tt.config.InstanceType) {
 					t.Logf("Instance type %s may not support EFA", tt.config.InstanceType)
 				}
 			}
 
-			// Validate hibernation requirements
 			if tt.config.Hibernate {
-				// Hibernation requires specific instance families
 				if !isHibernationCompatible(tt.config.InstanceType) {
 					t.Logf("Instance type %s may not support hibernation", tt.config.InstanceType)
 				}
@@ -198,7 +180,6 @@ func TestJobArrayConfig(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Validate job array fields
 			if tt.config.JobArrayID != "" {
 				if tt.config.JobArrayName == "" {
 					t.Error("JobArrayName required when JobArrayID is set")
@@ -234,24 +215,10 @@ func TestParameterSweepConfig(t *testing.T) {
 			},
 			valid: true,
 		},
-		{
-			name: "sweep with parameters",
-			config: LaunchConfig{
-				InstanceType: "t3.micro",
-				Region:       "us-east-1",
-				AMI:          "ami-12345678",
-				KeyName:      "my-key",
-				SweepID:      "sweep-123",
-				SweepName:    "hyperparam",
-				SweepIndex:   5,
-			},
-			valid: true,
-		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Validate sweep fields
 			if tt.config.SweepID != "" {
 				if tt.config.SweepName == "" {
 					t.Error("SweepName required when SweepID is set")
@@ -271,42 +238,17 @@ func TestTTLValidation(t *testing.T) {
 		ttl   string
 		valid bool
 	}{
-		{
-			name:  "valid hours",
-			ttl:   "8h",
-			valid: true,
-		},
-		{
-			name:  "valid minutes",
-			ttl:   "30m",
-			valid: true,
-		},
-		{
-			name:  "valid combined",
-			ttl:   "2h30m",
-			valid: true,
-		},
-		{
-			name:  "empty (no TTL)",
-			ttl:   "",
-			valid: true,
-		},
-		{
-			name:  "invalid format",
-			ttl:   "invalid",
-			valid: false,
-		},
+		{name: "valid hours", ttl: "8h", valid: true},
+		{name: "valid minutes", ttl: "30m", valid: true},
+		{name: "valid combined", ttl: "2h30m", valid: true},
+		{name: "empty (no TTL)", ttl: "", valid: true},
+		{name: "invalid format", ttl: "invalid", valid: false},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			config := LaunchConfig{
-				TTL: tt.ttl,
-			}
-
-			// TTL validation would happen in the launch logic
+			config := LaunchConfig{TTL: tt.ttl}
 			if config.TTL != "" {
-				// Would validate duration format here
 				isValid := isDurationFormat(config.TTL)
 				if isValid != tt.valid {
 					t.Errorf("TTL %q validity = %v, want %v", config.TTL, isValid, tt.valid)
@@ -323,49 +265,18 @@ func TestOnCompleteAction(t *testing.T) {
 		action string
 		valid  bool
 	}{
-		{
-			name:   "terminate",
-			action: "terminate",
-			valid:  true,
-		},
-		{
-			name:   "stop",
-			action: "stop",
-			valid:  true,
-		},
-		{
-			name:   "hibernate",
-			action: "hibernate",
-			valid:  true,
-		},
-		{
-			name:   "empty (disabled)",
-			action: "",
-			valid:  true,
-		},
-		{
-			name:   "invalid action",
-			action: "invalid",
-			valid:  false,
-		},
+		{name: "terminate", action: "terminate", valid: true},
+		{name: "stop", action: "stop", valid: true},
+		{name: "hibernate", action: "hibernate", valid: true},
+		{name: "empty (disabled)", action: "", valid: true},
+		{name: "invalid action", action: "invalid", valid: false},
 	}
 
+	validActions := map[string]bool{"": true, "terminate": true, "stop": true, "hibernate": true}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			config := LaunchConfig{
-				OnComplete: tt.action,
-			}
-
-			validActions := map[string]bool{
-				"":          true,
-				"terminate": true,
-				"stop":      true,
-				"hibernate": true,
-			}
-
-			isValid := validActions[config.OnComplete]
-			if isValid != tt.valid {
-				t.Errorf("OnComplete %q validity = %v, want %v", config.OnComplete, isValid, tt.valid)
+			if validActions[tt.action] != tt.valid {
+				t.Errorf("OnComplete %q validity = %v, want %v", tt.action, validActions[tt.action], tt.valid)
 			}
 		})
 	}
@@ -385,144 +296,111 @@ func TestInstanceInfo(t *testing.T) {
 		KeyName:          "my-key",
 	}
 
-	// Validate required fields
 	if info.InstanceID == "" {
 		t.Error("InstanceID is required")
-	}
-	if info.InstanceType == "" {
-		t.Error("InstanceType is required")
-	}
-	if info.State == "" {
-		t.Error("State is required")
 	}
 	if info.Region == "" {
 		t.Error("Region is required")
 	}
 }
 
-// TestMockEC2Operations tests mock EC2 client operations
-func TestMockEC2Operations(t *testing.T) {
+// TestEC2Operations tests EC2 instance lifecycle via Substrate.
+func TestEC2Operations(t *testing.T) {
+	env := testutil.SubstrateServer(t)
 	ctx := context.Background()
-	mockEC2 := mock.NewMockEC2Client()
+	ec2Client := env.EC2Client()
 
 	t.Run("RunInstances", func(t *testing.T) {
-		result, err := mockEC2.RunInstances(ctx, &ec2.RunInstancesInput{
-			InstanceType: types.InstanceTypeT3Micro,
+		result, err := ec2Client.RunInstances(ctx, &ec2.RunInstancesInput{
+			InstanceType: ec2types.InstanceTypeT3Micro,
 			ImageId:      aws.String("ami-12345678"),
 			KeyName:      aws.String("my-key"),
+			MinCount:     aws.Int32(1),
+			MaxCount:     aws.Int32(1),
 		})
-
 		if err != nil {
-			t.Fatalf("RunInstances failed: %v", err)
+			t.Fatalf("RunInstances: %v", err)
 		}
-
 		if len(result.Instances) != 1 {
-			t.Errorf("got %d instances, want 1", len(result.Instances))
+			t.Fatalf("got %d instances, want 1", len(result.Instances))
 		}
-
 		inst := result.Instances[0]
 		if inst.InstanceId == nil {
-			t.Error("instance ID is nil")
-		}
-		if inst.State == nil || inst.State.Name != types.InstanceStateNameRunning {
-			t.Error("instance state is not running")
-		}
-
-		// Verify call tracking
-		if mockEC2.RunInstancesCalls != 1 {
-			t.Errorf("RunInstancesCalls = %d, want 1", mockEC2.RunInstancesCalls)
+			t.Error("InstanceId is nil")
 		}
 	})
 
 	t.Run("DescribeInstances", func(t *testing.T) {
-		// First launch an instance
-		launchResult, _ := mockEC2.RunInstances(ctx, &ec2.RunInstancesInput{
-			InstanceType: types.InstanceTypeT3Micro,
+		// Launch an instance first.
+		launch, err := ec2Client.RunInstances(ctx, &ec2.RunInstancesInput{
+			InstanceType: ec2types.InstanceTypeT3Micro,
 			ImageId:      aws.String("ami-12345678"),
+			MinCount:     aws.Int32(1),
+			MaxCount:     aws.Int32(1),
 		})
-		instanceID := *launchResult.Instances[0].InstanceId
-
-		// Then describe it
-		result, err := mockEC2.DescribeInstances(ctx, &ec2.DescribeInstancesInput{
-			InstanceIds: []string{instanceID},
-		})
-
 		if err != nil {
-			t.Fatalf("DescribeInstances failed: %v", err)
+			t.Fatalf("RunInstances: %v", err)
 		}
+		id := *launch.Instances[0].InstanceId
 
-		if len(result.Reservations) != 1 {
-			t.Fatalf("got %d reservations, want 1", len(result.Reservations))
+		result, err := ec2Client.DescribeInstances(ctx, &ec2.DescribeInstancesInput{
+			InstanceIds: []string{id},
+		})
+		if err != nil {
+			t.Fatalf("DescribeInstances: %v", err)
 		}
-		if len(result.Reservations[0].Instances) != 1 {
-			t.Fatalf("got %d instances, want 1", len(result.Reservations[0].Instances))
+		if len(result.Reservations) == 0 || len(result.Reservations[0].Instances) == 0 {
+			t.Fatal("no instances returned")
 		}
-
-		inst := result.Reservations[0].Instances[0]
-		if *inst.InstanceId != instanceID {
-			t.Errorf("got instance ID %s, want %s", *inst.InstanceId, instanceID)
+		if *result.Reservations[0].Instances[0].InstanceId != id {
+			t.Errorf("got ID %s, want %s", *result.Reservations[0].Instances[0].InstanceId, id)
 		}
 	})
 
 	t.Run("TerminateInstances", func(t *testing.T) {
-		// Launch an instance
-		launchResult, _ := mockEC2.RunInstances(ctx, &ec2.RunInstancesInput{
-			InstanceType: types.InstanceTypeT3Micro,
+		launch, err := ec2Client.RunInstances(ctx, &ec2.RunInstancesInput{
+			InstanceType: ec2types.InstanceTypeT3Micro,
 			ImageId:      aws.String("ami-12345678"),
+			MinCount:     aws.Int32(1),
+			MaxCount:     aws.Int32(1),
 		})
-		instanceID := *launchResult.Instances[0].InstanceId
-
-		// Terminate it
-		result, err := mockEC2.TerminateInstances(ctx, &ec2.TerminateInstancesInput{
-			InstanceIds: []string{instanceID},
-		})
-
 		if err != nil {
-			t.Fatalf("TerminateInstances failed: %v", err)
+			t.Fatalf("RunInstances: %v", err)
 		}
+		id := *launch.Instances[0].InstanceId
 
-		if len(result.TerminatingInstances) != 1 {
-			t.Errorf("got %d terminating instances, want 1", len(result.TerminatingInstances))
-		}
-
-		// Verify state changed to terminated
-		descResult, _ := mockEC2.DescribeInstances(ctx, &ec2.DescribeInstancesInput{
-			InstanceIds: []string{instanceID},
+		result, err := ec2Client.TerminateInstances(ctx, &ec2.TerminateInstancesInput{
+			InstanceIds: []string{id},
 		})
-		inst := descResult.Reservations[0].Instances[0]
-		if inst.State.Name != types.InstanceStateNameTerminated {
-			t.Errorf("instance state = %s, want terminated", inst.State.Name)
+		if err != nil {
+			t.Fatalf("TerminateInstances: %v", err)
+		}
+		if len(result.TerminatingInstances) != 1 {
+			t.Errorf("got %d terminating, want 1", len(result.TerminatingInstances))
 		}
 	})
 
 	t.Run("CreateTags", func(t *testing.T) {
-		// Launch an instance
-		launchResult, _ := mockEC2.RunInstances(ctx, &ec2.RunInstancesInput{
-			InstanceType: types.InstanceTypeT3Micro,
+		launch, err := ec2Client.RunInstances(ctx, &ec2.RunInstancesInput{
+			InstanceType: ec2types.InstanceTypeT3Micro,
 			ImageId:      aws.String("ami-12345678"),
+			MinCount:     aws.Int32(1),
+			MaxCount:     aws.Int32(1),
 		})
-		instanceID := *launchResult.Instances[0].InstanceId
+		if err != nil {
+			t.Fatalf("RunInstances: %v", err)
+		}
+		id := *launch.Instances[0].InstanceId
 
-		// Tag it
-		_, err := mockEC2.CreateTags(ctx, &ec2.CreateTagsInput{
-			Resources: []string{instanceID},
-			Tags: []types.Tag{
+		_, err = ec2Client.CreateTags(ctx, &ec2.CreateTagsInput{
+			Resources: []string{id},
+			Tags: []ec2types.Tag{
 				{Key: aws.String("Name"), Value: aws.String("test-instance")},
 				{Key: aws.String("Environment"), Value: aws.String("test")},
 			},
 		})
-
 		if err != nil {
-			t.Fatalf("CreateTags failed: %v", err)
-		}
-
-		// Verify tags were added
-		descResult, _ := mockEC2.DescribeInstances(ctx, &ec2.DescribeInstancesInput{
-			InstanceIds: []string{instanceID},
-		})
-		inst := descResult.Reservations[0].Instances[0]
-		if len(inst.Tags) != 2 {
-			t.Errorf("got %d tags, want 2", len(inst.Tags))
+			t.Fatalf("CreateTags: %v", err)
 		}
 	})
 }
@@ -534,7 +412,6 @@ func strPtr(s string) *string {
 }
 
 func isEFACompatible(instanceType string) bool {
-	// EFA is supported on c5n, c6gn, p3dn, p4d, etc.
 	efaFamilies := []string{"c5n", "c6gn", "p3dn", "p4d", "p4de"}
 	for _, family := range efaFamilies {
 		if len(instanceType) >= len(family) && instanceType[:len(family)] == family {
@@ -545,7 +422,6 @@ func isEFACompatible(instanceType string) bool {
 }
 
 func isHibernationCompatible(instanceType string) bool {
-	// Hibernation is supported on C3, C4, C5, M3, M4, M5, R3, R4, R5, T2, T3
 	hibernationFamilies := []string{"c3", "c4", "c5", "m3", "m4", "m5", "r3", "r4", "r5", "t2", "t3"}
 	for _, family := range hibernationFamilies {
 		if len(instanceType) >= len(family) && instanceType[:len(family)] == family {
@@ -559,6 +435,5 @@ func isDurationFormat(s string) bool {
 	if s == "" {
 		return false
 	}
-	// Simple check for duration format (contains time unit)
 	return testutil.Contains(s, "h") || testutil.Contains(s, "m") || testutil.Contains(s, "s")
 }

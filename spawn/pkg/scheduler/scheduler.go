@@ -209,7 +209,7 @@ func (c *Client) UpdateScheduleStatus(ctx context.Context, scheduleID string, st
 		return fmt.Errorf("update schedule status: %w", err)
 	}
 
-	// Also update EventBridge schedule state
+	// Determine new EventBridge schedule state.
 	var ebState schedulertypes.ScheduleState
 	switch status {
 	case ScheduleStatusActive:
@@ -218,10 +218,29 @@ func (c *Client) UpdateScheduleStatus(ctx context.Context, scheduleID string, st
 		ebState = schedulertypes.ScheduleStateDisabled
 	}
 
-	_, err = c.schedulerClient.UpdateSchedule(ctx, &scheduler.UpdateScheduleInput{
-		Name:  aws.String(scheduleID),
+	// Load DynamoDB record to reconstruct required EventBridge fields.
+	record, err := c.GetSchedule(ctx, scheduleID)
+	if err != nil {
+		return fmt.Errorf("load schedule for eventbridge update: %w", err)
+	}
+
+	updateInput := &scheduler.UpdateScheduleInput{
+		Name:               aws.String(scheduleID),
+		ScheduleExpression: aws.String(record.ScheduleExpression),
+		FlexibleTimeWindow: &schedulertypes.FlexibleTimeWindow{
+			Mode: schedulertypes.FlexibleTimeWindowModeOff,
+		},
+		Target: &schedulertypes.Target{
+			Arn:     aws.String(c.lambdaARN),
+			RoleArn: aws.String(c.roleARN),
+		},
 		State: ebState,
-	})
+	}
+	if record.Timezone != "" {
+		updateInput.ScheduleExpressionTimezone = aws.String(record.Timezone)
+	}
+
+	_, err = c.schedulerClient.UpdateSchedule(ctx, updateInput)
 	if err != nil {
 		return fmt.Errorf("update eventbridge schedule state: %w", err)
 	}

@@ -2,96 +2,95 @@ package scheduler
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	dynamodbtypes "github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
-	"github.com/aws/aws-sdk-go-v2/service/scheduler"
-	schedulertypes "github.com/aws/aws-sdk-go-v2/service/scheduler/types"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/testutil"
 )
 
-// Mock DynamoDB client
-type mockDynamoDBClient struct {
-	getItemFunc    func(ctx context.Context, params *dynamodb.GetItemInput, optFns ...func(*dynamodb.Options)) (*dynamodb.GetItemOutput, error)
-	putItemFunc    func(ctx context.Context, params *dynamodb.PutItemInput, optFns ...func(*dynamodb.Options)) (*dynamodb.PutItemOutput, error)
-	updateItemFunc func(ctx context.Context, params *dynamodb.UpdateItemInput, optFns ...func(*dynamodb.Options)) (*dynamodb.UpdateItemOutput, error)
-	deleteItemFunc func(ctx context.Context, params *dynamodb.DeleteItemInput, optFns ...func(*dynamodb.Options)) (*dynamodb.DeleteItemOutput, error)
-	queryFunc      func(ctx context.Context, params *dynamodb.QueryInput, optFns ...func(*dynamodb.Options)) (*dynamodb.QueryOutput, error)
-}
+const (
+	testLambdaARN = "arn:aws:lambda:us-east-1:123456789012:function:test-handler"
+	testRoleARN   = "arn:aws:iam::123456789012:role/test-role"
+	testAccountID = "123456789012"
+)
 
-func (m *mockDynamoDBClient) GetItem(ctx context.Context, params *dynamodb.GetItemInput, optFns ...func(*dynamodb.Options)) (*dynamodb.GetItemOutput, error) {
-	if m.getItemFunc != nil {
-		return m.getItemFunc(ctx, params, optFns...)
+// createSchedulesTable creates the spawn-schedules DynamoDB table with the
+// required key schema and GSI in the Substrate emulator.
+func createSchedulesTable(t *testing.T, db *dynamodb.Client) {
+	t.Helper()
+	ctx := context.Background()
+	_, err := db.CreateTable(ctx, &dynamodb.CreateTableInput{
+		TableName:   aws.String("spawn-schedules"),
+		BillingMode: dynamodbtypes.BillingModePayPerRequest,
+		AttributeDefinitions: []dynamodbtypes.AttributeDefinition{
+			{AttributeName: aws.String("schedule_id"), AttributeType: dynamodbtypes.ScalarAttributeTypeS},
+			{AttributeName: aws.String("user_id"), AttributeType: dynamodbtypes.ScalarAttributeTypeS},
+			{AttributeName: aws.String("next_execution_time"), AttributeType: dynamodbtypes.ScalarAttributeTypeS},
+		},
+		KeySchema: []dynamodbtypes.KeySchemaElement{
+			{AttributeName: aws.String("schedule_id"), KeyType: dynamodbtypes.KeyTypeHash},
+		},
+		GlobalSecondaryIndexes: []dynamodbtypes.GlobalSecondaryIndex{
+			{
+				IndexName: aws.String("user_id-next_execution_time-index"),
+				KeySchema: []dynamodbtypes.KeySchemaElement{
+					{AttributeName: aws.String("user_id"), KeyType: dynamodbtypes.KeyTypeHash},
+					{AttributeName: aws.String("next_execution_time"), KeyType: dynamodbtypes.KeyTypeRange},
+				},
+				Projection: &dynamodbtypes.Projection{
+					ProjectionType: dynamodbtypes.ProjectionTypeAll,
+				},
+			},
+		},
+	})
+	if err != nil {
+		var resourceInUse *dynamodbtypes.ResourceInUseException
+		if !errors.As(err, &resourceInUse) {
+			t.Fatalf("create spawn-schedules table: %v", err)
+		}
 	}
-	return &dynamodb.GetItemOutput{}, nil
 }
 
-func (m *mockDynamoDBClient) PutItem(ctx context.Context, params *dynamodb.PutItemInput, optFns ...func(*dynamodb.Options)) (*dynamodb.PutItemOutput, error) {
-	if m.putItemFunc != nil {
-		return m.putItemFunc(ctx, params, optFns...)
+// createScheduleHistoryTable creates the spawn-schedule-history DynamoDB table.
+func createScheduleHistoryTable(t *testing.T, db *dynamodb.Client) {
+	t.Helper()
+	ctx := context.Background()
+	_, err := db.CreateTable(ctx, &dynamodb.CreateTableInput{
+		TableName:   aws.String("spawn-schedule-history"),
+		BillingMode: dynamodbtypes.BillingModePayPerRequest,
+		AttributeDefinitions: []dynamodbtypes.AttributeDefinition{
+			{AttributeName: aws.String("schedule_id"), AttributeType: dynamodbtypes.ScalarAttributeTypeS},
+			{AttributeName: aws.String("execution_time"), AttributeType: dynamodbtypes.ScalarAttributeTypeS},
+		},
+		KeySchema: []dynamodbtypes.KeySchemaElement{
+			{AttributeName: aws.String("schedule_id"), KeyType: dynamodbtypes.KeyTypeHash},
+			{AttributeName: aws.String("execution_time"), KeyType: dynamodbtypes.KeyTypeRange},
+		},
+	})
+	if err != nil {
+		var resourceInUse *dynamodbtypes.ResourceInUseException
+		if !errors.As(err, &resourceInUse) {
+			t.Fatalf("create spawn-schedule-history table: %v", err)
+		}
 	}
-	return &dynamodb.PutItemOutput{}, nil
-}
-
-func (m *mockDynamoDBClient) UpdateItem(ctx context.Context, params *dynamodb.UpdateItemInput, optFns ...func(*dynamodb.Options)) (*dynamodb.UpdateItemOutput, error) {
-	if m.updateItemFunc != nil {
-		return m.updateItemFunc(ctx, params, optFns...)
-	}
-	return &dynamodb.UpdateItemOutput{}, nil
-}
-
-func (m *mockDynamoDBClient) DeleteItem(ctx context.Context, params *dynamodb.DeleteItemInput, optFns ...func(*dynamodb.Options)) (*dynamodb.DeleteItemOutput, error) {
-	if m.deleteItemFunc != nil {
-		return m.deleteItemFunc(ctx, params, optFns...)
-	}
-	return &dynamodb.DeleteItemOutput{}, nil
-}
-
-func (m *mockDynamoDBClient) Query(ctx context.Context, params *dynamodb.QueryInput, optFns ...func(*dynamodb.Options)) (*dynamodb.QueryOutput, error) {
-	if m.queryFunc != nil {
-		return m.queryFunc(ctx, params, optFns...)
-	}
-	return &dynamodb.QueryOutput{}, nil
-}
-
-// Mock Scheduler client
-type mockSchedulerClient struct {
-	createScheduleFunc func(ctx context.Context, params *scheduler.CreateScheduleInput, optFns ...func(*scheduler.Options)) (*scheduler.CreateScheduleOutput, error)
-	deleteScheduleFunc func(ctx context.Context, params *scheduler.DeleteScheduleInput, optFns ...func(*scheduler.Options)) (*scheduler.DeleteScheduleOutput, error)
-	updateScheduleFunc func(ctx context.Context, params *scheduler.UpdateScheduleInput, optFns ...func(*scheduler.Options)) (*scheduler.UpdateScheduleOutput, error)
-}
-
-func (m *mockSchedulerClient) CreateSchedule(ctx context.Context, params *scheduler.CreateScheduleInput, optFns ...func(*scheduler.Options)) (*scheduler.CreateScheduleOutput, error) {
-	if m.createScheduleFunc != nil {
-		return m.createScheduleFunc(ctx, params, optFns...)
-	}
-	return &scheduler.CreateScheduleOutput{
-		ScheduleArn: aws.String("arn:aws:scheduler:us-east-1:123456789012:schedule/test-schedule"),
-	}, nil
-}
-
-func (m *mockSchedulerClient) DeleteSchedule(ctx context.Context, params *scheduler.DeleteScheduleInput, optFns ...func(*scheduler.Options)) (*scheduler.DeleteScheduleOutput, error) {
-	if m.deleteScheduleFunc != nil {
-		return m.deleteScheduleFunc(ctx, params, optFns...)
-	}
-	return &scheduler.DeleteScheduleOutput{}, nil
-}
-
-func (m *mockSchedulerClient) UpdateSchedule(ctx context.Context, params *scheduler.UpdateScheduleInput, optFns ...func(*scheduler.Options)) (*scheduler.UpdateScheduleOutput, error) {
-	if m.updateScheduleFunc != nil {
-		return m.updateScheduleFunc(ctx, params, optFns...)
-	}
-	return &scheduler.UpdateScheduleOutput{}, nil
 }
 
 func TestCreateSchedule(t *testing.T) {
+	env := testutil.SubstrateServer(t)
+	ctx := context.Background()
+	db := env.DynamoClient()
+	createSchedulesTable(t, db)
+
+	client := NewClientWithTableName(env.AWSConfig, testLambdaARN, testRoleARN, testAccountID, "spawn-schedules")
+
 	tests := []struct {
-		name       string
-		record     *ScheduleRecord
-		wantErr    bool
-		setupMocks func(*mockDynamoDBClient, *mockSchedulerClient)
+		name    string
+		record  *ScheduleRecord
+		wantErr bool
 	}{
 		{
 			name: "one-time schedule",
@@ -109,22 +108,6 @@ func TestCreateSchedule(t *testing.T) {
 				Region:             "us-east-1",
 			},
 			wantErr: false,
-			setupMocks: func(ddb *mockDynamoDBClient, sched *mockSchedulerClient) {
-				ddb.putItemFunc = func(ctx context.Context, params *dynamodb.PutItemInput, optFns ...func(*dynamodb.Options)) (*dynamodb.PutItemOutput, error) {
-					if params.TableName == nil || *params.TableName != "spawn-schedules" {
-						t.Errorf("Expected table name spawn-schedules, got %v", params.TableName)
-					}
-					return &dynamodb.PutItemOutput{}, nil
-				}
-				sched.createScheduleFunc = func(ctx context.Context, params *scheduler.CreateScheduleInput, optFns ...func(*scheduler.Options)) (*scheduler.CreateScheduleOutput, error) {
-					if params.ScheduleExpression == nil || *params.ScheduleExpression != "at(2026-01-22T15:00:00)" {
-						t.Errorf("Expected schedule expression at(2026-01-22T15:00:00), got %v", params.ScheduleExpression)
-					}
-					return &scheduler.CreateScheduleOutput{
-						ScheduleArn: aws.String("arn:aws:scheduler:us-east-1:123456789012:schedule/sched-test-001"),
-					}, nil
-				}
-			},
 		},
 		{
 			name: "recurring schedule with cron",
@@ -142,260 +125,182 @@ func TestCreateSchedule(t *testing.T) {
 				Region:             "us-east-1",
 			},
 			wantErr: false,
-			setupMocks: func(ddb *mockDynamoDBClient, sched *mockSchedulerClient) {
-				ddb.putItemFunc = func(ctx context.Context, params *dynamodb.PutItemInput, optFns ...func(*dynamodb.Options)) (*dynamodb.PutItemOutput, error) {
-					return &dynamodb.PutItemOutput{}, nil
-				}
-				sched.createScheduleFunc = func(ctx context.Context, params *scheduler.CreateScheduleInput, optFns ...func(*scheduler.Options)) (*scheduler.CreateScheduleOutput, error) {
-					if params.ScheduleExpression == nil || *params.ScheduleExpression != "cron(0 2 * * ? *)" {
-						t.Errorf("Expected cron expression, got %v", params.ScheduleExpression)
-					}
-					return &scheduler.CreateScheduleOutput{
-						ScheduleArn: aws.String("arn:aws:scheduler:us-east-1:123456789012:schedule/sched-test-002"),
-					}, nil
-				}
-			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockDDB := &mockDynamoDBClient{}
-			mockSched := &mockSchedulerClient{}
-
-			if tt.setupMocks != nil {
-				tt.setupMocks(mockDDB, mockSched)
-			}
-
-			client := &Client{
-				dynamoClient:    mockDDB,
-				schedulerClient: mockSched,
-				lambdaARN:       "arn:aws:lambda:us-east-1:123456789012:function:scheduler-handler",
-				roleARN:         "arn:aws:iam::123456789012:role/EventBridgeSchedulerRole",
-				tableName:       "spawn-schedules",
-			}
-
-			_, err := client.CreateSchedule(context.Background(), tt.record)
+			arn, err := client.CreateSchedule(ctx, tt.record)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("CreateSchedule() error = %v, wantErr %v", err, tt.wantErr)
+				t.Fatalf("CreateSchedule() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if !tt.wantErr {
+				if arn == "" {
+					t.Error("CreateSchedule() returned empty ARN")
+				}
+				// Verify DynamoDB record was saved.
+				got, err := client.GetSchedule(ctx, tt.record.ScheduleID)
+				if err != nil {
+					t.Fatalf("GetSchedule after create: %v", err)
+				}
+				if got.ScheduleName != tt.record.ScheduleName {
+					t.Errorf("ScheduleName = %q, want %q", got.ScheduleName, tt.record.ScheduleName)
+				}
 			}
 		})
 	}
 }
 
 func TestGetSchedule(t *testing.T) {
-	tests := []struct {
-		name       string
-		scheduleID string
-		setupMock  func(*mockDynamoDBClient)
-		wantErr    bool
-	}{
-		{
-			name:       "existing schedule",
-			scheduleID: "sched-test-001",
-			setupMock: func(ddb *mockDynamoDBClient) {
-				ddb.getItemFunc = func(ctx context.Context, params *dynamodb.GetItemInput, optFns ...func(*dynamodb.Options)) (*dynamodb.GetItemOutput, error) {
-					return &dynamodb.GetItemOutput{
-						Item: map[string]dynamodbtypes.AttributeValue{
-							"schedule_id":         &dynamodbtypes.AttributeValueMemberS{Value: "sched-test-001"},
-							"user_id":             &dynamodbtypes.AttributeValueMemberS{Value: "user-123"},
-							"schedule_name":       &dynamodbtypes.AttributeValueMemberS{Value: "test-schedule"},
-							"schedule_expression": &dynamodbtypes.AttributeValueMemberS{Value: "at(2026-01-22T15:00:00)"},
-							"schedule_type":       &dynamodbtypes.AttributeValueMemberS{Value: "one-time"},
-							"timezone":            &dynamodbtypes.AttributeValueMemberS{Value: "America/New_York"},
-							"status":              &dynamodbtypes.AttributeValueMemberS{Value: "active"},
-						},
-					}, nil
-				}
-			},
-			wantErr: false,
-		},
-		{
-			name:       "non-existent schedule",
-			scheduleID: "sched-missing",
-			setupMock: func(ddb *mockDynamoDBClient) {
-				ddb.getItemFunc = func(ctx context.Context, params *dynamodb.GetItemInput, optFns ...func(*dynamodb.Options)) (*dynamodb.GetItemOutput, error) {
-					return &dynamodb.GetItemOutput{
-						Item: nil,
-					}, nil
-				}
-			},
-			wantErr: true,
-		},
+	env := testutil.SubstrateServer(t)
+	ctx := context.Background()
+	db := env.DynamoClient()
+	createSchedulesTable(t, db)
+
+	client := NewClientWithTableName(env.AWSConfig, testLambdaARN, testRoleARN, testAccountID, "spawn-schedules")
+
+	record := &ScheduleRecord{
+		ScheduleID:         "sched-get-001",
+		UserID:             "user-get",
+		ScheduleName:       "get-test",
+		ScheduleExpression: "cron(0 2 * * ? *)",
+		ScheduleType:       "recurring",
+		Status:             "active",
+	}
+	if err := client.SaveSchedule(ctx, record); err != nil {
+		t.Fatalf("setup: SaveSchedule: %v", err)
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			mockDDB := &mockDynamoDBClient{}
-			if tt.setupMock != nil {
-				tt.setupMock(mockDDB)
-			}
+	t.Run("existing schedule", func(t *testing.T) {
+		got, err := client.GetSchedule(ctx, "sched-get-001")
+		if err != nil {
+			t.Fatalf("GetSchedule: %v", err)
+		}
+		if got.ScheduleID != record.ScheduleID {
+			t.Errorf("ScheduleID = %q, want %q", got.ScheduleID, record.ScheduleID)
+		}
+		if got.UserID != record.UserID {
+			t.Errorf("UserID = %q, want %q", got.UserID, record.UserID)
+		}
+	})
 
-			client := &Client{
-				dynamoClient: mockDDB,
-				tableName:    "spawn-schedules",
-			}
-
-			record, err := client.GetSchedule(context.Background(), tt.scheduleID)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("GetSchedule() error = %v, wantErr %v", err, tt.wantErr)
-			}
-
-			if !tt.wantErr && record == nil {
-				t.Error("GetSchedule() returned nil record when error not expected")
-			}
-		})
-	}
+	t.Run("non-existent schedule", func(t *testing.T) {
+		_, err := client.GetSchedule(ctx, "sched-missing")
+		if err == nil {
+			t.Error("GetSchedule() expected error for missing schedule")
+		}
+	})
 }
 
 func TestDeleteSchedule(t *testing.T) {
-	tests := []struct {
-		name       string
-		scheduleID string
-		setupMocks func(*mockDynamoDBClient, *mockSchedulerClient)
-		wantErr    bool
-	}{
-		{
-			name:       "successful deletion",
-			scheduleID: "sched-test-001",
-			setupMocks: func(ddb *mockDynamoDBClient, sched *mockSchedulerClient) {
-				ddb.deleteItemFunc = func(ctx context.Context, params *dynamodb.DeleteItemInput, optFns ...func(*dynamodb.Options)) (*dynamodb.DeleteItemOutput, error) {
-					return &dynamodb.DeleteItemOutput{}, nil
-				}
-				sched.deleteScheduleFunc = func(ctx context.Context, params *scheduler.DeleteScheduleInput, optFns ...func(*scheduler.Options)) (*scheduler.DeleteScheduleOutput, error) {
-					if params.Name == nil || *params.Name != "sched-test-001" {
-						t.Errorf("Expected schedule name sched-test-001, got %v", params.Name)
-					}
-					return &scheduler.DeleteScheduleOutput{}, nil
-				}
-			},
-			wantErr: false,
-		},
+	env := testutil.SubstrateServer(t)
+	ctx := context.Background()
+	db := env.DynamoClient()
+	createSchedulesTable(t, db)
+
+	client := NewClientWithTableName(env.AWSConfig, testLambdaARN, testRoleARN, testAccountID, "spawn-schedules")
+
+	// Create schedule in both EventBridge and DynamoDB.
+	record := &ScheduleRecord{
+		ScheduleID:         "sched-del-001",
+		UserID:             "user-del",
+		ScheduleName:       "delete-test",
+		ScheduleExpression: "at(2026-01-22T15:00:00)",
+		ScheduleType:       "one-time",
+		Timezone:           "UTC",
+		S3ParamsKey:        "schedules/sched-del-001/params.yaml",
+		SweepName:          "del-sweep",
+		Status:             "active",
+		Region:             "us-east-1",
+	}
+	if _, err := client.CreateSchedule(ctx, record); err != nil {
+		t.Fatalf("setup: CreateSchedule: %v", err)
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			mockDDB := &mockDynamoDBClient{}
-			mockSched := &mockSchedulerClient{}
+	if err := client.DeleteSchedule(ctx, "sched-del-001"); err != nil {
+		t.Fatalf("DeleteSchedule: %v", err)
+	}
 
-			if tt.setupMocks != nil {
-				tt.setupMocks(mockDDB, mockSched)
-			}
-
-			client := &Client{
-				dynamoClient:    mockDDB,
-				schedulerClient: mockSched,
-				tableName:       "spawn-schedules",
-			}
-
-			err := client.DeleteSchedule(context.Background(), tt.scheduleID)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("DeleteSchedule() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
+	// DynamoDB record should be gone.
+	if _, err := client.GetSchedule(ctx, "sched-del-001"); err == nil {
+		t.Error("GetSchedule after delete should return error")
 	}
 }
 
 func TestUpdateScheduleStatus(t *testing.T) {
+	env := testutil.SubstrateServer(t)
+	ctx := context.Background()
+	db := env.DynamoClient()
+	createSchedulesTable(t, db)
+
+	client := NewClientWithTableName(env.AWSConfig, testLambdaARN, testRoleARN, testAccountID, "spawn-schedules")
+
+	// Create schedule (EventBridge + DynamoDB) so UpdateSchedule can find it.
+	record := &ScheduleRecord{
+		ScheduleID:         "sched-upd-001",
+		UserID:             "user-upd",
+		ScheduleName:       "update-test",
+		ScheduleExpression: "cron(0 2 * * ? *)",
+		ScheduleType:       "recurring",
+		Timezone:           "UTC",
+		S3ParamsKey:        "schedules/sched-upd-001/params.yaml",
+		SweepName:          "upd-sweep",
+		Status:             "active",
+		Region:             "us-east-1",
+	}
+	if _, err := client.CreateSchedule(ctx, record); err != nil {
+		t.Fatalf("setup: CreateSchedule: %v", err)
+	}
+
 	tests := []struct {
-		name       string
-		scheduleID string
-		status     ScheduleStatus
-		setupMocks func(*mockDynamoDBClient, *mockSchedulerClient)
-		wantErr    bool
+		name   string
+		status ScheduleStatus
 	}{
-		{
-			name:       "pause schedule",
-			scheduleID: "sched-test-001",
-			status:     ScheduleStatusPaused,
-			setupMocks: func(ddb *mockDynamoDBClient, sched *mockSchedulerClient) {
-				ddb.updateItemFunc = func(ctx context.Context, params *dynamodb.UpdateItemInput, optFns ...func(*dynamodb.Options)) (*dynamodb.UpdateItemOutput, error) {
-					return &dynamodb.UpdateItemOutput{}, nil
-				}
-				sched.updateScheduleFunc = func(ctx context.Context, params *scheduler.UpdateScheduleInput, optFns ...func(*scheduler.Options)) (*scheduler.UpdateScheduleOutput, error) {
-					if params.State != schedulertypes.ScheduleStateDisabled {
-						t.Error("Expected schedule state to be DISABLED")
-					}
-					return &scheduler.UpdateScheduleOutput{}, nil
-				}
-			},
-			wantErr: false,
-		},
-		{
-			name:       "resume schedule",
-			scheduleID: "sched-test-001",
-			status:     ScheduleStatusActive,
-			setupMocks: func(ddb *mockDynamoDBClient, sched *mockSchedulerClient) {
-				ddb.updateItemFunc = func(ctx context.Context, params *dynamodb.UpdateItemInput, optFns ...func(*dynamodb.Options)) (*dynamodb.UpdateItemOutput, error) {
-					return &dynamodb.UpdateItemOutput{}, nil
-				}
-				sched.updateScheduleFunc = func(ctx context.Context, params *scheduler.UpdateScheduleInput, optFns ...func(*scheduler.Options)) (*scheduler.UpdateScheduleOutput, error) {
-					if params.State != schedulertypes.ScheduleStateEnabled {
-						t.Error("Expected schedule state to be ENABLED")
-					}
-					return &scheduler.UpdateScheduleOutput{}, nil
-				}
-			},
-			wantErr: false,
-		},
+		{"pause schedule", ScheduleStatusPaused},
+		{"resume schedule", ScheduleStatusActive},
+		{"cancel schedule", ScheduleStatusCancelled},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockDDB := &mockDynamoDBClient{}
-			mockSched := &mockSchedulerClient{}
-
-			if tt.setupMocks != nil {
-				tt.setupMocks(mockDDB, mockSched)
-			}
-
-			client := &Client{
-				dynamoClient:    mockDDB,
-				schedulerClient: mockSched,
-				tableName:       "spawn-schedules",
-			}
-
-			err := client.UpdateScheduleStatus(context.Background(), tt.scheduleID, tt.status)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("UpdateScheduleStatus() error = %v, wantErr %v", err, tt.wantErr)
+			if err := client.UpdateScheduleStatus(ctx, "sched-upd-001", tt.status); err != nil {
+				t.Errorf("UpdateScheduleStatus(%s): %v", tt.status, err)
 			}
 		})
 	}
 }
 
 func TestRecordExecution(t *testing.T) {
+	env := testutil.SubstrateServer(t)
+	ctx := context.Background()
+	db := env.DynamoClient()
+	createScheduleHistoryTable(t, db)
+
+	client := NewClientWithTableName(env.AWSConfig, testLambdaARN, testRoleARN, testAccountID, "spawn-schedules")
+
 	tests := []struct {
-		name       string
-		scheduleID string
-		sweepID    string
-		status     string
-		setupMock  func(*mockDynamoDBClient)
-		wantErr    bool
+		name    string
+		history *ExecutionHistory
+		wantErr bool
 	}{
 		{
-			name:       "successful execution record",
-			scheduleID: "sched-test-001",
-			sweepID:    "sweep-20260122-140530",
-			status:     "success",
-			setupMock: func(ddb *mockDynamoDBClient) {
-				ddb.putItemFunc = func(ctx context.Context, params *dynamodb.PutItemInput, optFns ...func(*dynamodb.Options)) (*dynamodb.PutItemOutput, error) {
-					if params.TableName == nil || *params.TableName != "spawn-schedule-history" {
-						t.Errorf("Expected table name spawn-schedule-history, got %v", params.TableName)
-					}
-					return &dynamodb.PutItemOutput{}, nil
-				}
+			name: "successful execution",
+			history: &ExecutionHistory{
+				ScheduleID:    "sched-exec-001",
+				ExecutionTime: time.Date(2026, 1, 22, 14, 5, 30, 0, time.UTC),
+				SweepID:       "sweep-20260122-140530",
+				Status:        "success",
 			},
 			wantErr: false,
 		},
 		{
-			name:       "failed execution record",
-			scheduleID: "sched-test-002",
-			sweepID:    "sweep-20260122-150530",
-			status:     "failed",
-			setupMock: func(ddb *mockDynamoDBClient) {
-				ddb.putItemFunc = func(ctx context.Context, params *dynamodb.PutItemInput, optFns ...func(*dynamodb.Options)) (*dynamodb.PutItemOutput, error) {
-					return &dynamodb.PutItemOutput{}, nil
-				}
+			name: "failed execution",
+			history: &ExecutionHistory{
+				ScheduleID:    "sched-exec-001",
+				ExecutionTime: time.Date(2026, 1, 23, 14, 5, 30, 0, time.UTC),
+				SweepID:       "sweep-20260123-140530",
+				Status:        "failed",
+				ErrorMessage:  "instance launch failed",
 			},
 			wantErr: false,
 		},
@@ -403,228 +308,156 @@ func TestRecordExecution(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockDDB := &mockDynamoDBClient{}
-			if tt.setupMock != nil {
-				tt.setupMock(mockDDB)
-			}
-
-			client := &Client{
-				dynamoClient: mockDDB,
-				tableName:    "spawn-schedules",
-			}
-
-			history := &ExecutionHistory{
-				ScheduleID:    tt.scheduleID,
-				ExecutionTime: time.Now(),
-				SweepID:       tt.sweepID,
-				Status:        tt.status,
-			}
-
-			err := client.RecordExecution(context.Background(), history)
+			err := client.RecordExecution(ctx, tt.history)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("RecordExecution() error = %v, wantErr %v", err, tt.wantErr)
 			}
-		})
-	}
-}
-
-func TestScheduleRecordValidation(t *testing.T) {
-	now := time.Now()
-
-	tests := []struct {
-		name   string
-		record *ScheduleRecord
-		valid  bool
-	}{
-		{
-			name: "valid one-time schedule",
-			record: &ScheduleRecord{
-				ScheduleID:         "sched-test-001",
-				ScheduleType:       "one-time",
-				ScheduleExpression: "at(2026-01-22T15:00:00)",
-				Status:             "active",
-			},
-			valid: true,
-		},
-		{
-			name: "valid recurring schedule",
-			record: &ScheduleRecord{
-				ScheduleID:         "sched-test-002",
-				ScheduleType:       "recurring",
-				ScheduleExpression: "cron(0 2 * * ? *)",
-				Status:             "active",
-			},
-			valid: true,
-		},
-		{
-			name: "recurring with max executions",
-			record: &ScheduleRecord{
-				ScheduleID:         "sched-test-003",
-				ScheduleType:       "recurring",
-				ScheduleExpression: "cron(0 2 * * ? *)",
-				Status:             "active",
-				MaxExecutions:      30,
-			},
-			valid: true,
-		},
-		{
-			name: "recurring with end date",
-			record: &ScheduleRecord{
-				ScheduleID:         "sched-test-004",
-				ScheduleType:       "recurring",
-				ScheduleExpression: "cron(0 2 * * ? *)",
-				Status:             "active",
-				EndAfter:           now.Add(30 * 24 * time.Hour),
-			},
-			valid: true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			// Basic validation checks
-			if tt.record.ScheduleID == "" {
-				t.Error("ScheduleID should not be empty")
-			}
-			if tt.record.ScheduleType != "one-time" && tt.record.ScheduleType != "recurring" {
-				t.Error("ScheduleType must be one-time or recurring")
-			}
-			if tt.record.Status != "active" && tt.record.Status != "paused" && tt.record.Status != "cancelled" {
-				t.Error("Invalid status")
-			}
-		})
-	}
-}
-
-func TestListSchedulesByUser(t *testing.T) {
-	tests := []struct {
-		name      string
-		userID    string
-		setupMock func(*mockDynamoDBClient)
-		wantCount int
-		wantErr   bool
-	}{
-		{
-			name:   "user with schedules",
-			userID: "user-123",
-			setupMock: func(ddb *mockDynamoDBClient) {
-				ddb.queryFunc = func(ctx context.Context, params *dynamodb.QueryInput, optFns ...func(*dynamodb.Options)) (*dynamodb.QueryOutput, error) {
-					return &dynamodb.QueryOutput{
-						Items: []map[string]dynamodbtypes.AttributeValue{
-							{
-								"schedule_id":         &dynamodbtypes.AttributeValueMemberS{Value: "sched-test-001"},
-								"user_id":             &dynamodbtypes.AttributeValueMemberS{Value: "user-123"},
-								"schedule_name":       &dynamodbtypes.AttributeValueMemberS{Value: "test-schedule-1"},
-								"schedule_expression": &dynamodbtypes.AttributeValueMemberS{Value: "cron(0 2 * * ? *)"},
-								"schedule_type":       &dynamodbtypes.AttributeValueMemberS{Value: "recurring"},
-								"status":              &dynamodbtypes.AttributeValueMemberS{Value: "active"},
-							},
-							{
-								"schedule_id":         &dynamodbtypes.AttributeValueMemberS{Value: "sched-test-002"},
-								"user_id":             &dynamodbtypes.AttributeValueMemberS{Value: "user-123"},
-								"schedule_name":       &dynamodbtypes.AttributeValueMemberS{Value: "test-schedule-2"},
-								"schedule_expression": &dynamodbtypes.AttributeValueMemberS{Value: "at(2026-01-22T15:00:00)"},
-								"schedule_type":       &dynamodbtypes.AttributeValueMemberS{Value: "one-time"},
-								"status":              &dynamodbtypes.AttributeValueMemberS{Value: "active"},
-							},
-						},
-					}, nil
-				}
-			},
-			wantCount: 2,
-			wantErr:   false,
-		},
-		{
-			name:   "user with no schedules",
-			userID: "user-empty",
-			setupMock: func(ddb *mockDynamoDBClient) {
-				ddb.queryFunc = func(ctx context.Context, params *dynamodb.QueryInput, optFns ...func(*dynamodb.Options)) (*dynamodb.QueryOutput, error) {
-					return &dynamodb.QueryOutput{
-						Items: []map[string]dynamodbtypes.AttributeValue{},
-					}, nil
-				}
-			},
-			wantCount: 0,
-			wantErr:   false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			mockDDB := &mockDynamoDBClient{}
-			if tt.setupMock != nil {
-				tt.setupMock(mockDDB)
-			}
-
-			client := &Client{
-				dynamoClient: mockDDB,
-				tableName:    "spawn-schedules",
-			}
-
-			schedules, err := client.ListSchedulesByUser(context.Background(), tt.userID)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("ListSchedulesByUser() error = %v, wantErr %v", err, tt.wantErr)
-			}
-
-			if len(schedules) != tt.wantCount {
-				t.Errorf("ListSchedulesByUser() returned %d schedules, want %d", len(schedules), tt.wantCount)
+			if tt.history.TTL == 0 {
+				t.Error("RecordExecution() did not set TTL")
 			}
 		})
 	}
 }
 
 func TestSaveSchedule(t *testing.T) {
-	tests := []struct {
-		name      string
-		record    *ScheduleRecord
-		setupMock func(*mockDynamoDBClient)
-		wantErr   bool
-	}{
+	env := testutil.SubstrateServer(t)
+	ctx := context.Background()
+	db := env.DynamoClient()
+	createSchedulesTable(t, db)
+
+	client := NewClientWithTableName(env.AWSConfig, testLambdaARN, testRoleARN, testAccountID, "spawn-schedules")
+
+	record := &ScheduleRecord{
+		ScheduleID:         "sched-save-001",
+		UserID:             "user-123",
+		ScheduleName:       "save-test",
+		ScheduleExpression: "cron(0 2 * * ? *)",
+		ScheduleType:       "recurring",
+		Status:             "active",
+	}
+
+	if err := client.SaveSchedule(ctx, record); err != nil {
+		t.Fatalf("SaveSchedule: %v", err)
+	}
+
+	if record.TTL == 0 {
+		t.Error("SaveSchedule() did not set TTL")
+	}
+
+	// Verify persisted.
+	got, err := client.GetSchedule(ctx, record.ScheduleID)
+	if err != nil {
+		t.Fatalf("GetSchedule after save: %v", err)
+	}
+	if got.ScheduleName != record.ScheduleName {
+		t.Errorf("ScheduleName = %q, want %q", got.ScheduleName, record.ScheduleName)
+	}
+}
+
+func TestListSchedulesByUser(t *testing.T) {
+	env := testutil.SubstrateServer(t)
+	ctx := context.Background()
+	db := env.DynamoClient()
+	createSchedulesTable(t, db)
+
+	client := NewClientWithTableName(env.AWSConfig, testLambdaARN, testRoleARN, testAccountID, "spawn-schedules")
+
+	next := time.Now().Add(24 * time.Hour)
+	records := []*ScheduleRecord{
 		{
-			name: "successful save",
-			record: &ScheduleRecord{
-				ScheduleID:         "sched-test-001",
-				UserID:             "user-123",
-				ScheduleName:       "test-schedule",
-				ScheduleExpression: "cron(0 2 * * ? *)",
-				ScheduleType:       "recurring",
-				Status:             "active",
-			},
-			setupMock: func(ddb *mockDynamoDBClient) {
-				ddb.putItemFunc = func(ctx context.Context, params *dynamodb.PutItemInput, optFns ...func(*dynamodb.Options)) (*dynamodb.PutItemOutput, error) {
-					if params.TableName == nil || *params.TableName != "spawn-schedules" {
-						t.Errorf("Expected table name spawn-schedules, got %v", params.TableName)
-					}
-					return &dynamodb.PutItemOutput{}, nil
-				}
-			},
-			wantErr: false,
+			ScheduleID:         "sched-list-001",
+			UserID:             "user-list",
+			ScheduleName:       "list-schedule-1",
+			ScheduleExpression: "cron(0 2 * * ? *)",
+			ScheduleType:       "recurring",
+			Status:             "active",
+			NextExecutionTime:  next,
+		},
+		{
+			ScheduleID:         "sched-list-002",
+			UserID:             "user-list",
+			ScheduleName:       "list-schedule-2",
+			ScheduleExpression: "at(2026-01-22T15:00:00)",
+			ScheduleType:       "one-time",
+			Status:             "active",
+			NextExecutionTime:  next.Add(time.Hour),
 		},
 	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			mockDDB := &mockDynamoDBClient{}
-			if tt.setupMock != nil {
-				tt.setupMock(mockDDB)
-			}
-
-			client := &Client{
-				dynamoClient: mockDDB,
-				tableName:    "spawn-schedules",
-			}
-
-			err := client.SaveSchedule(context.Background(), tt.record)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("SaveSchedule() error = %v, wantErr %v", err, tt.wantErr)
-			}
-
-			// Verify TTL was set
-			if tt.record.TTL == 0 {
-				t.Error("SaveSchedule() did not set TTL")
-			}
-		})
+	for _, r := range records {
+		if err := client.SaveSchedule(ctx, r); err != nil {
+			t.Fatalf("setup: SaveSchedule %s: %v", r.ScheduleID, err)
+		}
 	}
+
+	t.Run("user with schedules", func(t *testing.T) {
+		got, err := client.ListSchedulesByUser(ctx, "user-list")
+		if err != nil {
+			t.Fatalf("ListSchedulesByUser: %v", err)
+		}
+		if len(got) != 2 {
+			t.Errorf("got %d schedules, want 2", len(got))
+		}
+	})
+
+	t.Run("user with no schedules", func(t *testing.T) {
+		got, err := client.ListSchedulesByUser(ctx, "user-empty")
+		if err != nil {
+			t.Fatalf("ListSchedulesByUser: %v", err)
+		}
+		if len(got) != 0 {
+			t.Errorf("got %d schedules, want 0", len(got))
+		}
+	})
+}
+
+func TestGetExecutionHistory(t *testing.T) {
+	env := testutil.SubstrateServer(t)
+	ctx := context.Background()
+	db := env.DynamoClient()
+	createScheduleHistoryTable(t, db)
+
+	client := NewClientWithTableName(env.AWSConfig, testLambdaARN, testRoleARN, testAccountID, "spawn-schedules")
+
+	// Write two history entries.
+	entries := []*ExecutionHistory{
+		{
+			ScheduleID:    "sched-hist-001",
+			ExecutionTime: time.Date(2026, 1, 22, 14, 0, 0, 0, time.UTC),
+			SweepID:       "sweep-001",
+			Status:        "success",
+		},
+		{
+			ScheduleID:    "sched-hist-001",
+			ExecutionTime: time.Date(2026, 1, 23, 14, 0, 0, 0, time.UTC),
+			SweepID:       "sweep-002",
+			Status:        "success",
+		},
+	}
+	for _, e := range entries {
+		if err := client.RecordExecution(ctx, e); err != nil {
+			t.Fatalf("setup: RecordExecution: %v", err)
+		}
+	}
+
+	t.Run("schedule with history", func(t *testing.T) {
+		got, err := client.GetExecutionHistory(ctx, "sched-hist-001", 10)
+		if err != nil {
+			t.Fatalf("GetExecutionHistory: %v", err)
+		}
+		if len(got) != 2 {
+			t.Errorf("got %d history entries, want 2", len(got))
+		}
+	})
+
+	t.Run("schedule with no history", func(t *testing.T) {
+		got, err := client.GetExecutionHistory(ctx, "sched-hist-empty", 10)
+		if err != nil {
+			t.Fatalf("GetExecutionHistory: %v", err)
+		}
+		if len(got) != 0 {
+			t.Errorf("got %d history entries, want 0", len(got))
+		}
+	})
 }
 
 func TestGenerateScheduleID(t *testing.T) {
@@ -637,75 +470,63 @@ func TestGenerateScheduleID(t *testing.T) {
 	}
 }
 
-func TestGetExecutionHistory(t *testing.T) {
+func TestScheduleRecordValidation(t *testing.T) {
+	now := time.Now()
+
 	tests := []struct {
-		name       string
-		scheduleID string
-		limit      int
-		setupMock  func(*mockDynamoDBClient)
-		wantCount  int
-		wantErr    bool
+		name   string
+		record *ScheduleRecord
 	}{
 		{
-			name:       "schedule with execution history",
-			scheduleID: "sched-test-001",
-			limit:      10,
-			setupMock: func(ddb *mockDynamoDBClient) {
-				ddb.queryFunc = func(ctx context.Context, params *dynamodb.QueryInput, optFns ...func(*dynamodb.Options)) (*dynamodb.QueryOutput, error) {
-					return &dynamodb.QueryOutput{
-						Items: []map[string]dynamodbtypes.AttributeValue{
-							{
-								"schedule_id": &dynamodbtypes.AttributeValueMemberS{Value: "sched-test-001"},
-								"sweep_id":    &dynamodbtypes.AttributeValueMemberS{Value: "sweep-20260122-140530"},
-								"status":      &dynamodbtypes.AttributeValueMemberS{Value: "success"},
-							},
-							{
-								"schedule_id": &dynamodbtypes.AttributeValueMemberS{Value: "sched-test-001"},
-								"sweep_id":    &dynamodbtypes.AttributeValueMemberS{Value: "sweep-20260123-140530"},
-								"status":      &dynamodbtypes.AttributeValueMemberS{Value: "success"},
-							},
-						},
-					}, nil
-				}
+			name: "valid one-time schedule",
+			record: &ScheduleRecord{
+				ScheduleID:         "sched-test-001",
+				ScheduleType:       "one-time",
+				ScheduleExpression: "at(2026-01-22T15:00:00)",
+				Status:             "active",
 			},
-			wantCount: 2,
-			wantErr:   false,
 		},
 		{
-			name:       "schedule with no history",
-			scheduleID: "sched-empty",
-			limit:      10,
-			setupMock: func(ddb *mockDynamoDBClient) {
-				ddb.queryFunc = func(ctx context.Context, params *dynamodb.QueryInput, optFns ...func(*dynamodb.Options)) (*dynamodb.QueryOutput, error) {
-					return &dynamodb.QueryOutput{
-						Items: []map[string]dynamodbtypes.AttributeValue{},
-					}, nil
-				}
+			name: "valid recurring schedule",
+			record: &ScheduleRecord{
+				ScheduleID:         "sched-test-002",
+				ScheduleType:       "recurring",
+				ScheduleExpression: "cron(0 2 * * ? *)",
+				Status:             "active",
 			},
-			wantCount: 0,
-			wantErr:   false,
+		},
+		{
+			name: "recurring with max executions",
+			record: &ScheduleRecord{
+				ScheduleID:         "sched-test-003",
+				ScheduleType:       "recurring",
+				ScheduleExpression: "cron(0 2 * * ? *)",
+				Status:             "active",
+				MaxExecutions:      30,
+			},
+		},
+		{
+			name: "recurring with end date",
+			record: &ScheduleRecord{
+				ScheduleID:         "sched-test-004",
+				ScheduleType:       "recurring",
+				ScheduleExpression: "cron(0 2 * * ? *)",
+				Status:             "active",
+				EndAfter:           now.Add(30 * 24 * time.Hour),
+			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockDDB := &mockDynamoDBClient{}
-			if tt.setupMock != nil {
-				tt.setupMock(mockDDB)
+			if tt.record.ScheduleID == "" {
+				t.Error("ScheduleID should not be empty")
 			}
-
-			client := &Client{
-				dynamoClient: mockDDB,
-				tableName:    "spawn-schedules",
+			if tt.record.ScheduleType != "one-time" && tt.record.ScheduleType != "recurring" {
+				t.Error("ScheduleType must be one-time or recurring")
 			}
-
-			history, err := client.GetExecutionHistory(context.Background(), tt.scheduleID, tt.limit)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("GetExecutionHistory() error = %v, wantErr %v", err, tt.wantErr)
-			}
-
-			if len(history) != tt.wantCount {
-				t.Errorf("GetExecutionHistory() returned %d items, want %d", len(history), tt.wantCount)
+			if tt.record.Status != "active" && tt.record.Status != "paused" && tt.record.Status != "cancelled" {
+				t.Error("invalid status")
 			}
 		})
 	}

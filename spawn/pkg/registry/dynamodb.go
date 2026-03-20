@@ -44,6 +44,17 @@ func NewPeerRegistry(ctx context.Context, identity *provider.Identity) (*PeerReg
 	}, nil
 }
 
+// NewPeerRegistryFromConfig creates a new peer registry with an explicit AWS config.
+// Primarily used in tests to point at an emulator (e.g. Substrate).
+func NewPeerRegistryFromConfig(identity *provider.Identity, cfg aws.Config) *PeerRegistry {
+	return &PeerRegistry{
+		client:    dynamodb.NewFromConfig(cfg),
+		tableName: TableName,
+		identity:  identity,
+		ttl:       DefaultTTLSeconds,
+	}
+}
+
 // Register registers this instance in the registry
 func (r *PeerRegistry) Register(ctx context.Context, jobArrayID string, index int) error {
 	now := time.Now().Unix()

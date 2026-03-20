@@ -1,7 +1,12 @@
 package security
 
 import (
+	"context"
 	"testing"
+
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/kms"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/testutil"
 )
 
 func TestMaskSecret(t *testing.T) {
@@ -138,6 +143,81 @@ func TestMaskURL(t *testing.T) {
 	}
 }
 
-// Note: EncryptSecret and DecryptSecret require actual AWS KMS client
-// and would need integration tests with proper AWS credentials.
-// Unit tests would need mocking, which is beyond the scope here.
+func TestEncryptDecrypt(t *testing.T) {
+	env := testutil.SubstrateServer(t)
+	ctx := context.Background()
+	kmsClient := env.KMSClient()
+
+	// Create a KMS key in the Substrate emulator.
+	keyOut, err := kmsClient.CreateKey(ctx, &kms.CreateKeyInput{
+		Description: aws.String("test-key"),
+	})
+	if err != nil {
+		t.Fatalf("CreateKey: %v", err)
+	}
+	keyID := *keyOut.KeyMetadata.KeyId
+
+	tests := []struct {
+		name      string
+		plaintext string
+	}{
+		{"short secret", "mysecret"},
+		{"api key", "sk-1234567890abcdef1234567890abcdef"},
+		{"multi-word", "hello world secret"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ciphertext, err := EncryptSecret(ctx, kmsClient, keyID, tt.plaintext)
+			if err != nil {
+				t.Fatalf("EncryptSecret: %v", err)
+			}
+			if ciphertext == "" {
+				t.Fatal("EncryptSecret returned empty ciphertext")
+			}
+			if ciphertext == tt.plaintext {
+				t.Error("ciphertext should differ from plaintext")
+			}
+
+			got, err := DecryptSecret(ctx, kmsClient, ciphertext)
+			if err != nil {
+				t.Fatalf("DecryptSecret: %v", err)
+			}
+			if got != tt.plaintext {
+				t.Errorf("DecryptSecret = %q, want %q", got, tt.plaintext)
+			}
+		})
+	}
+}
+
+func TestEncryptSecret_Errors(t *testing.T) {
+	env := testutil.SubstrateServer(t)
+	ctx := context.Background()
+	kmsClient := env.KMSClient()
+
+	keyOut, err := kmsClient.CreateKey(ctx, &kms.CreateKeyInput{})
+	if err != nil {
+		t.Fatalf("CreateKey: %v", err)
+	}
+	keyID := *keyOut.KeyMetadata.KeyId
+
+	if _, err := EncryptSecret(ctx, kmsClient, "", "plaintext"); err == nil {
+		t.Error("expected error for empty keyID")
+	}
+	if _, err := EncryptSecret(ctx, kmsClient, keyID, ""); err == nil {
+		t.Error("expected error for empty plaintext")
+	}
+}
+
+func TestDecryptSecret_Errors(t *testing.T) {
+	ctx := context.Background()
+	env := testutil.SubstrateServer(t)
+	kmsClient := env.KMSClient()
+
+	if _, err := DecryptSecret(ctx, kmsClient, ""); err == nil {
+		t.Error("expected error for empty ciphertext")
+	}
+	if _, err := DecryptSecret(ctx, kmsClient, "not-base64!@#"); err == nil {
+		t.Error("expected error for invalid base64")
+	}
+}
