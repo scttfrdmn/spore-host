@@ -60,30 +60,33 @@ type JobResult struct {
 	CompletedAt time.Time
 }
 
-// NewQueueRunner creates a new queue runner
+// NewQueueRunner creates a new queue runner using the default AWS credential chain.
 func NewQueueRunner(ctx context.Context, queueFile string) (*QueueRunner, error) {
-	// Load queue config
+	awsCfg, err := config.LoadDefaultConfig(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("load AWS config: %w", err)
+	}
+	return NewQueueRunnerWithAWSConfig(ctx, queueFile, "", awsCfg)
+}
+
+// NewQueueRunnerWithAWSConfig creates a queue runner with an injected AWS config.
+// stateFile overrides the default state file path; pass "" to use /var/lib/spored/queue-state.json.
+func NewQueueRunnerWithAWSConfig(ctx context.Context, queueFile, stateFile string, awsCfg aws.Config) (*QueueRunner, error) {
 	cfg, err := queue.LoadConfig(queueFile)
 	if err != nil {
 		return nil, fmt.Errorf("load config: %w", err)
 	}
 
-	// Load or initialize state
-	stateFile := "/var/lib/spored/queue-state.json"
+	if stateFile == "" {
+		stateFile = "/var/lib/spored/queue-state.json"
+	}
+
 	state, err := loadOrInitState(stateFile, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("load state: %w", err)
 	}
 
-	// Setup AWS S3 client
-	awsCfg, err := config.LoadDefaultConfig(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("load AWS config: %w", err)
-	}
-
 	s3Client := s3.NewFromConfig(awsCfg)
-
-	// Create cancellable context
 	runnerCtx, cancel := context.WithCancel(ctx)
 
 	return &QueueRunner{

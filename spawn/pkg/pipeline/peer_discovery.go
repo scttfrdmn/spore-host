@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/config"
+	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	ec2types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 )
@@ -40,16 +40,21 @@ type PipelinePeerFile struct {
 }
 
 // GeneratePeerDiscoveryFile generates the peer discovery file for a pipeline instance
+// using the default AWS credential chain.
 func GeneratePeerDiscoveryFile(ctx context.Context, pipelineID, stageID string, stageIndex, instanceIndex int, pipelineDef *Pipeline) error {
-	log.Printf("Generating peer discovery file for %s/%s (index %d)", pipelineID, stageID, instanceIndex)
-
-	// Load AWS config
-	cfg, err := config.LoadDefaultConfig(ctx)
+	cfg, err := awsconfig.LoadDefaultConfig(ctx)
 	if err != nil {
 		return fmt.Errorf("load AWS config: %w", err)
 	}
+	return GeneratePeerDiscoveryFileWithAWSConfig(ctx, pipelineID, stageID, stageIndex, instanceIndex, pipelineDef, cfg)
+}
 
-	ec2Client := ec2.NewFromConfig(cfg)
+// GeneratePeerDiscoveryFileWithAWSConfig generates the peer discovery file using
+// an injected AWS config. Use this in tests to point at a Substrate emulator.
+func GeneratePeerDiscoveryFileWithAWSConfig(ctx context.Context, pipelineID, stageID string, stageIndex, instanceIndex int, pipelineDef *Pipeline, awsCfg aws.Config) error {
+	log.Printf("Generating peer discovery file for %s/%s (index %d)", pipelineID, stageID, instanceIndex)
+
+	ec2Client := ec2.NewFromConfig(awsCfg)
 
 	// Query all instances in the pipeline
 	allInstances, err := queryPipelineInstances(ctx, ec2Client, pipelineID)

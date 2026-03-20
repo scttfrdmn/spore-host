@@ -126,15 +126,16 @@ func loadFromFile() (*Config, error) {
 
 // loadFromSSM loads configuration from AWS SSM Parameter Store
 func loadFromSSM(ctx context.Context) (*DNSConfig, error) {
-	// Load AWS config
 	awsCfg, err := config.LoadDefaultConfig(ctx)
 	if err != nil {
 		return nil, err
 	}
+	return loadFromSSMWithClient(ctx, ssm.NewFromConfig(awsCfg))
+}
 
-	// Create SSM client
-	ssmClient := ssm.NewFromConfig(awsCfg)
-
+// loadFromSSMWithClient loads DNS configuration using the provided SSM client.
+// This allows injection of a pre-configured client for testing.
+func loadFromSSMWithClient(ctx context.Context, ssmClient *ssm.Client) (*DNSConfig, error) {
 	cfg := &DNSConfig{}
 
 	// Try to get domain parameter

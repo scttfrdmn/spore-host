@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/config"
+	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
@@ -26,15 +26,19 @@ type StageDataHandler struct {
 	stageID      string
 }
 
-// NewStageDataHandler creates a new data handler for a pipeline stage
+// NewStageDataHandler creates a new data handler using the default AWS credential chain.
 func NewStageDataHandler(ctx context.Context, bucket, prefix, pipelineID, stageID string) (*StageDataHandler, error) {
-	cfg, err := config.LoadDefaultConfig(ctx)
+	cfg, err := awsconfig.LoadDefaultConfig(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("load AWS config: %w", err)
 	}
+	return NewStageDataHandlerWithAWSConfig(ctx, bucket, prefix, pipelineID, stageID, cfg)
+}
 
-	s3Client := s3.NewFromConfig(cfg)
-
+// NewStageDataHandlerWithAWSConfig creates a new data handler with an injected AWS config.
+// Use this in tests to point the handler at a Substrate emulator.
+func NewStageDataHandlerWithAWSConfig(_ context.Context, bucket, prefix, pipelineID, stageID string, awsCfg aws.Config) (*StageDataHandler, error) {
+	s3Client := s3.NewFromConfig(awsCfg)
 	return &StageDataHandler{
 		s3Client:     s3Client,
 		s3Uploader:   manager.NewUploader(s3Client),
@@ -293,7 +297,7 @@ func (h *StageDataHandler) CheckCompletionMarker(ctx context.Context, stageID st
 
 // DownloadResultsToLocal downloads all pipeline results to a local directory
 func DownloadResultsToLocal(ctx context.Context, bucket, prefix, pipelineID, localDir string) error {
-	cfg, err := config.LoadDefaultConfig(ctx)
+	cfg, err := awsconfig.LoadDefaultConfig(ctx)
 	if err != nil {
 		return fmt.Errorf("load AWS config: %w", err)
 	}

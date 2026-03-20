@@ -35,25 +35,25 @@ type ManagedInstance struct {
 	CostPerHour  float64
 }
 
-// New creates a new orchestrator
+// New creates a new orchestrator using the default AWS credential chain.
 func New(ctx context.Context, cfg *Config) (*Orchestrator, error) {
-	// Load AWS config
 	awsCfg, err := config.LoadDefaultConfig(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load AWS config: %w", err)
 	}
+	return NewWithAWSConfig(ctx, cfg, awsCfg)
+}
 
+// NewWithAWSConfig creates a new orchestrator with an injected AWS config.
+// Use this in tests to point the orchestrator at a Substrate emulator.
+func NewWithAWSConfig(_ context.Context, cfg *Config, awsCfg aws.Config) (*Orchestrator, error) {
 	if cfg.Region != "" {
 		awsCfg.Region = cfg.Region
 	}
-
-	sqsClient := sqs.NewFromConfig(awsCfg)
-	ec2Client := ec2.NewFromConfig(awsCfg)
-
 	return &Orchestrator{
 		config:           cfg,
-		sqsClient:        sqsClient,
-		ec2Client:        ec2Client,
+		sqsClient:        sqs.NewFromConfig(awsCfg),
+		ec2Client:        ec2.NewFromConfig(awsCfg),
 		managedInstances: make(map[string]*ManagedInstance),
 	}, nil
 }
