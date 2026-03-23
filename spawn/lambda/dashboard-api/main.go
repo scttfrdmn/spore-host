@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/url"
 	"strconv"
 	"strings"
@@ -20,13 +21,10 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	path := request.Path
 	method := request.HTTPMethod
 
-	// Log request for debugging
-	fmt.Printf("Request: method=%s path=%s\n", method, path)
-	fmt.Printf("Headers: %+v\n", request.Headers)
+	log.Printf("request: method=%s path=%s", method, path)
 
 	// Handle OPTIONS for CORS preflight
 	if method == "OPTIONS" {
-		fmt.Println("Handling OPTIONS request")
 		return events.APIGatewayProxyResponse{
 			StatusCode: 200,
 			Headers:    corsHeaders,
@@ -43,12 +41,11 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	// Extract user identity and account info
 	userID, cliIamArn, accountBase36, err := getUserFromRequest(ctx, cfg, request)
 	if err != nil {
-		fmt.Printf("Authentication failed: %v\n", err)
-		return errorResponse(401, fmt.Sprintf("Authentication failed: %v", err)), nil
+		log.Printf("authentication failed: %v", err)
+		return errorResponse(401, "authentication failed"), nil
 	}
 
-	fmt.Printf("✓ Authentication successful: userID=%s cliIamArn=%s accountBase36=%s\n", userID, cliIamArn, accountBase36)
-	fmt.Printf("Routing request: path=%s method=%s\n", path, method)
+	log.Printf("authentication successful")
 
 	// Extract optional team context
 	teamID := request.Headers["X-Team-ID"]
@@ -74,6 +71,9 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	switch {
 	// Team endpoints
 	case path == "/teams" && method == "POST":
+		if ct := request.Headers["content-type"]; !strings.HasPrefix(strings.ToLower(ct), "application/json") {
+			return errorResponse(415, "Content-Type must be application/json"), nil
+		}
 		return handleCreateTeam(ctx, cfg, request.Body, cliIamArn)
 	case path == "/teams" && method == "GET":
 		return handleListMyTeams(ctx, cfg, cliIamArn)
@@ -88,6 +88,9 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		tid, _ := teamPathParts()
 		if tid == "" {
 			return errorResponse(400, "team_id is required"), nil
+		}
+		if ct := request.Headers["content-type"]; !strings.HasPrefix(strings.ToLower(ct), "application/json") {
+			return errorResponse(415, "Content-Type must be application/json"), nil
 		}
 		return handleAddMember(ctx, cfg, tid, cliIamArn, request.Body)
 	case strings.HasPrefix(path, "/teams/") && strings.Contains(path, "/members/") && method == "DELETE":
@@ -209,6 +212,13 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 func handleListInstances(ctx context.Context, cfg aws.Config, cliIamArn, teamID string) (events.APIGatewayProxyResponse, error) {
 	startTime := time.Now()
 
+	// Validate team membership before querying team-scoped instances.
+	if teamID != "" {
+		if _, err := resolveTeamContext(ctx, cfg, teamID, cliIamArn); err != nil {
+			return errorResponse(403, "access denied"), nil
+		}
+	}
+
 	// Query all regions in parallel (filtered by IAM user for per-user isolation)
 	instances, err := listInstances(ctx, cfg, cliIamArn, teamID)
 	if err != nil {
@@ -216,7 +226,7 @@ func handleListInstances(ctx context.Context, cfg aws.Config, cliIamArn, teamID 
 	}
 
 	elapsed := time.Since(startTime)
-	fmt.Printf("Listed %d instances across %d regions in %v\n", len(instances), len(awsRegions), elapsed)
+	log.Printf("listed %d instances across %d regions in %v", len(instances), len(awsRegions), elapsed)
 
 	// Build response
 	response := APIResponse{

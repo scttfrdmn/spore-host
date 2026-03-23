@@ -386,8 +386,8 @@ func runTeamRemove(cmd *cobra.Command, args []string) error {
 		Key: map[string]types.AttributeValue{
 			"team_id": &types.AttributeValueMemberS{Value: teamID},
 		},
-		UpdateExpression:          aws.String("SET member_count = member_count - :one"),
-		ConditionExpression:       aws.String("member_count > :zero"),
+		UpdateExpression:    aws.String("SET member_count = member_count - :one"),
+		ConditionExpression: aws.String("member_count > :zero"),
 		ExpressionAttributeValues: map[string]types.AttributeValue{
 			":one":  &types.AttributeValueMemberN{Value: "1"},
 			":zero": &types.AttributeValueMemberN{Value: "0"},

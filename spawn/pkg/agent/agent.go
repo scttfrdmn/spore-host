@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"github.com/scttfrdmn/spore-host/spawn/pkg/dns"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/plugin"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/pluginruntime"
 	"github.com/scttfrdmn/spore-host/spawn/pkg/provider"
 	"github.com/scttfrdmn/spore-host/spawn/pkg/registry"
 )
@@ -21,6 +23,7 @@ type Agent struct {
 	config           *provider.Config
 	dnsClient        *dns.Client
 	registry         *registry.PeerRegistry
+	pluginRuntime    *pluginruntime.Runtime
 	startTime        time.Time
 	lastActivityTime time.Time
 }
@@ -119,6 +122,21 @@ func NewAgent(ctx context.Context, prov provider.Provider) (*Agent, error) {
 		} else if len(peers) > 0 {
 			log.Printf("✓ Discovered %d peers in job array %s", len(peers), config.JobArrayID)
 		}
+	}
+
+	// Initialize plugin runtime (always, so the push API can route to it).
+	rt := pluginruntime.NewRuntime(identity)
+	agent.pluginRuntime = rt
+
+	if len(config.Plugins) > 0 {
+		// Convert provider.PluginDeclaration to plugin.Declaration.
+		decls := make([]plugin.Declaration, len(config.Plugins))
+		for i, pd := range config.Plugins {
+			decls[i] = plugin.Declaration{Ref: pd.Ref, Config: pd.Config}
+		}
+		resolver := plugin.DefaultResolver()
+		rt.LoadFromDeclarations(ctx, decls, resolver)
+		log.Printf("Plugin runtime: loading %d declared plugin(s)", len(decls))
 	}
 
 	return agent, nil
@@ -531,7 +549,7 @@ func (a *Agent) sendSpotInterruptionNotification(action, interruptTime string) {
   "detected_at": "%s"
 }`, a.identity.InstanceID, action, interruptTime, time.Now().UTC().Format(time.RFC3339))
 
-	if err := os.WriteFile(notificationFile, []byte(notification), 0644); err != nil {
+	if err := os.WriteFile(notificationFile, []byte(notification), 0600); err != nil {
 		log.Printf("Failed to write notification file: %v", err)
 	}
 
@@ -545,7 +563,7 @@ func (a *Agent) warnUsers(message string) {
 	cmd.Run()
 
 	// Also write to a warning file
-	os.WriteFile("/tmp/SPAWN_WARNING", []byte(message+"\n"), 0644)
+	os.WriteFile("/tmp/SPAWN_WARNING", []byte(message+"\n"), 0600)
 
 	log.Printf("Warning sent to users: %s", message)
 }
@@ -626,9 +644,16 @@ func (a *Agent) hibernate(ctx context.Context) {
 	}
 }
 
-// Cleanup performs cleanup tasks before shutdown (DNS deregistration, etc.)
+// Cleanup performs cleanup tasks before shutdown (plugins, DNS, registry).
 func (a *Agent) Cleanup(ctx context.Context) {
 	log.Printf("Running cleanup tasks...")
+
+	// Stop all running plugins before deregistering from infrastructure.
+	if a.pluginRuntime != nil {
+		log.Printf("Stopping plugins...")
+		a.pluginRuntime.StopAll(ctx)
+		log.Printf("Plugins stopped")
+	}
 
 	// Deregister from hybrid registry
 	if a.registry != nil && a.config.JobArrayID != "" {
@@ -728,6 +753,9 @@ func (a *Agent) Reload(ctx context.Context) error {
 }
 
 // Public getter methods for status reporting
+
+// GetPluginRuntime returns the agent's plugin runtime (always non-nil).
+func (a *Agent) GetPluginRuntime() *pluginruntime.Runtime { return a.pluginRuntime }
 
 func (a *Agent) GetConfig() *provider.Config {
 	return a.config

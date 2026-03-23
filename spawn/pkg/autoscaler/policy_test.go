@@ -357,11 +357,11 @@ func TestNormalizeQueues(t *testing.T) {
 
 func TestGetWeightedQueueDepth(t *testing.T) {
 	tests := []struct {
-		name       string
-		queues     []QueueConfig
-		mockDepth  int
-		want       int
-		wantErr    bool
+		name      string
+		queues    []QueueConfig
+		mockDepth int
+		want      int
+		wantErr   bool
 	}{
 		{
 			name: "single queue",
@@ -446,8 +446,8 @@ func TestEvaluatePolicy_MultiQueue(t *testing.T) {
 				{QueueURL: "https://sqs/q1", Weight: 1.0},
 				{QueueURL: "https://sqs/q2", Weight: 1.0},
 			},
-			queueDepth:     50,  // Each queue has 50, total = 100
-			target:         10,  // 100 / 10 = 10 instances
+			queueDepth:     50, // Each queue has 50, total = 100
+			target:         10, // 100 / 10 = 10 instances
 			currentDesired: 5,
 			min:            0,
 			max:            20,

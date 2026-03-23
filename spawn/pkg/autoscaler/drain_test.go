@@ -24,25 +24,25 @@ func TestGetDefaultDrainConfig(t *testing.T) {
 
 func TestDrainManager_hasActiveWork(t *testing.T) {
 	tests := []struct {
-		name          string
-		hasDynamoDB   bool
-		hasRegistry   bool
+		name           string
+		hasDynamoDB    bool
+		hasRegistry    bool
 		wantActiveWork bool
-		wantErr       bool
+		wantErr        bool
 	}{
 		{
-			name:          "no registry configured",
-			hasDynamoDB:   false,
-			hasRegistry:   false,
+			name:           "no registry configured",
+			hasDynamoDB:    false,
+			hasRegistry:    false,
 			wantActiveWork: false,
-			wantErr:       false,
+			wantErr:        false,
 		},
 		{
-			name:          "registry table name empty",
-			hasDynamoDB:   true,
-			hasRegistry:   false,
+			name:           "registry table name empty",
+			hasDynamoDB:    true,
+			hasRegistry:    false,
 			wantActiveWork: false,
-			wantErr:       false,
+			wantErr:        false,
 		},
 	}
 

@@ -11,7 +11,7 @@ import (
 var corsHeaders = map[string]string{
 	"Access-Control-Allow-Origin":      "https://spore.host",
 	"Access-Control-Allow-Methods":     "GET,POST,PUT,DELETE,OPTIONS",
-	"Access-Control-Allow-Headers":     "Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token,X-AWS-Credentials,X-User-Email,X-Team-ID",
+	"Access-Control-Allow-Headers":     "Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token,X-AWS-Credentials,X-Team-ID",
 	"Access-Control-Allow-Credentials": "true",
 	"Content-Type":                     "application/json",
 }

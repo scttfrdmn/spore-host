@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
+	"regexp"
 	"time"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -16,6 +18,9 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 )
 
+// awsAccountIDRe matches a valid 12-digit AWS account ID.
+var awsAccountIDRe = regexp.MustCompile(`^\d{12}$`)
+
 const (
 	dynamoSweepTable = "spawn-sweep-orchestration"
 )
@@ -23,7 +28,6 @@ const (
 // handleListSweeps handles GET /api/sweeps
 // When teamID is non-empty, team sweeps are merged with personal sweeps.
 func handleListSweeps(ctx context.Context, cfg aws.Config, cliIamArn, teamID string) (events.APIGatewayProxyResponse, error) {
-	fmt.Printf("handleListSweeps called for user: %s teamID: %s\n", cliIamArn, teamID)
 	startTime := time.Now()
 
 	dynamodbClient := dynamodb.NewFromConfig(cfg)
@@ -35,6 +39,7 @@ func handleListSweeps(ctx context.Context, cfg aws.Config, cliIamArn, teamID str
 		ExpressionAttributeValues: map[string]types.AttributeValue{
 			":user_id": &types.AttributeValueMemberS{Value: cliIamArn},
 		},
+		Limit: aws.Int32(200),
 	}
 	result, err := dynamodbClient.Scan(ctx, scanInput)
 	if err != nil {
@@ -83,6 +88,9 @@ func handleListSweeps(ctx context.Context, cfg aws.Config, cliIamArn, teamID str
 
 	// Team sweeps via team_id-index GSI
 	if teamID != "" {
+		if _, err := resolveTeamContext(ctx, cfg, teamID, cliIamArn); err != nil {
+			return errorResponse(403, "access denied"), nil
+		}
 		teamResult, err := dynamodbClient.Query(ctx, &dynamodb.QueryInput{
 			TableName:              aws.String(dynamoSweepTable),
 			IndexName:              aws.String("team_id-index"),
@@ -92,14 +100,14 @@ func handleListSweeps(ctx context.Context, cfg aws.Config, cliIamArn, teamID str
 			},
 		})
 		if err != nil {
-			fmt.Printf("Warning: failed to query team sweeps: %v\n", err)
+			log.Printf("warning: failed to query team sweeps: %v", err)
 		} else {
 			appendSweepRecords(teamResult.Items)
 		}
 	}
 
 	elapsed := time.Since(startTime)
-	fmt.Printf("Listed %d sweeps in %v\n", len(sweeps), elapsed)
+	log.Printf("listed %d sweeps in %v", len(sweeps), elapsed)
 
 	if sweeps == nil {
 		sweeps = []SweepInfo{}
@@ -272,10 +280,10 @@ func handleCancelSweep(ctx context.Context, cfg aws.Config, sweepID, cliIamArn s
 	if len(instanceIDs) > 0 {
 		err = terminateSweepInstancesCrossAccount(ctx, cfg, sweep.AWSAccountID, sweep.Region, instanceIDs)
 		if err != nil {
-			fmt.Printf("Warning: Failed to terminate instances: %v\n", err)
+			log.Printf("warning: failed to terminate instances: %v", err)
 			// Don't fail the request - sweep is still marked as cancelled
 		} else {
-			fmt.Printf("Terminated %d instances\n", len(instanceIDs))
+			log.Printf("terminated %d instances", len(instanceIDs))
 		}
 	}
 
@@ -303,6 +311,11 @@ func handleCleanupSweeps(ctx context.Context, cfg aws.Config, body string, cliIa
 		return errorResponse(400, "No sweep IDs provided"), nil
 	}
 
+	const maxSweepCleanupIDs = 100
+	if len(request.SweepIDs) > maxSweepCleanupIDs {
+		return errorResponse(400, fmt.Sprintf("too many sweep_ids: max %d", maxSweepCleanupIDs)), nil
+	}
+
 	dynamodbClient := dynamodb.NewFromConfig(cfg)
 	deletedCount := 0
 
@@ -318,30 +331,30 @@ func handleCleanupSweeps(ctx context.Context, cfg aws.Config, body string, cliIa
 
 		result, err := dynamodbClient.GetItem(ctx, getInput)
 		if err != nil {
-			fmt.Printf("Warning: Failed to get sweep %s: %v\n", sweepID, err)
+			log.Printf("warning: failed to get sweep %s: %v", sweepID, err)
 			continue
 		}
 
 		if result.Item == nil {
-			fmt.Printf("Warning: Sweep %s not found\n", sweepID)
+			log.Printf("warning: sweep %s not found", sweepID)
 			continue
 		}
 
 		var sweep SweepRecord
 		if err := attributevalue.UnmarshalMap(result.Item, &sweep); err != nil {
-			fmt.Printf("Warning: Failed to unmarshal sweep %s: %v\n", sweepID, err)
+			log.Printf("warning: failed to unmarshal sweep %s: %v", sweepID, err)
 			continue
 		}
 
 		// Verify sweep belongs to this user
 		if sweep.UserID != cliIamArn {
-			fmt.Printf("Warning: Sweep %s not owned by user\n", sweepID)
+			log.Printf("warning: sweep %s not owned by caller", sweepID)
 			continue
 		}
 
 		// Only delete if completed, cancelled, or failed
 		if sweep.Status != "COMPLETED" && sweep.Status != "CANCELLED" && sweep.Status != "FAILED" {
-			fmt.Printf("Warning: Sweep %s is %s, skipping\n", sweepID, sweep.Status)
+			log.Printf("warning: sweep %s is %s, skipping", sweepID, sweep.Status)
 			continue
 		}
 
@@ -355,12 +368,11 @@ func handleCleanupSweeps(ctx context.Context, cfg aws.Config, body string, cliIa
 
 		_, err = dynamodbClient.DeleteItem(ctx, deleteInput)
 		if err != nil {
-			fmt.Printf("Warning: Failed to delete sweep %s: %v\n", sweepID, err)
+			log.Printf("warning: failed to delete sweep %s: %v", sweepID, err)
 			continue
 		}
 
 		deletedCount++
-		fmt.Printf("Deleted sweep: %s\n", sweepID)
 	}
 
 	// Build response
@@ -381,6 +393,11 @@ func handleCleanupSweeps(ctx context.Context, cfg aws.Config, body string, cliIa
 func terminateSweepInstancesCrossAccount(ctx context.Context, cfg aws.Config, accountID, region string, instanceIDs []string) error {
 	if len(instanceIDs) == 0 {
 		return nil
+	}
+
+	// Validate account ID format before constructing ARN.
+	if !awsAccountIDRe.MatchString(accountID) {
+		return fmt.Errorf("invalid AWS account ID %q", accountID)
 	}
 
 	// Assume cross-account role

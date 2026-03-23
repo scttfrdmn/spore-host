@@ -9,6 +9,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -52,6 +53,7 @@ func NewLocalProvider(ctx context.Context) (*LocalProvider, error) {
 
 	identity := &Identity{
 		InstanceID: localConfig.InstanceID,
+		Name:       localConfig.Name,
 		Region:     localConfig.Region,
 		AccountID:  localConfig.AccountID,
 		PublicIP:   publicIP,
@@ -89,6 +91,14 @@ func NewLocalProvider(ctx context.Context) (*LocalProvider, error) {
 				AlertmanagerURL: localConfig.Observability.Alerting.AlertmanagerURL,
 			},
 		},
+	}
+
+	if len(localConfig.Plugins) > 0 {
+		decls := make([]PluginDeclaration, len(localConfig.Plugins))
+		for i, d := range localConfig.Plugins {
+			decls[i] = PluginDeclaration{Ref: d.Ref, Config: d.Config}
+		}
+		providerConfig.Plugins = decls
 	}
 
 	// Apply defaults if not set
@@ -245,8 +255,11 @@ func getStringValue(attr types.AttributeValue) string {
 
 func getNumberValue(attr types.AttributeValue) int64 {
 	if n, ok := attr.(*types.AttributeValueMemberN); ok {
-		var val int64
-		fmt.Sscanf(n.Value, "%d", &val)
+		val, err := strconv.ParseInt(n.Value, 10, 64)
+		if err != nil {
+			log.Printf("warning: unexpected DynamoDB number value %q: %v", n.Value, err)
+			return 0
+		}
 		return val
 	}
 	return 0

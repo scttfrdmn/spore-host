@@ -3,6 +3,7 @@ package autoscaler
 import (
 	"context"
 	"fmt"
+	"log"
 	"strconv"
 	"time"
 
@@ -167,10 +168,18 @@ func (p *PolicyEvaluator) getQueueDepth(ctx context.Context, queueURL string) (i
 	return visible + inFlight, nil
 }
 
+// maxReasonableQueueDepth caps queue depth before ceiling-division to prevent integer overflow.
+const maxReasonableQueueDepth = 1_000_000
+
 // calculateDesiredCapacity computes needed instances using ceiling division
 func (p *PolicyEvaluator) calculateDesiredCapacity(queueDepth, targetMessagesPerInstance int) int {
 	if queueDepth == 0 || targetMessagesPerInstance <= 0 {
 		return 0
+	}
+
+	if queueDepth > maxReasonableQueueDepth {
+		log.Printf("warning: queueDepth %d exceeds max %d, capping", queueDepth, maxReasonableQueueDepth)
+		queueDepth = maxReasonableQueueDepth
 	}
 
 	// Ceiling division: (depth + target - 1) / target

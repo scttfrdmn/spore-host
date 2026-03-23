@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/scttfrdmn/spore-host/spawn/pkg/plugin"
 	"gopkg.in/yaml.v3"
 )
 
@@ -16,6 +17,7 @@ import (
 type LocalConfig struct {
 	// Instance identity
 	InstanceID string `yaml:"instance_id"`
+	Name       string `yaml:"name"`
 	Region     string `yaml:"region"`
 	AccountID  string `yaml:"account_id"`
 	PublicIP   string `yaml:"public_ip"`
@@ -51,6 +53,9 @@ type LocalConfig struct {
 		URL               string `yaml:"url"`
 		RegisterOnStartup bool   `yaml:"register_on_startup"`
 	} `yaml:"orchestrator"`
+
+	// Plugin declarations to install at instance startup.
+	Plugins []plugin.Declaration `yaml:"plugins,omitempty"`
 
 	// Observability configuration
 	Observability struct {
@@ -114,6 +119,9 @@ func loadFromEnv() *LocalConfig {
 func mergeEnvVars(config *LocalConfig) {
 	if val := os.Getenv("SPAWN_INSTANCE_ID"); val != "" {
 		config.InstanceID = val
+	}
+	if val := os.Getenv("SPAWN_INSTANCE_NAME"); val != "" {
+		config.Name = val
 	}
 	if val := os.Getenv("SPAWN_REGION"); val != "" {
 		config.Region = val

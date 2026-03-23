@@ -65,11 +65,11 @@ func TestDetectGPUInstance(t *testing.T) {
 		instanceType string
 		wantGPU      bool
 	}{
-		{"p3.2xlarge", true},   // p3 family
-		{"p5.48xlarge", true},  // p5 family
-		{"g4.xlarge", true},    // g4 family (prefix match)
-		{"g5.xlarge", true},    // g5 family
-		{"g6.xlarge", true},    // g6 family
+		{"p3.2xlarge", true},  // p3 family
+		{"p5.48xlarge", true}, // p5 family
+		{"g4.xlarge", true},   // g4 family (prefix match)
+		{"g5.xlarge", true},   // g5 family
+		{"g6.xlarge", true},   // g6 family
 		{"t3.micro", false},
 		{"m5.large", false},
 		{"c5.xlarge", false},

@@ -16,9 +16,9 @@ func TestValidateSchedule(t *testing.T) {
 	se := NewScheduleEvaluator()
 
 	tests := []struct {
-		name    string
+		name     string
 		cronExpr string
-		wantErr bool
+		wantErr  bool
 	}{
 		{"valid standard cron", "0 0 9 * * *", false},
 		{"valid with seconds", "30 0 9 * * MON-FRI", false},

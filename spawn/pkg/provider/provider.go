@@ -11,11 +11,18 @@ import (
 // Identity represents the instance's identity information
 type Identity struct {
 	InstanceID string // EC2 instance ID or local hostname
+	Name       string // EC2 Name tag / local config name
 	Region     string // AWS region or "local"
 	AccountID  string // AWS account ID or organization name
 	PublicIP   string // Public IP address
 	PrivateIP  string // Private IP address
 	Provider   string // "ec2" or "local"
+}
+
+// PluginDeclaration references a plugin to install at instance startup.
+type PluginDeclaration struct {
+	Ref    string            `json:"ref" yaml:"ref"`
+	Config map[string]string `json:"config,omitempty" yaml:"config,omitempty"`
 }
 
 // Config represents the agent configuration
@@ -39,6 +46,9 @@ type Config struct {
 	JobArrayName  string
 	JobArrayIndex int
 	JobArraySize  int
+
+	// Plugin declarations to install at instance startup.
+	Plugins []PluginDeclaration
 
 	// Observability settings
 	Observability observability.Config

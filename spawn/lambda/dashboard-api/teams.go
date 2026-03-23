@@ -5,7 +5,10 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"log"
+	"regexp"
 	"time"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -14,6 +17,9 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
+
+// memberARNRe matches valid IAM user or role ARNs.
+var memberARNRe = regexp.MustCompile(`^arn:aws:iam::\d{12}:(user|role)/.{1,256}$`)
 
 const (
 	dynamoTeamsTable       = "spawn-teams"
@@ -67,6 +73,12 @@ func handleCreateTeam(ctx context.Context, cfg aws.Config, body, callerARN strin
 	}
 	if err := json.Unmarshal([]byte(body), &req); err != nil || req.TeamName == "" {
 		return errorResponse(400, "team_name is required"), nil
+	}
+	if len(req.TeamName) > 100 {
+		return errorResponse(400, "team_name must be 100 characters or fewer"), nil
+	}
+	if len(req.Description) > 1000 {
+		return errorResponse(400, "description must be 1000 characters or fewer"), nil
 	}
 
 	teamID := newUUID()
@@ -202,6 +214,7 @@ func handleGetTeam(ctx context.Context, cfg aws.Config, teamID, callerARN string
 		ExpressionAttributeValues: map[string]types.AttributeValue{
 			":tid": &types.AttributeValueMemberS{Value: teamID},
 		},
+		Limit: aws.Int32(500),
 	})
 	if err != nil {
 		return errorResponse(500, fmt.Sprintf("query members: %v", err)), nil
@@ -235,6 +248,9 @@ func handleAddMember(ctx context.Context, cfg aws.Config, teamID, callerARN, bod
 	if err := json.Unmarshal([]byte(body), &req); err != nil || req.MemberARN == "" {
 		return errorResponse(400, "member_arn is required"), nil
 	}
+	if !memberARNRe.MatchString(req.MemberARN) {
+		return errorResponse(400, "member_arn must be a valid IAM user or role ARN"), nil
+	}
 
 	ddb := dynamodb.NewFromConfig(cfg)
 	now := time.Now().UTC().Format(time.RFC3339)
@@ -251,9 +267,15 @@ func handleAddMember(ctx context.Context, cfg aws.Config, teamID, callerARN, bod
 		return errorResponse(500, fmt.Sprintf("marshal: %v", err)), nil
 	}
 	if _, err := ddb.PutItem(ctx, &dynamodb.PutItemInput{
-		TableName: aws.String(dynamoMembershipsTable),
-		Item:      item,
+		TableName:           aws.String(dynamoMembershipsTable),
+		Item:                item,
+		ConditionExpression: aws.String("attribute_not_exists(team_id) AND attribute_not_exists(member_arn)"),
 	}); err != nil {
+		var ccfe *types.ConditionalCheckFailedException
+		if errors.As(err, &ccfe) {
+			// Already a member — idempotent success.
+			return successResponse(map[string]interface{}{"success": true, "member": member})
+		}
 		return errorResponse(500, fmt.Sprintf("add member: %v", err)), nil
 	}
 
@@ -268,7 +290,7 @@ func handleAddMember(ctx context.Context, cfg aws.Config, teamID, callerARN, bod
 			":one": &types.AttributeValueMemberN{Value: "1"},
 		},
 	}); err != nil {
-		fmt.Printf("Warning: failed to update member_count: %v\n", err)
+		log.Printf("warning: failed to update member_count: %v", err)
 	}
 
 	return successResponse(map[string]interface{}{"success": true, "member": member})
@@ -301,14 +323,14 @@ func handleRemoveMember(ctx context.Context, cfg aws.Config, teamID, callerARN, 
 		Key: map[string]types.AttributeValue{
 			"team_id": &types.AttributeValueMemberS{Value: teamID},
 		},
-		UpdateExpression:         aws.String("SET member_count = member_count - :one"),
-		ConditionExpression:      aws.String("member_count > :zero"),
+		UpdateExpression:    aws.String("SET member_count = member_count - :one"),
+		ConditionExpression: aws.String("member_count > :zero"),
 		ExpressionAttributeValues: map[string]types.AttributeValue{
 			":one":  &types.AttributeValueMemberN{Value: "1"},
 			":zero": &types.AttributeValueMemberN{Value: "0"},
 		},
 	}); err != nil {
-		fmt.Printf("Warning: failed to update member_count: %v\n", err)
+		log.Printf("warning: failed to update member_count: %v", err)
 	}
 
 	return successResponse(map[string]interface{}{"success": true})
@@ -331,23 +353,31 @@ func handleDeleteTeam(ctx context.Context, cfg aws.Config, teamID, callerARN str
 			":tid": &types.AttributeValueMemberS{Value: teamID},
 		},
 		ProjectionExpression: aws.String("team_id, member_arn"),
+		Limit:                aws.Int32(500),
 	})
 	if err != nil {
 		return errorResponse(500, fmt.Sprintf("query members: %v", err)), nil
 	}
 
+	var deleteErrs int
 	for _, item := range membersResult.Items {
 		var m TeamMemberRecord
 		if err := attributevalue.UnmarshalMap(item, &m); err != nil {
 			continue
 		}
-		ddb.DeleteItem(ctx, &dynamodb.DeleteItemInput{ //nolint:errcheck
+		if _, err := ddb.DeleteItem(ctx, &dynamodb.DeleteItemInput{
 			TableName: aws.String(dynamoMembershipsTable),
 			Key: map[string]types.AttributeValue{
 				"team_id":    &types.AttributeValueMemberS{Value: teamID},
 				"member_arn": &types.AttributeValueMemberS{Value: m.MemberARN},
 			},
-		})
+		}); err != nil {
+			log.Printf("warning: failed to delete membership %s/%s: %v", teamID, m.MemberARN, err)
+			deleteErrs++
+		}
+	}
+	if deleteErrs > 0 {
+		return errorResponse(500, fmt.Sprintf("delete team: failed to remove %d membership(s)", deleteErrs)), nil
 	}
 
 	// Delete team record

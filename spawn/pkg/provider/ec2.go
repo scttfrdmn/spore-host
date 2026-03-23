@@ -88,14 +88,16 @@ func NewEC2Provider(ctx context.Context) (*EC2Provider, error) {
 
 	// Load config from tags first to check if tracing is enabled
 	ec2Client := ec2.NewFromConfig(cfg)
-	providerConfig, err := loadConfigFromEC2Tags(ctx, ec2Client, instanceID)
+	providerConfig, instanceName, err := loadConfigFromEC2Tags(ctx, ec2Client, instanceID)
 	if err != nil {
 		log.Printf("Warning: Could not load config from tags: %v", err)
 		providerConfig = &Config{
 			IdleCPUPercent: 5.0,
 			Observability:  observability.DefaultConfig(),
 		}
+		instanceName = ""
 	}
+	identity.Name = instanceName
 
 	// Instrument AWS SDK with tracing if enabled
 	if providerConfig.Observability.Tracing.Enabled {
@@ -304,8 +306,9 @@ func (p *EC2Provider) GetProviderType() string {
 	return "ec2"
 }
 
-// loadConfigFromEC2Tags loads configuration from EC2 instance tags
-func loadConfigFromEC2Tags(ctx context.Context, client *ec2.Client, instanceID string) (*Config, error) {
+// loadConfigFromEC2Tags loads configuration from EC2 instance tags.
+// It returns the Config and the value of the EC2 Name tag (may be empty).
+func loadConfigFromEC2Tags(ctx context.Context, client *ec2.Client, instanceID string) (*Config, string, error) {
 	output, err := client.DescribeTags(ctx, &ec2.DescribeTagsInput{
 		Filters: []types.Filter{
 			{
@@ -315,7 +318,7 @@ func loadConfigFromEC2Tags(ctx context.Context, client *ec2.Client, instanceID s
 		},
 	})
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	config := &Config{
@@ -323,12 +326,15 @@ func loadConfigFromEC2Tags(ctx context.Context, client *ec2.Client, instanceID s
 		Observability:  observability.DefaultConfig(),
 	}
 
+	var instanceName string
 	for _, tag := range output.Tags {
 		if tag.Key == nil || tag.Value == nil {
 			continue
 		}
 
 		switch *tag.Key {
+		case "Name":
+			instanceName = *tag.Value
 		case "spawn:ttl":
 			if duration, err := time.ParseDuration(*tag.Value); err == nil {
 				config.TTL = duration
@@ -374,7 +380,7 @@ func loadConfigFromEC2Tags(ctx context.Context, client *ec2.Client, instanceID s
 		case "spawn:metrics-enabled":
 			config.Observability.Metrics.Enabled = *tag.Value == "true"
 		case "spawn:metrics-port":
-			if port, err := strconv.Atoi(*tag.Value); err == nil {
+			if port, err := strconv.Atoi(*tag.Value); err == nil && port >= 1024 && port <= 65535 {
 				config.Observability.Metrics.Port = port
 			}
 		case "spawn:metrics-bind":
@@ -406,7 +412,24 @@ func loadConfigFromEC2Tags(ctx context.Context, client *ec2.Client, instanceID s
 		config.CompletionDelay = 30 * time.Second
 	}
 
-	return config, nil
+	// Load plugin declarations written to /etc/spawn/plugins.json by user-data.
+	config.Plugins = loadPluginDeclarations()
+
+	return config, instanceName, nil
+}
+
+// loadPluginDeclarations reads /etc/spawn/plugins.json if present.
+func loadPluginDeclarations() []PluginDeclaration {
+	data, err := os.ReadFile("/etc/spawn/plugins.json")
+	if err != nil {
+		return nil // File is optional.
+	}
+	var decls []PluginDeclaration
+	if err := json.Unmarshal(data, &decls); err != nil {
+		log.Printf("Warning: failed to parse /etc/spawn/plugins.json: %v", err)
+		return nil
+	}
+	return decls
 }
 
 // intToBase36 converts an AWS account ID to base36
@@ -433,7 +456,7 @@ func writePeersFile(peers []PeerInfo) error {
 	}
 
 	peersFile := "/etc/spawn/job-array-peers.json"
-	err = os.WriteFile(peersFile, peersJSON, 0644)
+	err = os.WriteFile(peersFile, peersJSON, 0640)
 	if err != nil {
 		return fmt.Errorf("failed to write peers file: %w", err)
 	}

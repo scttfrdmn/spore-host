@@ -61,7 +61,6 @@ func getUserAccount(ctx context.Context, cfg aws.Config, userID string) (*UserAc
 	return &record, nil
 }
 
-
 // updateLastAccess updates the last access timestamp for a user
 func updateLastAccess(ctx context.Context, cfg aws.Config, userID string) error {
 	client := dynamodb.NewFromConfig(cfg)

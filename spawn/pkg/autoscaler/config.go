@@ -23,24 +23,24 @@ type Config struct {
 
 // AutoScaleGroup represents an auto-scaling job array configuration
 type AutoScaleGroup struct {
-	AutoScaleGroupID    string         `dynamodbav:"autoscale_group_id"`
-	GroupName           string         `dynamodbav:"group_name"`
-	JobArrayID          string         `dynamodbav:"job_array_id"`
-	DesiredCapacity     int            `dynamodbav:"desired_capacity"`
-	MinCapacity         int            `dynamodbav:"min_capacity"`
-	MaxCapacity         int            `dynamodbav:"max_capacity"`
-	LaunchTemplate      LaunchTemplate `dynamodbav:"launch_template"`
-	Status              string         `dynamodbav:"status"` // "active", "paused", "terminated"
-	CreatedAt           time.Time      `dynamodbav:"created_at"`
-	UpdatedAt           time.Time      `dynamodbav:"updated_at"`
-	LastScaleEvent      time.Time      `dynamodbav:"last_scale_event"`
-	HealthCheckInterval time.Duration  `dynamodbav:"health_check_interval"`
-	ReplacementStrategy string                `dynamodbav:"replacement_strategy"` // "immediate", "rolling"
-	ScalingPolicy       *ScalingPolicy        `dynamodbav:"scaling_policy,omitempty"`
-	MetricPolicy        *MetricScalingPolicy  `dynamodbav:"metric_policy,omitempty"`
-	ScalingState        *ScalingState         `dynamodbav:"scaling_state,omitempty"`
-	DrainConfig         *DrainConfig          `dynamodbav:"drain_config,omitempty"`
-	ScheduleConfig      *ScheduleConfig       `dynamodbav:"schedule_config,omitempty"`
+	AutoScaleGroupID    string               `dynamodbav:"autoscale_group_id"`
+	GroupName           string               `dynamodbav:"group_name"`
+	JobArrayID          string               `dynamodbav:"job_array_id"`
+	DesiredCapacity     int                  `dynamodbav:"desired_capacity"`
+	MinCapacity         int                  `dynamodbav:"min_capacity"`
+	MaxCapacity         int                  `dynamodbav:"max_capacity"`
+	LaunchTemplate      LaunchTemplate       `dynamodbav:"launch_template"`
+	Status              string               `dynamodbav:"status"` // "active", "paused", "terminated"
+	CreatedAt           time.Time            `dynamodbav:"created_at"`
+	UpdatedAt           time.Time            `dynamodbav:"updated_at"`
+	LastScaleEvent      time.Time            `dynamodbav:"last_scale_event"`
+	HealthCheckInterval time.Duration        `dynamodbav:"health_check_interval"`
+	ReplacementStrategy string               `dynamodbav:"replacement_strategy"` // "immediate", "rolling"
+	ScalingPolicy       *ScalingPolicy       `dynamodbav:"scaling_policy,omitempty"`
+	MetricPolicy        *MetricScalingPolicy `dynamodbav:"metric_policy,omitempty"`
+	ScalingState        *ScalingState        `dynamodbav:"scaling_state,omitempty"`
+	DrainConfig         *DrainConfig         `dynamodbav:"drain_config,omitempty"`
+	ScheduleConfig      *ScheduleConfig      `dynamodbav:"schedule_config,omitempty"`
 }
 
 // LaunchTemplate defines how to launch new instances

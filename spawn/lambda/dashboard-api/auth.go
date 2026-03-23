@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -21,19 +22,15 @@ import (
 func getUserFromRequest(ctx context.Context, cfg aws.Config, request events.APIGatewayProxyRequest) (string, string, string, error) {
 	// Check for credentials in X-AWS-Credentials header (from Cognito Identity Pool)
 	if credsHeader, ok := request.Headers["x-aws-credentials"]; ok && credsHeader != "" {
-		fmt.Printf("Found X-AWS-Credentials header, validating...\n")
 		return getUserFromCredentialsHeader(ctx, cfg, request, credsHeader)
 	}
 
 	// Try case-insensitive header lookup (API Gateway may normalize headers)
 	for key, value := range request.Headers {
 		if strings.ToLower(key) == "x-aws-credentials" && value != "" {
-			fmt.Printf("Found X-AWS-Credentials header (case-insensitive), validating...\n")
 			return getUserFromCredentialsHeader(ctx, cfg, request, value)
 		}
 	}
-
-	fmt.Printf("No X-AWS-Credentials header found, checking IAM auth...\n")
 
 	// Fallback: IAM authentication via API Gateway
 	// Extract user ARN from request context
@@ -123,7 +120,8 @@ func getUserFromRequest(ctx context.Context, cfg aws.Config, request events.APIG
 		// Look up CLI IAM ARN by email
 		cliIamArn, err = lookupCliIamArnByEmail(ctx, cfg, email)
 		if err != nil {
-			return "", "", "", fmt.Errorf("identity not linked (email: %s): %w", email, err)
+			log.Printf("identity not linked for email %s: %v", email, err)
+			return "", "", "", fmt.Errorf("identity not linked: link your CLI IAM user via 'spawn auth link'")
 		}
 	}
 
@@ -136,7 +134,7 @@ func getUserFromRequest(ctx context.Context, cfg aws.Config, request events.APIG
 	err = createUserAccountWithIdentity(ctx, cfg, userID, cliIamArn, identityType, accountID, accountBase36, email)
 	if err != nil {
 		// Log error but don't fail the request
-		fmt.Printf("Warning: failed to cache user account: %v\n", err)
+		log.Printf("warning: failed to cache user account: %v", err)
 	}
 
 	return userID, cliIamArn, accountBase36, nil
@@ -145,10 +143,16 @@ func getUserFromRequest(ctx context.Context, cfg aws.Config, request events.APIG
 // getUserFromCredentialsHeader validates credentials from X-AWS-Credentials header
 // Header format: base64-encoded JSON with accessKeyId, secretAccessKey, sessionToken
 func getUserFromCredentialsHeader(ctx context.Context, cfg aws.Config, request events.APIGatewayProxyRequest, credsHeader string) (string, string, string, error) {
+	// Reject oversized headers before attempting decode.
+	const maxCredentialHeaderBytes = 8192
+	if len(credsHeader) > maxCredentialHeaderBytes {
+		return "", "", "", fmt.Errorf("credentials header too large")
+	}
+
 	// Decode base64 credentials
 	credsJSON, err := base64.StdEncoding.DecodeString(credsHeader)
 	if err != nil {
-		fmt.Printf("Failed to decode credentials header: %v\n", err)
+		log.Printf("failed to decode credentials header: %v", err)
 		return "", "", "", fmt.Errorf("failed to decode credentials header: %w", err)
 	}
 
@@ -159,11 +163,9 @@ func getUserFromCredentialsHeader(ctx context.Context, cfg aws.Config, request e
 	}
 
 	if err := json.Unmarshal(credsJSON, &creds); err != nil {
-		fmt.Printf("Failed to parse credentials JSON: %v\n", err)
+		log.Printf("failed to parse credentials JSON: %v", err)
 		return "", "", "", fmt.Errorf("failed to parse credentials JSON: %w", err)
 	}
-
-	fmt.Printf("Calling STS GetCallerIdentity to validate credentials...\n")
 
 	// Validate credentials using STS GetCallerIdentity
 	stsClient := sts.NewFromConfig(cfg, func(o *sts.Options) {
@@ -178,11 +180,11 @@ func getUserFromCredentialsHeader(ctx context.Context, cfg aws.Config, request e
 
 	identity, err := stsClient.GetCallerIdentity(ctx, &sts.GetCallerIdentityInput{})
 	if err != nil {
-		fmt.Printf("STS GetCallerIdentity failed: %v\n", err)
+		log.Printf("STS GetCallerIdentity failed: %v", err)
 		return "", "", "", fmt.Errorf("invalid credentials: %w", err)
 	}
 
-	fmt.Printf("✓ Credentials validated successfully: %s\n", *identity.Arn)
+	log.Printf("credentials validated")
 
 	if identity.Arn == nil || identity.Account == nil {
 		return "", "", "", fmt.Errorf("incomplete identity response from STS")
@@ -231,7 +233,8 @@ func getUserFromCredentialsHeader(ctx context.Context, cfg aws.Config, request e
 		// Look up CLI IAM ARN by email
 		cliIamArn, err = lookupCliIamArnByEmail(ctx, cfg, email)
 		if err != nil {
-			return "", "", "", fmt.Errorf("identity not linked (email: %s): %w", email, err)
+			log.Printf("identity not linked for email %s: %v", email, err)
+			return "", "", "", fmt.Errorf("identity not linked: link your CLI IAM user via 'spawn auth link'")
 		}
 	}
 
@@ -242,27 +245,15 @@ func getUserFromCredentialsHeader(ctx context.Context, cfg aws.Config, request e
 	}
 
 	if err := createUserAccountWithIdentity(ctx, cfg, userID, cliIamArn, identityType, accountID, accountBase36, email); err != nil {
-		fmt.Printf("Warning: failed to cache user account: %v\n", err)
+		log.Printf("warning: failed to cache user account: %v", err)
 	}
 
 	return userID, cliIamArn, accountBase36, nil
 }
 
 // extractEmailFromRequest extracts email from API Gateway request
-// Tries multiple sources: Custom header, Cognito claims, JWT claims, request context
+// Relies on Cognito authorizer claims only; never trusts client-supplied headers.
 func extractEmailFromRequest(request events.APIGatewayProxyRequest) (string, error) {
-	// Try custom X-User-Email header first (set by frontend)
-	if email, ok := request.Headers["x-user-email"]; ok && email != "" {
-		return email, nil
-	}
-
-	// Try case-insensitive header lookup
-	for key, value := range request.Headers {
-		if strings.ToLower(key) == "x-user-email" && value != "" {
-			return value, nil
-		}
-	}
-
 	// Try to get email from Cognito claims in authorizer context
 	if claims, ok := request.RequestContext.Authorizer["claims"].(map[string]interface{}); ok {
 		if email, ok := claims["email"].(string); ok && email != "" {

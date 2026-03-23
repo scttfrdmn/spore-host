@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strconv"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -203,8 +204,11 @@ func getStringValue(attr types.AttributeValue) string {
 
 func getNumberValue(attr types.AttributeValue) int64 {
 	if n, ok := attr.(*types.AttributeValueMemberN); ok {
-		var val int64
-		fmt.Sscanf(n.Value, "%d", &val)
+		val, err := strconv.ParseInt(n.Value, 10, 64)
+		if err != nil {
+			log.Printf("warning: unexpected DynamoDB number value %q: %v", n.Value, err)
+			return 0
+		}
 		return val
 	}
 	return 0

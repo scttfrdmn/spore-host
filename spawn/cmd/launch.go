@@ -26,6 +26,7 @@ import (
 	"github.com/scttfrdmn/spore-host/spawn/pkg/input"
 	"github.com/scttfrdmn/spore-host/spawn/pkg/locality"
 	"github.com/scttfrdmn/spore-host/spawn/pkg/platform"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/plugin"
 	"github.com/scttfrdmn/spore-host/spawn/pkg/pricing"
 	"github.com/scttfrdmn/spore-host/spawn/pkg/progress"
 	"github.com/scttfrdmn/spore-host/spawn/pkg/queue"
@@ -37,6 +38,7 @@ import (
 	"github.com/scttfrdmn/spore-host/spawn/pkg/userdata"
 	"github.com/scttfrdmn/spore-host/spawn/pkg/wizard"
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v3"
 )
 
 var (
@@ -161,10 +163,15 @@ var (
 
 	// Team sharing
 	launchTeamID string
+
+	// Plugin declarations
+	launchConfigFile string
+	launchPlugins    []string
 )
 
 var launchCmd = &cobra.Command{
-	Use:     "launch",
+	Use:     "launch <name>",
+	Args:    cobra.MaximumNArgs(1),
 	RunE:    runLaunch,
 	Aliases: []string{"", "run", "create"},
 	// Short and Long will be set after i18n initialization
@@ -205,7 +212,7 @@ func init() {
 	launchCmd.Flags().StringVar(&sessionTimeout, "session-timeout", "30m", "Auto-logout idle shells (0 to disable)")
 
 	// Meta
-	launchCmd.Flags().StringVar(&name, "name", "", "Name your spore (sets Name tag and registers <name>.spore.host DNS)")
+	launchCmd.Flags().StringVar(&name, "name", "", "Name your spore, required (sets Name tag, DNS, and hostname)")
 	launchCmd.Flags().StringVar(&userData, "user-data", "", "User data (@file or inline)")
 	launchCmd.Flags().StringVar(&userDataFile, "user-data-file", "", "User data file")
 	launchCmd.Flags().StringVar(&dnsName, "dns", "", "Override DNS name if different from --name (advanced)")
@@ -298,6 +305,10 @@ func init() {
 	// Team sharing
 	launchCmd.Flags().StringVar(&launchTeamID, "team", "", "Team ID: tag instance with spawn:team-id for team-shared access")
 
+	// Plugin declarations
+	launchCmd.Flags().StringVar(&launchConfigFile, "config", "", "Launch config YAML file (supports plugins: list)")
+	launchCmd.Flags().StringArrayVar(&launchPlugins, "plugin", nil, "Plugin to install at launch (ref[@version], repeatable)")
+
 	// Register completions for flags
 	launchCmd.RegisterFlagCompletionFunc("region", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return completeRegion(cmd, args, toComplete)
@@ -351,6 +362,11 @@ func runLaunch(cmd *cobra.Command, args []string) error {
 		return launchParameterSweep(ctx, config, plat, auditLog)
 	}
 
+	// Positional arg takes precedence over --name flag.
+	if len(args) > 0 {
+		name = args[0]
+	}
+
 	var config *aws.LaunchConfig
 
 	// Determine mode: wizard, pipe, or flags
@@ -393,6 +409,9 @@ func runLaunch(cmd *cobra.Command, args []string) error {
 	}
 
 	// Validate
+	if config.Name == "" {
+		return fmt.Errorf("--name is required: give your spore a name (e.g. --name my-worker)")
+	}
 	if config.InstanceType == "" {
 		return i18n.Te("error.instance_type_required", nil)
 	}
@@ -2114,12 +2133,67 @@ systemctl start spored
 echo "spored installation complete"
 `
 
+	// Inject plugin declarations from --plugin flags or --config file.
+	decls := collectPluginDeclarations()
+	if len(decls) > 0 {
+		declJSON, err := json.Marshal(decls)
+		if err != nil {
+			return "", fmt.Errorf("marshal plugin declarations: %w", err)
+		}
+		script += fmt.Sprintf(`
+# Write plugin declarations for spored to load at startup
+mkdir -p /etc/spawn
+cat > /etc/spawn/plugins.json <<'EOFPLUGINS'
+%s
+EOFPLUGINS
+chmod 644 /etc/spawn/plugins.json
+echo "Plugin declarations written: %d plugin(s)"
+`, string(declJSON), len(decls))
+	}
+
 	if customUserData != "" {
 		script += "\n# Custom user data\n"
 		script += customUserData
 	}
 
 	return script, nil
+}
+
+// collectPluginDeclarations merges plugin refs from --plugin flags and --config file.
+func collectPluginDeclarations() []plugin.Declaration {
+	var decls []plugin.Declaration
+
+	// From --config YAML file.
+	if launchConfigFile != "" {
+		if cfg, err := loadLaunchConfig(launchConfigFile); err == nil {
+			decls = append(decls, cfg.Plugins...)
+		}
+	}
+
+	// From --plugin flags (simple refs without per-plugin config).
+	for _, ref := range launchPlugins {
+		decls = append(decls, plugin.Declaration{Ref: ref})
+	}
+
+	return decls
+}
+
+// LaunchConfig is the YAML structure for --config files passed to spawn launch.
+type LaunchConfig struct {
+	Plugins []plugin.Declaration `yaml:"plugins"`
+}
+
+// loadLaunchConfig reads a launch config YAML file.
+func loadLaunchConfig(path string) (*LaunchConfig, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("read launch config %s: %w", path, err)
+	}
+	var cfg LaunchConfig
+	if err := yaml.Unmarshal(data, &cfg); err != nil {
+		return nil, fmt.Errorf("parse launch config %s: %w", path, err)
+	}
+	return &cfg, nil
 }
 
 func isTerminal(f *os.File) bool {

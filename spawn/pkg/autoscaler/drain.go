@@ -16,18 +16,18 @@ import (
 
 // DrainConfig defines graceful drain behavior
 type DrainConfig struct {
-	Enabled              bool          `dynamodbav:"enabled"`                           // Enable graceful drain
-	TimeoutSeconds       int           `dynamodbav:"timeout_seconds"`                   // Max time to wait for drain (default: 300)
-	CheckInterval        time.Duration `dynamodbav:"check_interval,omitempty"`          // How often to check drain status
-	HeartbeatStaleAfter  int           `dynamodbav:"heartbeat_stale_after,omitempty"`   // Heartbeat age threshold in seconds (default: 300)
-	GracePeriodSeconds   int           `dynamodbav:"grace_period_seconds,omitempty"`    // Min wait after last job (default: 30)
+	Enabled             bool          `dynamodbav:"enabled"`                         // Enable graceful drain
+	TimeoutSeconds      int           `dynamodbav:"timeout_seconds"`                 // Max time to wait for drain (default: 300)
+	CheckInterval       time.Duration `dynamodbav:"check_interval,omitempty"`        // How often to check drain status
+	HeartbeatStaleAfter int           `dynamodbav:"heartbeat_stale_after,omitempty"` // Heartbeat age threshold in seconds (default: 300)
+	GracePeriodSeconds  int           `dynamodbav:"grace_period_seconds,omitempty"`  // Min wait after last job (default: 30)
 }
 
 // DrainState tracks instance drain status
 type DrainState struct {
-	InstanceID  string
-	StartedAt   time.Time
-	TimeoutAt   time.Time
+	InstanceID    string
+	StartedAt     time.Time
+	TimeoutAt     time.Time
 	HasActiveWork bool
 }
 
@@ -49,11 +49,11 @@ func NewDrainManager(ec2Client *ec2.Client, dynamoClient *dynamodb.Client, regis
 
 // JobRegistryEntry represents a job in the hybrid registry
 type JobRegistryEntry struct {
-	JobID          string    `dynamodbav:"job-id"`
-	InstanceID     string    `dynamodbav:"instance-id"`
-	JobStatus      string    `dynamodbav:"job-status"` // "running", "completed", "failed"
-	LastHeartbeat  time.Time `dynamodbav:"last-heartbeat"`
-	StartTime      time.Time `dynamodbav:"start-time"`
+	JobID         string    `dynamodbav:"job-id"`
+	InstanceID    string    `dynamodbav:"instance-id"`
+	JobStatus     string    `dynamodbav:"job-status"` // "running", "completed", "failed"
+	LastHeartbeat time.Time `dynamodbav:"last-heartbeat"`
+	StartTime     time.Time `dynamodbav:"start-time"`
 }
 
 // MarkForDrain tags instances for graceful drain

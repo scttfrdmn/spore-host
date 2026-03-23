@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"sort"
 	"strconv"
 	"sync"
@@ -106,7 +107,7 @@ func handleListAutoscaleGroups(ctx context.Context, cfg aws.Config, cliIamArn, t
 
 			count, err := getCurrentCapacity(ctx, cfg, group.AutoScaleGroupID, cliIamArn)
 			if err != nil {
-				fmt.Printf("Warning: Failed to get capacity for group %s: %v\n", group.AutoScaleGroupID, err)
+				log.Printf("warning: failed to get capacity for group %s: %v", group.AutoScaleGroupID, err)
 			}
 
 			policyType := "none"
@@ -141,6 +142,7 @@ func handleListAutoscaleGroups(ctx context.Context, cfg aws.Config, cliIamArn, t
 		ExpressionAttributeValues: map[string]ddbTypes.AttributeValue{
 			":user_id": &ddbTypes.AttributeValueMemberS{Value: cliIamArn},
 		},
+		Limit: aws.Int32(200),
 	})
 	if err != nil {
 		return errorResponse(500, fmt.Sprintf("Failed to query autoscale groups: %v", err)), nil
@@ -149,6 +151,9 @@ func handleListAutoscaleGroups(ctx context.Context, cfg aws.Config, cliIamArn, t
 
 	// Team groups via team_id-index GSI
 	if teamID != "" {
+		if _, err := resolveTeamContext(ctx, cfg, teamID, cliIamArn); err != nil {
+			return errorResponse(403, "access denied"), nil
+		}
 		teamResult, err := dynamodbClient.Query(ctx, &dynamodb.QueryInput{
 			TableName:              aws.String(dynamoAutoscaleGroupsTable),
 			IndexName:              aws.String("team_id-index"),
@@ -156,16 +161,17 @@ func handleListAutoscaleGroups(ctx context.Context, cfg aws.Config, cliIamArn, t
 			ExpressionAttributeValues: map[string]ddbTypes.AttributeValue{
 				":tid": &ddbTypes.AttributeValueMemberS{Value: teamID},
 			},
+			Limit: aws.Int32(200),
 		})
 		if err != nil {
-			fmt.Printf("Warning: failed to query team autoscale groups: %v\n", err)
+			log.Printf("warning: failed to query team autoscale groups: %v", err)
 		} else {
 			appendGroups(teamResult.Items)
 		}
 	}
 
 	elapsed := time.Since(startTime)
-	fmt.Printf("Listed %d autoscale groups in %v\n", len(groupInfos), elapsed)
+	log.Printf("listed %d autoscale groups in %v", len(groupInfos), elapsed)
 
 	if groupInfos == nil {
 		groupInfos = []AutoScaleGroupInfo{}

@@ -241,4 +241,3 @@ func shouldAlert(lastAlerted string, cooldown time.Duration) bool {
 	}
 	return time.Since(t) > cooldown
 }
-

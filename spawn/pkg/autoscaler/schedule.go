@@ -11,13 +11,13 @@ import (
 
 // ScheduledAction defines a time-based capacity adjustment
 type ScheduledAction struct {
-	Name            string `dynamodbav:"name"`              // Human-readable name
-	Schedule        string `dynamodbav:"schedule"`          // Cron expression
-	DesiredCapacity int    `dynamodbav:"desired_capacity"`  // Target capacity
-	MinCapacity     int    `dynamodbav:"min_capacity"`      // Optional min override
-	MaxCapacity     int    `dynamodbav:"max_capacity"`      // Optional max override
-	Timezone        string `dynamodbav:"timezone"`          // Timezone (default: UTC)
-	Enabled         bool   `dynamodbav:"enabled"`           // Enable/disable without deleting
+	Name            string `dynamodbav:"name"`             // Human-readable name
+	Schedule        string `dynamodbav:"schedule"`         // Cron expression
+	DesiredCapacity int    `dynamodbav:"desired_capacity"` // Target capacity
+	MinCapacity     int    `dynamodbav:"min_capacity"`     // Optional min override
+	MaxCapacity     int    `dynamodbav:"max_capacity"`     // Optional max override
+	Timezone        string `dynamodbav:"timezone"`         // Timezone (default: UTC)
+	Enabled         bool   `dynamodbav:"enabled"`          // Enable/disable without deleting
 }
 
 // ScheduleConfig holds scheduled actions for a group
@@ -115,6 +115,14 @@ func (s *ScheduleEvaluator) EvaluateSchedule(
 	log.Printf("active scheduled action: %s (triggered %v ago)",
 		mostRecent.Name, activeActions[0].timeSinceTrigger)
 
+	const maxScheduledCapacity = 10_000
+	if mostRecent.DesiredCapacity < 0 || mostRecent.DesiredCapacity > maxScheduledCapacity ||
+		mostRecent.MinCapacity < 0 || mostRecent.MinCapacity > maxScheduledCapacity ||
+		mostRecent.MaxCapacity < 0 || mostRecent.MaxCapacity > maxScheduledCapacity {
+		log.Printf("warning: scheduled action %q has out-of-range capacity values, skipping", mostRecent.Name)
+		return 0, 0, 0, "", false
+	}
+
 	return mostRecent.DesiredCapacity,
 		mostRecent.MinCapacity,
 		mostRecent.MaxCapacity,
@@ -160,13 +168,13 @@ type scheduledActionWithTime struct {
 // GetScheduleExamples returns common schedule patterns
 func GetScheduleExamples() map[string]string {
 	return map[string]string{
-		"workday-morning":   "0 0 8 * * MON-FRI",   // 8 AM weekdays
-		"workday-evening":   "0 0 18 * * MON-FRI",  // 6 PM weekdays
-		"weekend-start":     "0 0 0 * * SAT",       // Midnight Saturday
-		"hourly":            "0 0 * * * *",         // Every hour
-		"every-15-min":      "0 */15 * * * *",      // Every 15 minutes
-		"daily-midnight":    "0 0 0 * * *",         // Midnight daily
-		"weekly-monday":     "0 0 9 * * MON",       // 9 AM Monday
-		"monthly-first":     "0 0 0 1 * *",         // 1st of month
+		"workday-morning": "0 0 8 * * MON-FRI",  // 8 AM weekdays
+		"workday-evening": "0 0 18 * * MON-FRI", // 6 PM weekdays
+		"weekend-start":   "0 0 0 * * SAT",      // Midnight Saturday
+		"hourly":          "0 0 * * * *",        // Every hour
+		"every-15-min":    "0 */15 * * * *",     // Every 15 minutes
+		"daily-midnight":  "0 0 0 * * *",        // Midnight daily
+		"weekly-monday":   "0 0 9 * * MON",      // 9 AM Monday
+		"monthly-first":   "0 0 0 1 * *",        // 1st of month
 	}
 }

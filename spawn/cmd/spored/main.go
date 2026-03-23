@@ -18,6 +18,7 @@ import (
 	"github.com/scttfrdmn/spore-host/spawn/pkg/observability/metrics"
 	"github.com/scttfrdmn/spore-host/spawn/pkg/observability/tracing"
 	"github.com/scttfrdmn/spore-host/spawn/pkg/pipeline"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/pluginruntime"
 	"github.com/scttfrdmn/spore-host/spawn/pkg/provider"
 )
 
@@ -120,6 +121,16 @@ func main() {
 			if err := metricsServer.Start(ctx); err != nil {
 				log.Printf("Warning: Failed to start metrics server: %v", err)
 			}
+		}
+	}
+
+	// Start the push API server (plugin key/value delivery from local controller).
+	pushAPI, err := pluginruntime.NewPushAPIServer(agent.GetPluginRuntime())
+	if err != nil {
+		log.Printf("Warning: Failed to start push API server: %v", err)
+	} else {
+		if err := pushAPI.Start(ctx); err != nil {
+			log.Printf("Warning: Push API server failed to bind: %v", err)
 		}
 	}
 

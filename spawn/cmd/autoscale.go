@@ -52,8 +52,8 @@ var (
 
 	// Scaling policy flags
 	scalingPolicy             string
-	queueURL                  string   // Single queue (backward compat)
-	queueURLs                 []string // Multi-queue support
+	queueURL                  string    // Single queue (backward compat)
+	queueURLs                 []string  // Multi-queue support
 	queueWeights              []float64 // Weights for multi-queue
 	targetMessagesPerInstance int
 	scaleUpCooldown           int

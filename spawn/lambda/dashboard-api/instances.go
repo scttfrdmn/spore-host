@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"sort"
 	"sync"
 	"time"
@@ -111,7 +112,7 @@ func listInstances(ctx context.Context, cfg aws.Config, cliIamArn, teamID string
 
 	// Collect errors (don't fail on region errors, just log)
 	for err := range errorsChan {
-		fmt.Printf("Warning: %v\n", err)
+		log.Printf("warning: %v", err)
 	}
 
 	// Sort by launch time (newest first)
