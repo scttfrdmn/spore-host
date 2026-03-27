@@ -47,14 +47,14 @@ jobs:
             ./pkg/quotas/...
 
       - name: Upload spawn coverage
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v6
         with:
           files: spawn/coverage.out
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: false
 
       - name: Upload truffle coverage
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v6
         with:
           files: truffle/coverage.out
           token: ${{ secrets.CODECOV_TOKEN }}
