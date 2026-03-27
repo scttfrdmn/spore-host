@@ -171,7 +171,7 @@ var (
 
 var launchCmd = &cobra.Command{
 	Use:     "launch <name>",
-	Args:    cobra.MaximumNArgs(1),
+	Args:    cobra.ExactArgs(1),
 	RunE:    runLaunch,
 	Aliases: []string{"", "run", "create"},
 	// Short and Long will be set after i18n initialization
