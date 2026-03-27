@@ -8,6 +8,7 @@ on:
 permissions:
   contents: write
   packages: write
+  id-token: write
 
 jobs:
   goreleaser:
@@ -38,3 +39,35 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
           SCOOP_BUCKET_GITHUB_TOKEN: ${{ secrets.SCOOP_BUCKET_GITHUB_TOKEN }}
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::966362334030:role/GitHubActions-spore-host-release
+          aws-region: us-east-1
+
+      - name: Upload spored binaries to S3
+        run: |
+          BUCKETS=(
+            spawn-binaries-us-east-1
+            spawn-binaries-us-east-2
+            spawn-binaries-us-west-1
+            spawn-binaries-us-west-2
+            spawn-binaries-ca-central-1
+            spawn-binaries-eu-west-1
+            spawn-binaries-eu-central-1
+            spawn-binaries-ap-southeast-2
+          )
+          for arch in amd64 arm64; do
+            if [ "$arch" = "amd64" ]; then
+              src="dist/spored_linux_amd64_v1/spored"
+            else
+              src="dist/spored_linux_arm64/spored"
+            fi
+            sha256sum "$src" | awk '{print $1}' > "spored-linux-${arch}.sha256"
+            for bucket in "${BUCKETS[@]}"; do
+              aws s3 cp "$src"                          "s3://${bucket}/spored-linux-${arch}"
+              aws s3 cp "spored-linux-${arch}.sha256"   "s3://${bucket}/spored-linux-${arch}.sha256"
+            done
+          done
+
