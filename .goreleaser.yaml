@@ -3,11 +3,6 @@
 
 version: 2
 
-before:
-  hooks:
-    - go mod download
-    - go mod tidy
-
 # Build configurations for both truffle and spawn
 builds:
   # truffle - EC2 instance search tool
