@@ -109,6 +109,60 @@ Set up monitoring and notifications:
 
 ---
 
+## Cost-Optimized Workflows (Intermediate–Advanced)
+
+### [Tutorial 8: Finding EC2 Capacity Before You Launch](08-finding-ec2-capacity.md)
+**Duration:** 20 minutes | **Level:** Intermediate
+
+Pre-flight capacity and cost checks with `truffle`:
+- Check vCPU service quotas
+- Compare spot prices across instance families (Intel, AMD, Graviton)
+- Filter to AZs with active capacity
+- Extract the cheapest region programmatically with `-o json`
+
+**Prerequisites:** [Tutorial 2: Your First Instance](02-first-instance.md)
+
+---
+
+### [Tutorial 9: Instance Lifecycle — Instances That Clean Up After Themselves](09-instance-lifecycle.md)
+**Duration:** 20 minutes | **Level:** Intermediate
+
+Eliminate forgotten-instance bills with lifecycle management:
+- Name instances and connect by name (DNS auto-registration)
+- Set TTL, idle-timeout, and on-complete actions
+- Send a completion signal from inside your job (`/tmp/SPAWN_COMPLETE`)
+- Check status and extend TTL on a live instance
+
+**Prerequisites:** [Tutorial 2: Your First Instance](02-first-instance.md)
+
+---
+
+### [Tutorial 10: From Capacity to Instance — The truffle → spawn Workflow](10-truffle-to-spawn-workflow.md)
+**Duration:** 25 minutes | **Level:** Intermediate
+
+Combine truffle and spawn into a reliable one-liner:
+- Scripted cheapest-region selection with `jq`
+- Add `--spot` after truffle confirms capacity
+- Multi-region fallback loop
+- Drop-in GitHub Actions integration
+
+**Prerequisites:** [Tutorials 8](08-finding-ec2-capacity.md) and [9](09-instance-lifecycle.md)
+
+---
+
+### [Tutorial 11: Advanced spawn — Sweeps, Arrays, and Autoscaling](11-advanced-spawn.md)
+**Duration:** 30 minutes | **Level:** Advanced
+
+Fleet-scale workflows:
+- Mixed-architecture parameter sweeps (Graviton, Intel, AMD)
+- Monitor and extend live job arrays
+- Autoscale groups that drain SQS queues and scale to zero
+- Cost comparison: always-on vs autoscale
+
+**Prerequisites:** [Tutorials 3](03-parameter-sweeps.md), [4](04-job-arrays.md), and [10](10-truffle-to-spawn-workflow.md)
+
+---
+
 ## Learning Paths
 
 ### Path 1: Quick Start (Get Running Fast)
@@ -157,8 +211,26 @@ Complete all tutorials for comprehensive understanding.
 5. [Tutorial 5: Batch Queues](05-batch-queues.md) - 45 min
 6. [Tutorial 6: Cost Management](06-cost-management.md) - 20 min
 7. [Tutorial 7: Monitoring & Alerts](07-monitoring-alerts.md) - 30 min
+8. [Tutorial 8: Finding EC2 Capacity](08-finding-ec2-capacity.md) - 20 min
+9. [Tutorial 9: Instance Lifecycle](09-instance-lifecycle.md) - 20 min
+10. [Tutorial 10: truffle → spawn Workflow](10-truffle-to-spawn-workflow.md) - 25 min
+11. [Tutorial 11: Advanced spawn](11-advanced-spawn.md) - 30 min
 
-**Total:** 3 hours 10 minutes
+**Total:** 4 hours 45 minutes
+
+---
+
+### Path 5: Cost-Optimized Workflows
+For users who want to minimize cost while maximizing reliability.
+
+1. [Tutorial 1: Getting Started](01-getting-started.md) - 15 min
+2. [Tutorial 2: Your First Instance](02-first-instance.md) - 20 min
+3. [Tutorial 8: Finding EC2 Capacity](08-finding-ec2-capacity.md) - 20 min
+4. [Tutorial 9: Instance Lifecycle](09-instance-lifecycle.md) - 20 min
+5. [Tutorial 10: truffle → spawn Workflow](10-truffle-to-spawn-workflow.md) - 25 min
+6. [Tutorial 11: Advanced spawn](11-advanced-spawn.md) - 30 min
+
+**Total:** 2 hours 10 minutes
 
 ---
 
