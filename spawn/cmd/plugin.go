@@ -69,9 +69,9 @@ var pluginListCmd = &cobra.Command{
 		}
 
 		w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-		fmt.Fprintln(w, "NAME\tVERSION\tSTATUS\tUPDATED")
+		_, _ = fmt.Fprintln(w, "NAME\tVERSION\tSTATUS\tUPDATED")
 		for _, st := range states {
-			fmt.Fprintf(w, "%s\t%s\t%s\t%s\n",
+			_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\n",
 				st.Name, st.Version, st.Status,
 				st.UpdatedAt.Format(time.RFC3339))
 		}
@@ -265,7 +265,7 @@ func remotePluginList(ctx context.Context, instance string) ([]*pluginStateRespo
 		if err != nil {
 			return nil, err
 		}
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 		if resp.StatusCode != http.StatusOK {
 			return resp, fmt.Errorf("list plugins: HTTP %d", resp.StatusCode)
 		}
@@ -292,7 +292,7 @@ func remotePluginStatus(ctx context.Context, instance, name string) (*pluginStat
 		if err != nil {
 			return nil, err
 		}
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 		if resp.StatusCode == http.StatusNotFound {
 			return resp, fmt.Errorf("plugin %q not found on %s", name, instance)
 		}
@@ -344,7 +344,7 @@ func withSSHTunnel(ctx context.Context, instance, keyPath string, fn func() (*ht
 	for time.Now().Before(deadline) {
 		conn, err := net.DialTimeout("tcp", "127.0.0.1:7777", 100*time.Millisecond)
 		if err == nil {
-			conn.Close()
+			_ = conn.Close()
 			break
 		}
 		time.Sleep(50 * time.Millisecond)

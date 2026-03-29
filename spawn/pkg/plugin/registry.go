@@ -128,7 +128,7 @@ func fetchGitHubSpec(ctx context.Context, owner, repo, name, version string) (*P
 	if err != nil {
 		return nil, fmt.Errorf("fetch %s: %w", url, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == http.StatusNotFound {
 		return nil, fmt.Errorf("plugin %q not found in %s/%s@%s", name, owner, repo, gitRef)

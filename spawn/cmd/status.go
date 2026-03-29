@@ -140,13 +140,13 @@ func runSweepStatus(ctx context.Context, sweepID string) error {
 	}
 
 	// Display sweep information
-	fmt.Fprintf(os.Stdout, "╔═══════════════════════════════════════════════════════════════╗\n")
-	fmt.Fprintf(os.Stdout, "║  Parameter Sweep Status                                      ║\n")
-	fmt.Fprintf(os.Stdout, "╚═══════════════════════════════════════════════════════════════╝\n\n")
+	_, _ = fmt.Fprintf(os.Stdout, "╔═══════════════════════════════════════════════════════════════╗\n")
+	_, _ = fmt.Fprintf(os.Stdout, "║  Parameter Sweep Status                                      ║\n")
+	_, _ = fmt.Fprintf(os.Stdout, "╚═══════════════════════════════════════════════════════════════╝\n\n")
 
-	fmt.Fprintf(os.Stdout, "Sweep ID:          %s\n", status.SweepID)
-	fmt.Fprintf(os.Stdout, "Sweep Name:        %s\n", status.SweepName)
-	fmt.Fprintf(os.Stdout, "Status:            %s\n", colorizeStatus(status.Status))
+	_, _ = fmt.Fprintf(os.Stdout, "Sweep ID:          %s\n", status.SweepID)
+	_, _ = fmt.Fprintf(os.Stdout, "Sweep Name:        %s\n", status.SweepName)
+	_, _ = fmt.Fprintf(os.Stdout, "Status:            %s\n", colorizeStatus(status.Status))
 
 	// Display region information
 	if status.MultiRegion && len(status.RegionStatus) > 0 {
@@ -154,37 +154,37 @@ func runSweepStatus(ctx context.Context, sweepID string) error {
 		for region := range status.RegionStatus {
 			regions = append(regions, region)
 		}
-		fmt.Fprintf(os.Stdout, "Type:              Multi-Region\n")
-		fmt.Fprintf(os.Stdout, "Regions:           %d (%v)\n", len(regions), regions)
+		_, _ = fmt.Fprintf(os.Stdout, "Type:              Multi-Region\n")
+		_, _ = fmt.Fprintf(os.Stdout, "Regions:           %d (%v)\n", len(regions), regions)
 	} else {
-		fmt.Fprintf(os.Stdout, "Region:            %s\n", status.Region)
+		_, _ = fmt.Fprintf(os.Stdout, "Region:            %s\n", status.Region)
 	}
-	fmt.Fprintf(os.Stdout, "\n")
+	_, _ = fmt.Fprintf(os.Stdout, "\n")
 
 	// Display timestamps
 	createdAt, _ := time.Parse(time.RFC3339, status.CreatedAt)
 	updatedAt, _ := time.Parse(time.RFC3339, status.UpdatedAt)
-	fmt.Fprintf(os.Stdout, "Created:           %s\n", createdAt.Format("2006-01-02 15:04:05 MST"))
-	fmt.Fprintf(os.Stdout, "Last Updated:      %s\n", updatedAt.Format("2006-01-02 15:04:05 MST"))
+	_, _ = fmt.Fprintf(os.Stdout, "Created:           %s\n", createdAt.Format("2006-01-02 15:04:05 MST"))
+	_, _ = fmt.Fprintf(os.Stdout, "Last Updated:      %s\n", updatedAt.Format("2006-01-02 15:04:05 MST"))
 
 	if status.CompletedAt != "" {
 		completedAt, _ := time.Parse(time.RFC3339, status.CompletedAt)
-		fmt.Fprintf(os.Stdout, "Completed:         %s\n", completedAt.Format("2006-01-02 15:04:05 MST"))
+		_, _ = fmt.Fprintf(os.Stdout, "Completed:         %s\n", completedAt.Format("2006-01-02 15:04:05 MST"))
 		duration := completedAt.Sub(createdAt)
-		fmt.Fprintf(os.Stdout, "Duration:          %s\n", formatDuration(duration))
+		_, _ = fmt.Fprintf(os.Stdout, "Duration:          %s\n", formatDuration(duration))
 	}
-	fmt.Fprintf(os.Stdout, "\n")
+	_, _ = fmt.Fprintf(os.Stdout, "\n")
 
 	// Display progress
-	fmt.Fprintf(os.Stdout, "Progress (Global):\n")
-	fmt.Fprintf(os.Stdout, "  Total Parameters:  %d\n", status.TotalParams)
-	fmt.Fprintf(os.Stdout, "  Launched:          %d (%.1f%%)\n", status.Launched, float64(status.Launched)/float64(status.TotalParams)*100)
+	_, _ = fmt.Fprintf(os.Stdout, "Progress (Global):\n")
+	_, _ = fmt.Fprintf(os.Stdout, "  Total Parameters:  %d\n", status.TotalParams)
+	_, _ = fmt.Fprintf(os.Stdout, "  Launched:          %d (%.1f%%)\n", status.Launched, float64(status.Launched)/float64(status.TotalParams)*100)
 
 	if !status.MultiRegion {
 		// Only show NextToLaunch for single-region sweeps (legacy)
-		fmt.Fprintf(os.Stdout, "  Next to Launch:    %d\n", status.NextToLaunch)
+		_, _ = fmt.Fprintf(os.Stdout, "  Next to Launch:    %d\n", status.NextToLaunch)
 	}
-	fmt.Fprintf(os.Stdout, "  Failed:            %d\n", status.Failed)
+	_, _ = fmt.Fprintf(os.Stdout, "  Failed:            %d\n", status.Failed)
 
 	// Calculate and display estimated completion time
 	if status.Status == "RUNNING" && status.Launched > 0 {
@@ -207,16 +207,16 @@ func runSweepStatus(ctx context.Context, sweepID string) error {
 			estimatedRemaining := time.Duration(remainingBatches) * avgTimePerLaunch * time.Duration(status.MaxConcurrent)
 			estimatedCompletion := time.Now().Add(estimatedRemaining)
 
-			fmt.Fprintf(os.Stdout, "  Est. Completion:   %s (in %s)\n",
+			_, _ = fmt.Fprintf(os.Stdout, "  Est. Completion:   %s (in %s)\n",
 				estimatedCompletion.Format("3:04 PM MST"),
 				formatDuration(estimatedRemaining))
 		}
 	}
-	fmt.Fprintf(os.Stdout, "\n")
+	_, _ = fmt.Fprintf(os.Stdout, "\n")
 
 	// Display regional breakdown for multi-region sweeps
 	if status.MultiRegion && len(status.RegionStatus) > 0 {
-		fmt.Fprintf(os.Stdout, "Regional Breakdown:\n")
+		_, _ = fmt.Fprintf(os.Stdout, "Regional Breakdown:\n")
 
 		// Sort regions for consistent display
 		regions := make([]string, 0, len(status.RegionStatus))
@@ -238,7 +238,7 @@ func runSweepStatus(ctx context.Context, sweepID string) error {
 			total := len(rs.NextToLaunch) + rs.Launched + rs.Failed
 			pending := len(rs.NextToLaunch)
 
-			fmt.Fprintf(os.Stdout, "  %-13s  %d/%d launched, %d active, %d pending, %d failed\n",
+			_, _ = fmt.Fprintf(os.Stdout, "  %-13s  %d/%d launched, %d active, %d pending, %d failed\n",
 				region+":",
 				rs.Launched,
 				total,
@@ -249,7 +249,7 @@ func runSweepStatus(ctx context.Context, sweepID string) error {
 
 			// Show costs if available
 			if rs.TotalInstanceHours > 0 || rs.EstimatedCost > 0 {
-				fmt.Fprintf(os.Stdout, "  %-13s  Cost: $%.2f (%.1f instance-hours)\n",
+				_, _ = fmt.Fprintf(os.Stdout, "  %-13s  Cost: $%.2f (%.1f instance-hours)\n",
 					"",
 					rs.EstimatedCost,
 					rs.TotalInstanceHours,
@@ -261,25 +261,25 @@ func runSweepStatus(ctx context.Context, sweepID string) error {
 
 		// Show total cost if any
 		if totalCost > 0 {
-			fmt.Fprintf(os.Stdout, "\n  Total Estimated Cost: $%.2f\n", totalCost)
+			_, _ = fmt.Fprintf(os.Stdout, "\n  Total Estimated Cost: $%.2f\n", totalCost)
 			if status.Budget > 0 {
 				remaining := status.Budget - totalCost
 				if remaining < 0 {
-					fmt.Fprintf(os.Stdout, "  Budget:              $%.2f (EXCEEDED by $%.2f)\n", status.Budget, -remaining)
+					_, _ = fmt.Fprintf(os.Stdout, "  Budget:              $%.2f (EXCEEDED by $%.2f)\n", status.Budget, -remaining)
 				} else {
-					fmt.Fprintf(os.Stdout, "  Budget:              $%.2f (%.1f%% used)\n", status.Budget, (totalCost/status.Budget)*100)
+					_, _ = fmt.Fprintf(os.Stdout, "  Budget:              $%.2f (%.1f%% used)\n", status.Budget, (totalCost/status.Budget)*100)
 				}
 			}
 		}
 
-		fmt.Fprintf(os.Stdout, "\n")
+		_, _ = fmt.Fprintf(os.Stdout, "\n")
 	}
 
 	// Display configuration
-	fmt.Fprintf(os.Stdout, "Configuration:\n")
-	fmt.Fprintf(os.Stdout, "  Max Concurrent:    %d\n", status.MaxConcurrent)
-	fmt.Fprintf(os.Stdout, "  Launch Delay:      %s\n", status.LaunchDelay)
-	fmt.Fprintf(os.Stdout, "\n")
+	_, _ = fmt.Fprintf(os.Stdout, "Configuration:\n")
+	_, _ = fmt.Fprintf(os.Stdout, "  Max Concurrent:    %d\n", status.MaxConcurrent)
+	_, _ = fmt.Fprintf(os.Stdout, "  Launch Delay:      %s\n", status.LaunchDelay)
+	_, _ = fmt.Fprintf(os.Stdout, "\n")
 
 	// Calculate active instances
 	activeCount := 0
@@ -296,28 +296,28 @@ func runSweepStatus(ctx context.Context, sweepID string) error {
 		}
 	}
 
-	fmt.Fprintf(os.Stdout, "Instances:\n")
-	fmt.Fprintf(os.Stdout, "  Active:            %d\n", activeCount)
-	fmt.Fprintf(os.Stdout, "  Completed:         %d\n", completedCount)
-	fmt.Fprintf(os.Stdout, "  Failed:            %d\n", failedCount)
-	fmt.Fprintf(os.Stdout, "\n")
+	_, _ = fmt.Fprintf(os.Stdout, "Instances:\n")
+	_, _ = fmt.Fprintf(os.Stdout, "  Active:            %d\n", activeCount)
+	_, _ = fmt.Fprintf(os.Stdout, "  Completed:         %d\n", completedCount)
+	_, _ = fmt.Fprintf(os.Stdout, "  Failed:            %d\n", failedCount)
+	_, _ = fmt.Fprintf(os.Stdout, "\n")
 
 	// Display error message if any
 	if status.ErrorMessage != "" {
-		fmt.Fprintf(os.Stdout, "⚠️  Error: %s\n\n", status.ErrorMessage)
+		_, _ = fmt.Fprintf(os.Stdout, "⚠️  Error: %s\n\n", status.ErrorMessage)
 	}
 
 	// Display instance details (limited to most recent 10)
 	if len(status.Instances) > 0 {
-		fmt.Fprintf(os.Stdout, "Recent Instances (showing last 10):\n")
+		_, _ = fmt.Fprintf(os.Stdout, "Recent Instances (showing last 10):\n")
 
 		if status.MultiRegion {
 			// Show region column for multi-region sweeps
-			fmt.Fprintf(os.Stdout, "%-5s %-13s %-20s %-15s %-20s\n", "Index", "Region", "Instance ID", "State", "Launched At")
-			fmt.Fprintf(os.Stdout, "%-5s %-13s %-20s %-15s %-20s\n", "-----", "-------------", "--------------------", "---------------", "--------------------")
+			_, _ = fmt.Fprintf(os.Stdout, "%-5s %-13s %-20s %-15s %-20s\n", "Index", "Region", "Instance ID", "State", "Launched At")
+			_, _ = fmt.Fprintf(os.Stdout, "%-5s %-13s %-20s %-15s %-20s\n", "-----", "-------------", "--------------------", "---------------", "--------------------")
 		} else {
-			fmt.Fprintf(os.Stdout, "%-5s %-20s %-15s %-20s\n", "Index", "Instance ID", "State", "Launched At")
-			fmt.Fprintf(os.Stdout, "%-5s %-20s %-15s %-20s\n", "-----", "--------------------", "---------------", "--------------------")
+			_, _ = fmt.Fprintf(os.Stdout, "%-5s %-20s %-15s %-20s\n", "Index", "Instance ID", "State", "Launched At")
+			_, _ = fmt.Fprintf(os.Stdout, "%-5s %-20s %-15s %-20s\n", "-----", "--------------------", "---------------", "--------------------")
 		}
 
 		// Show last 10 instances
@@ -331,7 +331,7 @@ func runSweepStatus(ctx context.Context, sweepID string) error {
 			stateDisplay := colorizeInstanceState(inst.State)
 
 			if status.MultiRegion {
-				fmt.Fprintf(os.Stdout, "%-5d %-13s %-20s %-15s %-20s\n",
+				_, _ = fmt.Fprintf(os.Stdout, "%-5d %-13s %-20s %-15s %-20s\n",
 					inst.Index,
 					inst.Region,
 					inst.InstanceID,
@@ -339,7 +339,7 @@ func runSweepStatus(ctx context.Context, sweepID string) error {
 					launchedAt.Format("2006-01-02 15:04:05"),
 				)
 			} else {
-				fmt.Fprintf(os.Stdout, "%-5d %-20s %-15s %-20s\n",
+				_, _ = fmt.Fprintf(os.Stdout, "%-5d %-20s %-15s %-20s\n",
 					inst.Index,
 					inst.InstanceID,
 					stateDisplay,
@@ -347,30 +347,31 @@ func runSweepStatus(ctx context.Context, sweepID string) error {
 				)
 			}
 		}
-		fmt.Fprintf(os.Stdout, "\n")
+		_, _ = fmt.Fprintf(os.Stdout, "\n")
 	}
 
 	// Display failed launches if any
 	if failedCount > 0 {
-		fmt.Fprintf(os.Stdout, "Failed Launches:\n")
+		_, _ = fmt.Fprintf(os.Stdout, "Failed Launches:\n")
 		for _, inst := range status.Instances {
 			if inst.State == "failed" {
-				fmt.Fprintf(os.Stdout, "  [%d] %s\n", inst.Index, inst.ErrorMessage)
+				_, _ = fmt.Fprintf(os.Stdout, "  [%d] %s\n", inst.Index, inst.ErrorMessage)
 			}
 		}
-		fmt.Fprintf(os.Stdout, "\n")
+		_, _ = fmt.Fprintf(os.Stdout, "\n")
 	}
 
 	// Display next steps based on status
-	if status.Status == "RUNNING" {
-		fmt.Fprintf(os.Stdout, "The sweep is currently running in Lambda.\n")
-		fmt.Fprintf(os.Stdout, "Re-run this command to see updated progress.\n")
-	} else if status.Status == "COMPLETED" {
-		fmt.Fprintf(os.Stdout, "✅ Sweep completed successfully!\n")
-	} else if status.Status == "FAILED" {
-		fmt.Fprintf(os.Stdout, "❌ Sweep failed. Check error message above.\n")
-		fmt.Fprintf(os.Stdout, "\nTo resume:\n")
-		fmt.Fprintf(os.Stdout, "  spawn resume --sweep-id %s --detach\n", status.SweepID)
+	switch status.Status {
+	case "RUNNING":
+		_, _ = fmt.Fprintf(os.Stdout, "The sweep is currently running in Lambda.\n")
+		_, _ = fmt.Fprintf(os.Stdout, "Re-run this command to see updated progress.\n")
+	case "COMPLETED":
+		_, _ = fmt.Fprintf(os.Stdout, "✅ Sweep completed successfully!\n")
+	case "FAILED":
+		_, _ = fmt.Fprintf(os.Stdout, "❌ Sweep failed. Check error message above.\n")
+		_, _ = fmt.Fprintf(os.Stdout, "\nTo resume:\n")
+		_, _ = fmt.Fprintf(os.Stdout, "  spawn resume --sweep-id %s --detach\n", status.SweepID)
 	}
 
 	return nil

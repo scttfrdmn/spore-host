@@ -104,7 +104,7 @@ func init() {
 
 	teamCreateCmd.Flags().StringVar(&teamName, "name", "", "Team name (required)")
 	teamCreateCmd.Flags().StringVar(&teamDescription, "description", "", "Team description")
-	teamCreateCmd.MarkFlagRequired("name")
+	_ = teamCreateCmd.MarkFlagRequired("name")
 }
 
 // teamDDBClient returns a DynamoDB client using the default config.
@@ -195,7 +195,7 @@ func runTeamCreate(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("create membership: %w", err)
 	}
 
-	fmt.Fprintf(os.Stdout, "Created team %q\n  ID:    %s\n  Owner: %s\n", team.TeamName, teamID, callerARN)
+	_, _ = fmt.Fprintf(os.Stdout, "Created team %q\n  ID:    %s\n  Owner: %s\n", team.TeamName, teamID, callerARN)
 	return nil
 }
 
@@ -224,7 +224,7 @@ func runTeamList(cmd *cobra.Command, args []string) error {
 	}
 
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-	fmt.Fprintln(w, "TEAM ID\tNAME\tROLE\tMEMBERS\tCREATED")
+	_, _ = fmt.Fprintln(w, "TEAM ID\tNAME\tROLE\tMEMBERS\tCREATED")
 	for _, item := range result.Items {
 		var m memberRecord
 		if err := attributevalue.UnmarshalMap(item, &m); err != nil {
@@ -243,9 +243,9 @@ func runTeamList(cmd *cobra.Command, args []string) error {
 		if err := attributevalue.UnmarshalMap(tr.Item, &t); err != nil {
 			continue
 		}
-		fmt.Fprintf(w, "%s\t%s\t%s\t%d\t%s\n", t.TeamID, t.TeamName, m.Role, t.MemberCount, t.CreatedAt)
+		_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%d\t%s\n", t.TeamID, t.TeamName, m.Role, t.MemberCount, t.CreatedAt)
 	}
-	w.Flush()
+	_ = w.Flush()
 	return nil
 }
 
@@ -295,15 +295,15 @@ func runTeamShow(cmd *cobra.Command, args []string) error {
 	}
 
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-	fmt.Fprintln(w, "MEMBER ARN\tROLE\tJOINED")
+	_, _ = fmt.Fprintln(w, "MEMBER ARN\tROLE\tJOINED")
 	for _, item := range membersResult.Items {
 		var m memberRecord
 		if err := attributevalue.UnmarshalMap(item, &m); err != nil {
 			continue
 		}
-		fmt.Fprintf(w, "%s\t%s\t%s\n", m.MemberARN, m.Role, m.JoinedAt)
+		_, _ = fmt.Fprintf(w, "%s\t%s\t%s\n", m.MemberARN, m.Role, m.JoinedAt)
 	}
-	w.Flush()
+	_ = w.Flush()
 	return nil
 }
 

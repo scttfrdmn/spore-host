@@ -419,7 +419,7 @@ func getVCPUCount(instanceType string) int32 {
 
 func parseInt(s string) int32 {
 	var result int32
-	fmt.Sscanf(s, "%d", &result)
+	_, _ = fmt.Sscanf(s, "%d", &result)
 	return result
 }
 

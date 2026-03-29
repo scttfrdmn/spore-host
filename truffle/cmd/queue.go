@@ -236,13 +236,13 @@ func runQueueResults(cmd *cobra.Command, args []string) error {
 			// Write to file
 			outFile, err := os.Create(localPath)
 			if err != nil {
-				result.Body.Close()
+				_ = result.Body.Close()
 				return fmt.Errorf("failed to create file: %w", err)
 			}
 
 			_, err = outFile.ReadFrom(result.Body)
-			result.Body.Close()
-			outFile.Close()
+			_ = result.Body.Close()
+			_ = outFile.Close()
 
 			if err != nil {
 				return fmt.Errorf("failed to write file: %w", err)

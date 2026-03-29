@@ -549,7 +549,7 @@ func (c *Client) getRegionSpotPricing(ctx context.Context, region string, instan
 func parsePrice(priceStr string) float64 {
 	// AWS returns price as string, convert to float
 	var price float64
-	fmt.Sscanf(priceStr, "%f", &price)
+	_, _ = fmt.Sscanf(priceStr, "%f", &price)
 	return price
 }
 

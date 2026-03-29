@@ -184,7 +184,7 @@ func EnableWindowsColors() {
 		// Enable ANSI escape sequences in Windows Console
 		// This works on Windows 10+ with modern terminals
 		cmd := exec.Command("cmd", "/c", "")
-		cmd.Run()
+		_ = cmd.Run()
 	}
 }
 

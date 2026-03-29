@@ -176,37 +176,37 @@ func runValidatePipeline(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("validation failed: %w", err)
 	}
 
-	fmt.Fprintf(os.Stdout, "✓ Pipeline is valid\n\n")
-	fmt.Fprintf(os.Stdout, "Pipeline: %s\n", p.PipelineName)
-	fmt.Fprintf(os.Stdout, "ID: %s\n", p.PipelineID)
-	fmt.Fprintf(os.Stdout, "Stages: %d\n", len(p.Stages))
-	fmt.Fprintf(os.Stdout, "S3 Bucket: %s\n", p.S3Bucket)
+	_, _ = fmt.Fprintf(os.Stdout, "✓ Pipeline is valid\n\n")
+	_, _ = fmt.Fprintf(os.Stdout, "Pipeline: %s\n", p.PipelineName)
+	_, _ = fmt.Fprintf(os.Stdout, "ID: %s\n", p.PipelineID)
+	_, _ = fmt.Fprintf(os.Stdout, "Stages: %d\n", len(p.Stages))
+	_, _ = fmt.Fprintf(os.Stdout, "S3 Bucket: %s\n", p.S3Bucket)
 
 	// Show topological order
 	order, err := p.GetTopologicalOrder()
 	if err != nil {
 		return fmt.Errorf("get topological order: %w", err)
 	}
-	fmt.Fprintf(os.Stdout, "\nExecution order:\n")
+	_, _ = fmt.Fprintf(os.Stdout, "\nExecution order:\n")
 	for i, stageID := range order {
-		fmt.Fprintf(os.Stdout, "  %d. %s\n", i+1, stageID)
+		_, _ = fmt.Fprintf(os.Stdout, "  %d. %s\n", i+1, stageID)
 	}
 
 	// Show features
-	fmt.Fprintf(os.Stdout, "\nFeatures:\n")
+	_, _ = fmt.Fprintf(os.Stdout, "\nFeatures:\n")
 	if p.HasStreamingStages() {
-		fmt.Fprintf(os.Stdout, "  • Network streaming enabled\n")
+		_, _ = fmt.Fprintf(os.Stdout, "  • Network streaming enabled\n")
 	}
 	if p.HasEFAStages() {
-		fmt.Fprintf(os.Stdout, "  • EFA (Elastic Fabric Adapter) enabled\n")
+		_, _ = fmt.Fprintf(os.Stdout, "  • EFA (Elastic Fabric Adapter) enabled\n")
 	}
 	if p.OnFailure == "stop" {
-		fmt.Fprintf(os.Stdout, "  • Stops on first failure\n")
+		_, _ = fmt.Fprintf(os.Stdout, "  • Stops on first failure\n")
 	} else {
-		fmt.Fprintf(os.Stdout, "  • Continues on failure\n")
+		_, _ = fmt.Fprintf(os.Stdout, "  • Continues on failure\n")
 	}
 	if p.MaxCostUSD != nil {
-		fmt.Fprintf(os.Stdout, "  • Budget limit: $%.2f\n", *p.MaxCostUSD)
+		_, _ = fmt.Fprintf(os.Stdout, "  • Budget limit: $%.2f\n", *p.MaxCostUSD)
 	}
 
 	return nil
@@ -233,21 +233,21 @@ func runGraphPipeline(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return fmt.Errorf("marshal JSON: %w", err)
 		}
-		fmt.Fprintf(os.Stdout, "%s\n", data)
+		_, _ = fmt.Fprintf(os.Stdout, "%s\n", data)
 		return nil
 	}
 
 	// Show statistics
 	if flagGraphStats {
 		stats := p.GetGraphStats()
-		fmt.Fprintf(os.Stdout, "Pipeline Statistics\n")
-		fmt.Fprintf(os.Stdout, "═══════════════════\n\n")
-		fmt.Fprintf(os.Stdout, "Total stages:     %d\n", stats["total_stages"])
-		fmt.Fprintf(os.Stdout, "Total instances:  %d\n", stats["total_instances"])
-		fmt.Fprintf(os.Stdout, "Max fan-out:      %d\n", stats["max_fan_out"])
-		fmt.Fprintf(os.Stdout, "Max fan-in:       %d\n", stats["max_fan_in"])
-		fmt.Fprintf(os.Stdout, "Has streaming:    %v\n", stats["has_streaming"])
-		fmt.Fprintf(os.Stdout, "Has EFA:          %v\n\n", stats["has_efa"])
+		_, _ = fmt.Fprintf(os.Stdout, "Pipeline Statistics\n")
+		_, _ = fmt.Fprintf(os.Stdout, "═══════════════════\n\n")
+		_, _ = fmt.Fprintf(os.Stdout, "Total stages:     %d\n", stats["total_stages"])
+		_, _ = fmt.Fprintf(os.Stdout, "Total instances:  %d\n", stats["total_instances"])
+		_, _ = fmt.Fprintf(os.Stdout, "Max fan-out:      %d\n", stats["max_fan_out"])
+		_, _ = fmt.Fprintf(os.Stdout, "Max fan-in:       %d\n", stats["max_fan_in"])
+		_, _ = fmt.Fprintf(os.Stdout, "Has streaming:    %v\n", stats["has_streaming"])
+		_, _ = fmt.Fprintf(os.Stdout, "Has EFA:          %v\n\n", stats["has_efa"])
 		return nil
 	}
 
@@ -262,7 +262,7 @@ func runGraphPipeline(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("render graph: %w", err)
 	}
 
-	fmt.Fprintf(os.Stdout, "%s\n", graph)
+	_, _ = fmt.Fprintf(os.Stdout, "%s\n", graph)
 	return nil
 }
 
@@ -407,7 +407,7 @@ func runLaunchPipeline(cmd *cobra.Command, args []string) error {
 	fmt.Fprintf(os.Stderr, "  spawn pipeline collect %s --output ./results/\n", p.PipelineID)
 
 	// Output just the pipeline ID to stdout for scripting
-	fmt.Fprintf(os.Stdout, "%s\n", p.PipelineID)
+	_, _ = fmt.Fprintf(os.Stdout, "%s\n", p.PipelineID)
 
 	return nil
 }
@@ -450,31 +450,31 @@ func runStatusPipeline(cmd *cobra.Command, args []string) error {
 	}
 
 	// Display status
-	fmt.Fprintf(os.Stdout, "Pipeline: %s\n", state.PipelineName)
-	fmt.Fprintf(os.Stdout, "ID: %s\n", pipelineID)
-	fmt.Fprintf(os.Stdout, "Status: %s\n", state.Status)
-	fmt.Fprintf(os.Stdout, "Created: %s\n", state.CreatedAt.Format(time.RFC3339))
-	fmt.Fprintf(os.Stdout, "Updated: %s\n", state.UpdatedAt.Format(time.RFC3339))
-	fmt.Fprintf(os.Stdout, "\n")
+	_, _ = fmt.Fprintf(os.Stdout, "Pipeline: %s\n", state.PipelineName)
+	_, _ = fmt.Fprintf(os.Stdout, "ID: %s\n", pipelineID)
+	_, _ = fmt.Fprintf(os.Stdout, "Status: %s\n", state.Status)
+	_, _ = fmt.Fprintf(os.Stdout, "Created: %s\n", state.CreatedAt.Format(time.RFC3339))
+	_, _ = fmt.Fprintf(os.Stdout, "Updated: %s\n", state.UpdatedAt.Format(time.RFC3339))
+	_, _ = fmt.Fprintf(os.Stdout, "\n")
 
 	// Progress
-	fmt.Fprintf(os.Stdout, "Progress: %d/%d stages completed", state.CompletedStages, state.TotalStages)
+	_, _ = fmt.Fprintf(os.Stdout, "Progress: %d/%d stages completed", state.CompletedStages, state.TotalStages)
 	if state.FailedStages > 0 {
-		fmt.Fprintf(os.Stdout, " (%d failed)", state.FailedStages)
+		_, _ = fmt.Fprintf(os.Stdout, " (%d failed)", state.FailedStages)
 	}
-	fmt.Fprintf(os.Stdout, "\n")
+	_, _ = fmt.Fprintf(os.Stdout, "\n")
 
 	// Cost
-	fmt.Fprintf(os.Stdout, "Cost: $%.2f", state.CurrentCostUSD)
+	_, _ = fmt.Fprintf(os.Stdout, "Cost: $%.2f", state.CurrentCostUSD)
 	if state.MaxCostUSD != nil && *state.MaxCostUSD > 0 {
-		fmt.Fprintf(os.Stdout, " / $%.2f", *state.MaxCostUSD)
+		_, _ = fmt.Fprintf(os.Stdout, " / $%.2f", *state.MaxCostUSD)
 	}
-	fmt.Fprintf(os.Stdout, "\n\n")
+	_, _ = fmt.Fprintf(os.Stdout, "\n\n")
 
 	// Stages table
 	if len(state.Stages) > 0 {
-		fmt.Fprintf(os.Stdout, "STAGE                STATUS       INSTANCES  COST      DURATION\n")
-		fmt.Fprintf(os.Stdout, "─────────────────────────────────────────────────────────────────\n")
+		_, _ = fmt.Fprintf(os.Stdout, "STAGE                STATUS       INSTANCES  COST      DURATION\n")
+		_, _ = fmt.Fprintf(os.Stdout, "─────────────────────────────────────────────────────────────────\n")
 		for _, stage := range state.Stages {
 			// Calculate duration
 			duration := ""
@@ -496,7 +496,7 @@ func runStatusPipeline(cmd *cobra.Command, args []string) error {
 				costStr = fmt.Sprintf("$%.2f", stage.StageCostUSD)
 			}
 
-			fmt.Fprintf(os.Stdout, "%-20s %-12s %-10s %-9s %s\n",
+			_, _ = fmt.Fprintf(os.Stdout, "%-20s %-12s %-10s %-9s %s\n",
 				truncate(stage.StageID, 20), stage.Status, instanceStr, costStr, duration)
 		}
 	}
@@ -649,13 +649,13 @@ func runCollectPipeline(cmd *cobra.Command, args []string) error {
 		// Write to file
 		file, err := os.Create(localPath)
 		if err != nil {
-			getOutput.Body.Close()
+			_ = getOutput.Body.Close()
 			return fmt.Errorf("create file %s: %w", localPath, err)
 		}
 
 		_, err = io.Copy(file, getOutput.Body)
-		file.Close()
-		getOutput.Body.Close()
+		_ = file.Close()
+		_ = getOutput.Body.Close()
 		if err != nil {
 			return fmt.Errorf("write file %s: %w", localPath, err)
 		}
@@ -722,7 +722,7 @@ func runListPipeline(cmd *cobra.Command, args []string) error {
 	}
 
 	if len(pipelines) == 0 {
-		fmt.Fprintf(os.Stdout, "No pipelines found\n")
+		_, _ = fmt.Fprintf(os.Stdout, "No pipelines found\n")
 		return nil
 	}
 
@@ -732,13 +732,13 @@ func runListPipeline(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return fmt.Errorf("marshal JSON: %w", err)
 		}
-		fmt.Fprintf(os.Stdout, "%s\n", data)
+		_, _ = fmt.Fprintf(os.Stdout, "%s\n", data)
 		return nil
 	}
 
 	// Table output
-	fmt.Fprintf(os.Stdout, "PIPELINE ID                    NAME                          STATUS       COST      CREATED\n")
-	fmt.Fprintf(os.Stdout, "──────────────────────────────────────────────────────────────────────────────────────────────────\n")
+	_, _ = fmt.Fprintf(os.Stdout, "PIPELINE ID                    NAME                          STATUS       COST      CREATED\n")
+	_, _ = fmt.Fprintf(os.Stdout, "──────────────────────────────────────────────────────────────────────────────────────────────────\n")
 	for _, p := range pipelines {
 		pipelineID := getStringField(p, "pipeline_id")
 		pipelineName := getStringField(p, "pipeline_name")
@@ -756,7 +756,7 @@ func runListPipeline(cmd *cobra.Command, args []string) error {
 
 		costStr := fmt.Sprintf("$%.2f", cost)
 
-		fmt.Fprintf(os.Stdout, "%-30s %-29s %-12s %-9s %s\n",
+		_, _ = fmt.Fprintf(os.Stdout, "%-30s %-29s %-12s %-9s %s\n",
 			truncate(pipelineID, 30),
 			truncate(pipelineName, 29),
 			status,

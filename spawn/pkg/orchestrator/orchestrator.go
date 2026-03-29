@@ -143,10 +143,10 @@ func (o *Orchestrator) getQueueDepth(ctx context.Context) (int, error) {
 	notVisible := 0
 
 	if val, ok := result.Attributes["ApproximateNumberOfMessages"]; ok {
-		fmt.Sscanf(val, "%d", &visible)
+		_, _ = fmt.Sscanf(val, "%d", &visible)
 	}
 	if val, ok := result.Attributes["ApproximateNumberOfMessagesNotVisible"]; ok {
-		fmt.Sscanf(val, "%d", &notVisible)
+		_, _ = fmt.Sscanf(val, "%d", &notVisible)
 	}
 
 	// Total is visible + in-flight
@@ -162,9 +162,10 @@ func (o *Orchestrator) countActiveInstances(ctx context.Context) (local, cloud i
 	}
 
 	for _, peer := range peers {
-		if peer.Provider == "local" {
+		switch peer.Provider {
+		case "local":
 			local++
-		} else if peer.Provider == "ec2" {
+		case "ec2":
 			cloud++
 		}
 	}

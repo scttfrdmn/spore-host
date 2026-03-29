@@ -39,7 +39,7 @@ func (s *Spinner) Start() {
 				return
 			case <-ticker.C:
 				s.mu.Lock()
-				fmt.Fprintf(s.writer, "\r%s %s", s.frames[s.current], s.message)
+				_, _ = fmt.Fprintf(s.writer, "\r%s %s", s.frames[s.current], s.message)
 				s.current = (s.current + 1) % len(s.frames)
 				s.mu.Unlock()
 			}
@@ -51,7 +51,7 @@ func (s *Spinner) Stop() {
 	close(s.stopCh)
 	s.wg.Wait()
 	s.mu.Lock()
-	fmt.Fprint(s.writer, "\r\033[K") // Clear line
+	_, _ = fmt.Fprint(s.writer, "\r\033[K") // Clear line
 	s.mu.Unlock()
 }
 

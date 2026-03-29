@@ -278,7 +278,7 @@ func TestHealthEndpoint(t *testing.T) {
 	// Manually call health handler
 	http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
+		_, _ = w.Write([]byte("OK"))
 	}).ServeHTTP(w, req)
 
 	if w.Code != http.StatusOK {

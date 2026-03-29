@@ -84,7 +84,7 @@ func TestStartSpan(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create tracer: %v", err)
 	}
-	defer tracer.Shutdown(ctx)
+	defer func() { _ = tracer.Shutdown(ctx) }()
 
 	// Start span
 	ctx, end := StartSpan(ctx, tracer, "test-span")

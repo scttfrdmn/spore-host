@@ -106,7 +106,7 @@ func (c *Client) RegisterDNS(ctx context.Context, recordName, ipAddress string) 
 	if err != nil {
 		return nil, fmt.Errorf("failed to get identity signature: %w", err)
 	}
-	defer sigResp.Content.Close()
+	defer func() { _ = sigResp.Content.Close() }()
 
 	signatureBytes, err := io.ReadAll(sigResp.Content)
 	if err != nil {
@@ -153,7 +153,7 @@ func (c *Client) RegisterJobArrayDNS(ctx context.Context, recordName, ipAddress,
 	if err != nil {
 		return nil, fmt.Errorf("failed to get identity signature: %w", err)
 	}
-	defer sigResp.Content.Close()
+	defer func() { _ = sigResp.Content.Close() }()
 
 	signatureBytes, err := io.ReadAll(sigResp.Content)
 	if err != nil {
@@ -193,7 +193,7 @@ func (c *Client) DeleteJobArrayDNS(ctx context.Context, recordName, ipAddress, j
 	if err != nil {
 		return nil, fmt.Errorf("failed to get identity signature: %w", err)
 	}
-	defer sigResp.Content.Close()
+	defer func() { _ = sigResp.Content.Close() }()
 
 	signatureBytes, err := io.ReadAll(sigResp.Content)
 	if err != nil {
@@ -232,7 +232,7 @@ func (c *Client) DeleteDNS(ctx context.Context, recordName, ipAddress string) (*
 	if err != nil {
 		return nil, fmt.Errorf("failed to get identity signature: %w", err)
 	}
-	defer sigResp.Content.Close()
+	defer func() { _ = sigResp.Content.Close() }()
 
 	signatureBytes, err := io.ReadAll(sigResp.Content)
 	if err != nil {
@@ -271,7 +271,7 @@ func (c *Client) callAPI(ctx context.Context, req DNSUpdateRequest) (*DNSUpdateR
 	if err != nil {
 		return nil, fmt.Errorf("failed to call DNS API: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Read response
 	respBody, err := io.ReadAll(resp.Body)

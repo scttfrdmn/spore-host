@@ -57,7 +57,7 @@ func init() {
 	burstCmd.Flags().StringVar(&burstSubnetID, "subnet-id", "", "Subnet ID")
 	burstCmd.Flags().StringSliceVar(&burstSecurityGroups, "security-groups", nil, "Security group IDs")
 
-	burstCmd.MarkFlagRequired("job-array-id")
+	_ = burstCmd.MarkFlagRequired("job-array-id")
 }
 
 func runBurst(cmd *cobra.Command, args []string) error {

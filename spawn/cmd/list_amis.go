@@ -173,10 +173,10 @@ func outputAMIsTable(amis []aws.AMIInfo) error {
 	fmt.Println() // Blank line
 
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-	defer w.Flush()
+	defer func() { _ = w.Flush() }()
 
 	// Header
-	fmt.Fprintf(w, "NAME\tAMI ID\tSTACK\tVERSION\tARCH\tSIZE\tAGE\tSTATUS\n")
+	_, _ = fmt.Fprintf(w, "NAME\tAMI ID\tSTACK\tVERSION\tARCH\tSIZE\tAGE\tSTATUS\n")
 
 	hasWarnings := false
 
@@ -221,7 +221,7 @@ func outputAMIsTable(amis []aws.AMIInfo) error {
 			}
 		}
 
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
+		_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
 			ami.Name,
 			ami.AMIID,
 			stack,
@@ -233,7 +233,7 @@ func outputAMIsTable(amis []aws.AMIInfo) error {
 		)
 	}
 
-	w.Flush()
+	_ = w.Flush()
 
 	// Show warnings in detail after table
 	if hasWarnings && region != "" {
@@ -257,10 +257,10 @@ func outputAMIsTableSimple(amis []aws.AMIInfo) error {
 	fmt.Println() // Blank line
 
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-	defer w.Flush()
+	defer func() { _ = w.Flush() }()
 
 	// Header
-	fmt.Fprintf(w, "NAME\tAMI ID\tSTACK\tVERSION\tARCH\tSIZE\tAGE\tSTATUS\n")
+	_, _ = fmt.Fprintf(w, "NAME\tAMI ID\tSTACK\tVERSION\tARCH\tSIZE\tAGE\tSTATUS\n")
 
 	for _, ami := range amis {
 		// Format age
@@ -291,7 +291,7 @@ func outputAMIsTableSimple(amis []aws.AMIInfo) error {
 			status += "[deprecated]"
 		}
 
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
+		_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
 			ami.Name,
 			ami.AMIID,
 			stack,

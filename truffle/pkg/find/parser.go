@@ -285,18 +285,6 @@ func (pq *ParsedQuery) Validate() error {
 		return fmt.Errorf("conflicting architectures: %v", archs)
 	}
 
-	// Check for unknown tokens (warn but don't error)
-	var unknown []string
-	for _, token := range pq.RawTokens {
-		if token.Type == TokenUnknown {
-			unknown = append(unknown, token.Raw)
-		}
-	}
-	if len(unknown) > 0 {
-		// This is informational; we don't fail on unknown tokens
-		// The caller can decide what to do with this
-	}
-
 	return nil
 }
 

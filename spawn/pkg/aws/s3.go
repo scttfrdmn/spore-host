@@ -162,7 +162,7 @@ func (c *Client) GetFSxConfigFromS3Bucket(ctx context.Context, stackName, region
 					bucketName = *bucket.Name
 				}
 			case "spawn:fsx-storage-capacity":
-				fmt.Sscanf(*tag.Value, "%d", &storageCapacity)
+				_, _ = fmt.Sscanf(*tag.Value, "%d", &storageCapacity)
 			case "spawn:fsx-import-path":
 				importPath = *tag.Value
 			case "spawn:fsx-export-path":

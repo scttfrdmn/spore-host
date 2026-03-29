@@ -107,8 +107,14 @@ func TestFindSSHKey_ExactName(t *testing.T) {
 
 	// Temporarily override home directory
 	oldHome := os.Getenv("HOME")
-	os.Setenv("HOME", tmpDir)
-	defer os.Setenv("HOME", oldHome)
+	if err := os.Setenv("HOME", tmpDir); err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := os.Setenv("HOME", oldHome); err != nil {
+			t.Fatal(err)
+		}
+	}()
 
 	// Test finding the key
 	foundPath, err := findSSHKey(keyName)
@@ -139,8 +145,14 @@ func TestFindSSHKey_WithPemExtension(t *testing.T) {
 	}
 
 	oldHome := os.Getenv("HOME")
-	os.Setenv("HOME", tmpDir)
-	defer os.Setenv("HOME", oldHome)
+	if err := os.Setenv("HOME", tmpDir); err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := os.Setenv("HOME", oldHome); err != nil {
+			t.Fatal(err)
+		}
+	}()
 
 	foundPath, err := findSSHKey(keyName)
 	if err != nil {
@@ -169,8 +181,14 @@ func TestFindSSHKey_WithKeyExtension(t *testing.T) {
 	}
 
 	oldHome := os.Getenv("HOME")
-	os.Setenv("HOME", tmpDir)
-	defer os.Setenv("HOME", oldHome)
+	if err := os.Setenv("HOME", tmpDir); err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := os.Setenv("HOME", oldHome); err != nil {
+			t.Fatal(err)
+		}
+	}()
 
 	foundPath, err := findSSHKey(keyName)
 	if err != nil {
@@ -199,8 +217,14 @@ func TestFindSSHKey_DefaultIdRsa(t *testing.T) {
 	}
 
 	oldHome := os.Getenv("HOME")
-	os.Setenv("HOME", tmpDir)
-	defer os.Setenv("HOME", oldHome)
+	if err := os.Setenv("HOME", tmpDir); err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := os.Setenv("HOME", oldHome); err != nil {
+			t.Fatal(err)
+		}
+	}()
 
 	// Try to find a key that doesn't exist - should fallback to id_rsa
 	foundPath, err := findSSHKey("nonexistent-key")
@@ -230,13 +254,19 @@ func TestFindSSHKey_Prioritization(t *testing.T) {
 	keyPath := filepath.Join(sshDir, keyName+".key")
 
 	// Write all keys
-	os.WriteFile(exactPath, []byte("exact"), 0600)
-	os.WriteFile(pemPath, []byte("pem"), 0600)
-	os.WriteFile(keyPath, []byte("key"), 0600)
+	_ = os.WriteFile(exactPath, []byte("exact"), 0600)
+	_ = os.WriteFile(pemPath, []byte("pem"), 0600)
+	_ = os.WriteFile(keyPath, []byte("key"), 0600)
 
 	oldHome := os.Getenv("HOME")
-	os.Setenv("HOME", tmpDir)
-	defer os.Setenv("HOME", oldHome)
+	if err := os.Setenv("HOME", tmpDir); err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := os.Setenv("HOME", oldHome); err != nil {
+			t.Fatal(err)
+		}
+	}()
 
 	// Should find exact name first
 	foundPath, err := findSSHKey(keyName)
@@ -259,13 +289,19 @@ func TestFindSSHKey_NotFound(t *testing.T) {
 	}
 
 	oldHome := os.Getenv("HOME")
-	os.Setenv("HOME", tmpDir)
-	defer os.Setenv("HOME", oldHome)
+	if err := os.Setenv("HOME", tmpDir); err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := os.Setenv("HOME", oldHome); err != nil {
+			t.Fatal(err)
+		}
+	}()
 
 	// Initialize i18n for testing
 	if i18n.Global == nil {
 		cfg := i18n.Config{Language: "en"}
-		i18n.Init(cfg)
+		_ = i18n.Init(cfg)
 	}
 
 	// Try to find non-existent key (and no default keys exist)
@@ -280,7 +316,7 @@ func TestFindSSHKey_EmptyKeyName(t *testing.T) {
 	// Initialize i18n for testing
 	if i18n.Global == nil {
 		cfg := i18n.Config{Language: "en"}
-		i18n.Init(cfg)
+		_ = i18n.Init(cfg)
 	}
 
 	_, err := findSSHKey("")
@@ -306,8 +342,14 @@ func TestFindSSHKey_MultipleDefaultKeys(t *testing.T) {
 	}
 
 	oldHome := os.Getenv("HOME")
-	os.Setenv("HOME", tmpDir)
-	defer os.Setenv("HOME", oldHome)
+	if err := os.Setenv("HOME", tmpDir); err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := os.Setenv("HOME", oldHome); err != nil {
+			t.Fatal(err)
+		}
+	}()
 
 	// Should fallback to id_ed25519 when id_rsa doesn't exist
 	foundPath, err := findSSHKey("nonexistent")

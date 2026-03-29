@@ -172,20 +172,20 @@ func stopOrHibernate(identifier string, hibernate bool) error {
 	if remainingTTL != "" {
 		tags["spawn:ttl-remaining"] = remainingTTL
 	}
-	client.UpdateInstanceTags(ctx, instance.Region, instance.InstanceID, tags)
+	_ = client.UpdateInstanceTags(ctx, instance.Region, instance.InstanceID, tags)
 
 	if hibernate {
-		fmt.Fprintf(os.Stdout, "\n✅ Hibernate request sent!\n")
-		fmt.Fprintf(os.Stdout, "   Instance: %s\n", instance.InstanceID)
-		fmt.Fprintf(os.Stdout, "   Region:   %s\n", instance.Region)
-		fmt.Fprintf(os.Stdout, "\nThe instance will hibernate (save RAM to disk) and stop.\n")
-		fmt.Fprintf(os.Stdout, "TTL countdown will pause until the instance is started again.\n")
+		_, _ = fmt.Fprintf(os.Stdout, "\n✅ Hibernate request sent!\n")
+		_, _ = fmt.Fprintf(os.Stdout, "   Instance: %s\n", instance.InstanceID)
+		_, _ = fmt.Fprintf(os.Stdout, "   Region:   %s\n", instance.Region)
+		_, _ = fmt.Fprintf(os.Stdout, "\nThe instance will hibernate (save RAM to disk) and stop.\n")
+		_, _ = fmt.Fprintf(os.Stdout, "TTL countdown will pause until the instance is started again.\n")
 	} else {
-		fmt.Fprintf(os.Stdout, "\n✅ Stop request sent!\n")
-		fmt.Fprintf(os.Stdout, "   Instance: %s\n", instance.InstanceID)
-		fmt.Fprintf(os.Stdout, "   Region:   %s\n", instance.Region)
-		fmt.Fprintf(os.Stdout, "\nThe instance will stop (EBS preserved).\n")
-		fmt.Fprintf(os.Stdout, "TTL countdown will pause until the instance is started again.\n")
+		_, _ = fmt.Fprintf(os.Stdout, "\n✅ Stop request sent!\n")
+		_, _ = fmt.Fprintf(os.Stdout, "   Instance: %s\n", instance.InstanceID)
+		_, _ = fmt.Fprintf(os.Stdout, "   Region:   %s\n", instance.Region)
+		_, _ = fmt.Fprintf(os.Stdout, "\nThe instance will stop (EBS preserved).\n")
+		_, _ = fmt.Fprintf(os.Stdout, "TTL countdown will pause until the instance is started again.\n")
 	}
 
 	return nil
@@ -293,16 +293,16 @@ func stopOrHibernateJobArray(ctx context.Context, hibernate bool) error {
 		if remainingTTL != "" {
 			tags["spawn:ttl-remaining"] = remainingTTL
 		}
-		client.UpdateInstanceTags(ctx, inst.Region, inst.InstanceID, tags)
+		_ = client.UpdateInstanceTags(ctx, inst.Region, inst.InstanceID, tags)
 
 		successCount++
 		fmt.Fprintf(os.Stderr, "✓ %s %s\n", action, inst.InstanceID)
 	}
 
 	// Display results
-	fmt.Fprintf(os.Stdout, "\n✅ Job array %s request sent!\n", action)
-	fmt.Fprintf(os.Stdout, "   Array:     %s\n", arrayName)
-	fmt.Fprintf(os.Stdout, "   Processed: %d/%d instances\n", successCount, len(jobArrayInstances))
+	_, _ = fmt.Fprintf(os.Stdout, "\n✅ Job array %s request sent!\n", action)
+	_, _ = fmt.Fprintf(os.Stdout, "   Array:     %s\n", arrayName)
+	_, _ = fmt.Fprintf(os.Stdout, "   Processed: %d/%d instances\n", successCount, len(jobArrayInstances))
 
 	if len(failedInstances) > 0 {
 		fmt.Fprintf(os.Stderr, "\n⚠️  Failed to %s %d instances:\n", action, len(failedInstances))
@@ -375,13 +375,13 @@ func runStart(cmd *cobra.Command, args []string) error {
 	}
 
 	// Tag the instance with the start event and restored TTL
-	client.UpdateInstanceTags(ctx, instance.Region, instance.InstanceID, tags)
+	_ = client.UpdateInstanceTags(ctx, instance.Region, instance.InstanceID, tags)
 
-	fmt.Fprintf(os.Stdout, "\n✅ Start request sent!\n")
-	fmt.Fprintf(os.Stdout, "   Instance: %s\n", instance.InstanceID)
-	fmt.Fprintf(os.Stdout, "   Region:   %s\n", instance.Region)
-	fmt.Fprintf(os.Stdout, "\nThe instance is starting up...\n")
-	fmt.Fprintf(os.Stdout, "TTL countdown will resume once the instance is running.\n")
+	_, _ = fmt.Fprintf(os.Stdout, "\n✅ Start request sent!\n")
+	_, _ = fmt.Fprintf(os.Stdout, "   Instance: %s\n", instance.InstanceID)
+	_, _ = fmt.Fprintf(os.Stdout, "   Region:   %s\n", instance.Region)
+	_, _ = fmt.Fprintf(os.Stdout, "\nThe instance is starting up...\n")
+	_, _ = fmt.Fprintf(os.Stdout, "TTL countdown will resume once the instance is running.\n")
 
 	// Wait for instance to be running
 	fmt.Fprintf(os.Stderr, "\nWaiting for instance to reach running state...")
@@ -399,7 +399,7 @@ func runStart(cmd *cobra.Command, args []string) error {
 				if inst.State == "running" {
 					fmt.Fprintf(os.Stderr, " running!\n")
 					if inst.PublicIP != "" {
-						fmt.Fprintf(os.Stdout, "\n🔌 Connect: spawn connect %s\n", instance.InstanceID)
+						_, _ = fmt.Fprintf(os.Stdout, "\n🔌 Connect: spawn connect %s\n", instance.InstanceID)
 					}
 					return nil
 				}
@@ -410,7 +410,7 @@ func runStart(cmd *cobra.Command, args []string) error {
 	}
 
 	fmt.Fprintf(os.Stderr, " (taking longer than expected)\n")
-	fmt.Fprintf(os.Stdout, "\nUse 'spawn list' to check the current state.\n")
+	_, _ = fmt.Fprintf(os.Stdout, "\nUse 'spawn list' to check the current state.\n")
 
 	return nil
 }
@@ -487,16 +487,16 @@ func startJobArray(ctx context.Context) error {
 		if ttlRemaining, exists := inst.Tags["spawn:ttl-remaining"]; exists && ttlRemaining != "" {
 			tags["spawn:ttl"] = ttlRemaining
 		}
-		client.UpdateInstanceTags(ctx, inst.Region, inst.InstanceID, tags)
+		_ = client.UpdateInstanceTags(ctx, inst.Region, inst.InstanceID, tags)
 
 		successCount++
 		fmt.Fprintf(os.Stderr, "✓ Started %s\n", inst.InstanceID)
 	}
 
 	// Display results
-	fmt.Fprintf(os.Stdout, "\n✅ Job array start request sent!\n")
-	fmt.Fprintf(os.Stdout, "   Array:     %s\n", arrayName)
-	fmt.Fprintf(os.Stdout, "   Started:   %d/%d instances\n", successCount, len(jobArrayInstances))
+	_, _ = fmt.Fprintf(os.Stdout, "\n✅ Job array start request sent!\n")
+	_, _ = fmt.Fprintf(os.Stdout, "   Array:     %s\n", arrayName)
+	_, _ = fmt.Fprintf(os.Stdout, "   Started:   %d/%d instances\n", successCount, len(jobArrayInstances))
 
 	if len(failedInstances) > 0 {
 		fmt.Fprintf(os.Stderr, "\n⚠️  Failed to start %d instances:\n", len(failedInstances))
@@ -505,8 +505,8 @@ func startJobArray(ctx context.Context) error {
 		}
 	}
 
-	fmt.Fprintf(os.Stdout, "\nInstances are starting up...\n")
-	fmt.Fprintf(os.Stdout, "Use 'spawn list --job-array-name %s' to check status.\n", arrayName)
+	_, _ = fmt.Fprintf(os.Stdout, "\nInstances are starting up...\n")
+	_, _ = fmt.Fprintf(os.Stdout, "Use 'spawn list --job-array-name %s' to check status.\n", arrayName)
 
 	return nil
 }

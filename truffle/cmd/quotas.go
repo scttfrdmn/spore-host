@@ -170,7 +170,7 @@ func displayRegionQuotas(region string, info *quotas.QuotaInfo, filterFamily str
 				statusStr = red("❌ Zero")
 			}
 
-			table.Append([]string{
+			_ = table.Append([]string{
 				string(family),
 				"On-Demand",
 				fmt.Sprintf("%d vCPUs", onDemandQuota),
@@ -191,7 +191,7 @@ func displayRegionQuotas(region string, info *quotas.QuotaInfo, filterFamily str
 				statusStr = green("✅ OK")
 			}
 
-			table.Append([]string{
+			_ = table.Append([]string{
 				string(family),
 				"Spot",
 				fmt.Sprintf("%d vCPUs", spotQuota),

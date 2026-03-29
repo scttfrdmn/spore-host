@@ -77,7 +77,7 @@ func runFSxList(cmd *cobra.Command, args []string) error {
 
 	// Setup tabwriter
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-	fmt.Fprintf(w, "FILESYSTEM ID\tREGION\tSTACK NAME\tSIZE (GB)\tSTATUS\tS3 BUCKET\tCREATED\n")
+	_, _ = fmt.Fprintf(w, "FILESYSTEM ID\tREGION\tSTACK NAME\tSIZE (GB)\tSTATUS\tS3 BUCKET\tCREATED\n")
 
 	totalCount := 0
 
@@ -123,7 +123,7 @@ func runFSxList(cmd *cobra.Command, args []string) error {
 				createdAt = fs.CreationTime.Format("2006-01-02")
 			}
 
-			fmt.Fprintf(w, "%s\t%s\t%s\t%d\t%s\t%s\t%s\n",
+			_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%d\t%s\t%s\t%s\n",
 				*fs.FileSystemId,
 				region,
 				stackName,
@@ -135,7 +135,7 @@ func runFSxList(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	w.Flush()
+	_ = w.Flush()
 
 	if totalCount == 0 {
 		fmt.Fprintf(os.Stderr, "\nNo spawn-managed FSx filesystems found.\n")
@@ -314,7 +314,7 @@ func runFSxDelete(cmd *cobra.Command, args []string) error {
 
 		fmt.Printf("This action cannot be undone. Continue? (y/N): ")
 		var response string
-		fmt.Scanln(&response)
+		_, _ = fmt.Scanln(&response)
 		if strings.ToLower(response) != "y" && strings.ToLower(response) != "yes" {
 			fmt.Println("Cancelled.")
 			return nil

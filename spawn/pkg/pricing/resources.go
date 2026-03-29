@@ -58,7 +58,7 @@ func GetEBSMonthlyRate(region, volumeType string, sizeGB, iops int) float64 {
 	totalRate := baseRate + iopsMonthly
 
 	// Regional multiplier
-	multiplier := 1.0
+	var multiplier float64
 	if m, ok := ebsRegionMultipliers[strings.ToLower(region)]; ok {
 		multiplier = m
 	} else {

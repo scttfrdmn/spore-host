@@ -35,7 +35,7 @@ func NewTCPServer(port int, handler func(conn net.Conn)) (*TCPServer, error) {
 
 // Serve starts accepting connections
 func (s *TCPServer) Serve(ctx context.Context) error {
-	defer s.listener.Close()
+	defer func() { _ = s.listener.Close() }()
 
 	for {
 		select {
@@ -56,7 +56,7 @@ func (s *TCPServer) Serve(ctx context.Context) error {
 }
 
 func (s *TCPServer) handleConnection(conn net.Conn) {
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 	s.handler(conn)
 }
 
@@ -268,7 +268,7 @@ func (p *ConnectionPool) Broadcast(data []byte) error {
 // CloseAll closes all connections in the pool
 func (p *ConnectionPool) CloseAll() {
 	for _, conn := range p.connections {
-		conn.Close()
+		_ = conn.Close()
 	}
 }
 

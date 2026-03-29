@@ -113,10 +113,10 @@ func runExtend(cmd *cobra.Command, args []string) error {
 
 	auditLog.LogOperationWithRegion("extend_ttl", instance.InstanceID, instance.Region, "success", nil)
 
-	fmt.Fprintf(os.Stdout, "\n✅ TTL extended successfully!\n")
-	fmt.Fprintf(os.Stdout, "   Instance: %s\n", instance.InstanceID)
-	fmt.Fprintf(os.Stdout, "   Old TTL:  %s\n", instance.TTL)
-	fmt.Fprintf(os.Stdout, "   New TTL:  %s\n", newTTL)
+	_, _ = fmt.Fprintf(os.Stdout, "\n✅ TTL extended successfully!\n")
+	_, _ = fmt.Fprintf(os.Stdout, "   Instance: %s\n", instance.InstanceID)
+	_, _ = fmt.Fprintf(os.Stdout, "   Old TTL:  %s\n", instance.TTL)
+	_, _ = fmt.Fprintf(os.Stdout, "   New TTL:  %s\n", newTTL)
 
 	// Trigger reload on instance
 	fmt.Fprintf(os.Stderr, "\nTriggering configuration reload on instance...\n")
@@ -125,7 +125,7 @@ func runExtend(cmd *cobra.Command, args []string) error {
 		fmt.Fprintf(os.Stderr, "   You may need to manually run: ssh ec2-user@%s 'sudo spored reload'\n",
 			instance.PublicIP)
 	} else {
-		fmt.Fprintf(os.Stdout, "✓ Configuration reloaded on instance\n")
+		_, _ = fmt.Fprintf(os.Stdout, "✓ Configuration reloaded on instance\n")
 	}
 
 	return nil
@@ -199,15 +199,15 @@ func extendJobArrayWithAudit(ctx context.Context, newTTL string, auditLog *audit
 		} else {
 			successCount++
 			// Try to trigger reload (non-fatal)
-			triggerReload(&inst)
+			_ = triggerReload(&inst)
 		}
 	}
 
 	// Display results
-	fmt.Fprintf(os.Stdout, "\n✅ Job array TTL extended!\n")
-	fmt.Fprintf(os.Stdout, "   Array:     %s\n", arrayName)
-	fmt.Fprintf(os.Stdout, "   New TTL:   %s\n", newTTL)
-	fmt.Fprintf(os.Stdout, "   Updated:   %d/%d instances\n", successCount, len(jobArrayInstances))
+	_, _ = fmt.Fprintf(os.Stdout, "\n✅ Job array TTL extended!\n")
+	_, _ = fmt.Fprintf(os.Stdout, "   Array:     %s\n", arrayName)
+	_, _ = fmt.Fprintf(os.Stdout, "   New TTL:   %s\n", newTTL)
+	_, _ = fmt.Fprintf(os.Stdout, "   Updated:   %d/%d instances\n", successCount, len(jobArrayInstances))
 
 	if len(failedInstances) > 0 {
 		fmt.Fprintf(os.Stderr, "\n⚠️  Failed to update %d instances:\n", len(failedInstances))

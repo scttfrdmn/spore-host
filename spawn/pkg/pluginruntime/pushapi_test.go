@@ -59,7 +59,7 @@ func TestPushAPI_Auth(t *testing.T) {
 			if err != nil {
 				t.Fatalf("request failed: %v", err)
 			}
-			resp.Body.Close()
+			_ = resp.Body.Close()
 			if resp.StatusCode != tt.wantSC {
 				t.Errorf("got %d, want %d", resp.StatusCode, tt.wantSC)
 			}
@@ -97,7 +97,7 @@ func TestPushAPI_Push(t *testing.T) {
 	if err != nil {
 		t.Fatalf("request failed: %v", err)
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("got %d, want 200", resp.StatusCode)
 	}
@@ -126,7 +126,7 @@ func TestPushAPI_List(t *testing.T) {
 	if err != nil {
 		t.Fatalf("request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("got %d, want 200", resp.StatusCode)
 	}
@@ -161,7 +161,7 @@ func TestPushAPI_Status(t *testing.T) {
 			if err != nil {
 				t.Fatalf("request failed: %v", err)
 			}
-			resp.Body.Close()
+			_ = resp.Body.Close()
 			if resp.StatusCode != tt.wantSC {
 				t.Errorf("got %d, want %d", resp.StatusCode, tt.wantSC)
 			}
@@ -180,7 +180,7 @@ func TestPushAPI_Remove(t *testing.T) {
 	if err != nil {
 		t.Fatalf("request failed: %v", err)
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("got %d, want 200", resp.StatusCode)
 	}

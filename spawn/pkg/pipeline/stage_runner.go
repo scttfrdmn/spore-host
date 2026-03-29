@@ -216,9 +216,9 @@ func loadStageInfoFromTags(ctx context.Context, client *ec2.Client, instanceID s
 		case "spawn:stage-id":
 			info.StageID = *tag.Value
 		case "spawn:stage-index":
-			fmt.Sscanf(*tag.Value, "%d", &info.StageIndex)
+			_, _ = fmt.Sscanf(*tag.Value, "%d", &info.StageIndex)
 		case "spawn:instance-index":
-			fmt.Sscanf(*tag.Value, "%d", &info.InstanceIndex)
+			_, _ = fmt.Sscanf(*tag.Value, "%d", &info.InstanceIndex)
 		case "spawn:s3-bucket":
 			info.S3Bucket = *tag.Value
 		case "spawn:s3-prefix":
@@ -266,7 +266,7 @@ func downloadPipelineDefinitionFromS3(ctx context.Context, s3Key string) (*Pipel
 	if err != nil {
 		return nil, fmt.Errorf("s3 get object: %w", err)
 	}
-	defer result.Body.Close()
+	defer func() { _ = result.Body.Close() }()
 
 	// Parse pipeline definition
 	var p Pipeline

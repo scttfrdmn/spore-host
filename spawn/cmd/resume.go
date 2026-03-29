@@ -44,7 +44,7 @@ Examples:
 
 func init() {
 	resumeCmd.Flags().StringVar(&resumeSweepID, "sweep-id", "", "Sweep ID to resume (required)")
-	resumeCmd.MarkFlagRequired("sweep-id")
+	_ = resumeCmd.MarkFlagRequired("sweep-id")
 	resumeCmd.Flags().IntVar(&resumeMaxConcurrent, "max-concurrent", 0, "Override max concurrent instances (0 = use original)")
 	resumeCmd.Flags().BoolVar(&resumeDetach, "detach", false, "Run sweep orchestration in Lambda")
 

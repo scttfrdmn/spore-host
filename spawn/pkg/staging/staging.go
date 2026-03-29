@@ -65,7 +65,7 @@ func (c *Client) UploadToPrimaryRegion(ctx context.Context, localPath, stagingID
 	if err != nil {
 		return "", 0, "", fmt.Errorf("open file: %w", err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	// Calculate SHA256 and size
 	hash := sha256.New()
@@ -190,7 +190,7 @@ func (c *Client) GetMetadata(ctx context.Context, stagingID string) (*StagingMet
 		metadata.CreatedAt, _ = time.Parse(time.RFC3339, v.Value)
 	}
 	if v, ok := result.Item["size_bytes"].(*dynamodbtypes.AttributeValueMemberN); ok {
-		fmt.Sscanf(v.Value, "%d", &metadata.SizeBytes)
+		_, _ = fmt.Sscanf(v.Value, "%d", &metadata.SizeBytes)
 	}
 	if v, ok := result.Item["sha256"].(*dynamodbtypes.AttributeValueMemberS); ok {
 		metadata.SHA256 = v.Value
@@ -238,7 +238,7 @@ func (c *Client) ListStagedData(ctx context.Context) ([]StagingMetadata, error) 
 			metadata.CreatedAt, _ = time.Parse(time.RFC3339, v.Value)
 		}
 		if v, ok := item["size_bytes"].(*dynamodbtypes.AttributeValueMemberN); ok {
-			fmt.Sscanf(v.Value, "%d", &metadata.SizeBytes)
+			_, _ = fmt.Sscanf(v.Value, "%d", &metadata.SizeBytes)
 		}
 		if v, ok := item["regions"].(*dynamodbtypes.AttributeValueMemberL); ok {
 			metadata.Regions = make([]string, len(v.Value))
@@ -275,7 +275,7 @@ func (c *Client) UploadScheduleParams(ctx context.Context, localPath, scheduleID
 	if err != nil {
 		return "", 0, "", fmt.Errorf("open file: %w", err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	// Calculate SHA256 and size
 	hash := sha256.New()

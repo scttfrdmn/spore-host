@@ -477,7 +477,7 @@ func writeCSVOutput(results []SweepResult, filename string) error {
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	// Write CSV header
 	header := "sweep_id,sweep_index,instance_id,region,learning_rate,batch_size,accuracy,loss\n"

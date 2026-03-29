@@ -560,10 +560,10 @@ func (a *Agent) sendSpotInterruptionNotification(action, interruptTime string) {
 func (a *Agent) warnUsers(message string) {
 	// Write to all logged-in terminals
 	cmd := exec.Command("wall", message)
-	cmd.Run()
+	_ = cmd.Run()
 
 	// Also write to a warning file
-	os.WriteFile("/tmp/SPAWN_WARNING", []byte(message+"\n"), 0600)
+	_ = os.WriteFile("/tmp/SPAWN_WARNING", []byte(message+"\n"), 0600)
 
 	log.Printf("Warning sent to users: %s", message)
 }

@@ -171,24 +171,28 @@ func TestGetUsername(t *testing.T) {
 
 	// Set a known USER env var for the test.
 	orig := os.Getenv("USER")
-	t.Cleanup(func() { os.Setenv("USER", orig) })
+	t.Cleanup(func() { _ = os.Setenv("USER", orig) })
 
-	os.Setenv("USER", "testuser")
+	if err := os.Setenv("USER", "testuser"); err != nil {
+		t.Fatal(err)
+	}
 	if got := p.GetUsername(); got != "testuser" {
 		t.Errorf("GetUsername = %q, want testuser", got)
 	}
 
 	// When USER is unset and USERNAME is set.
-	os.Unsetenv("USER")
+	_ = os.Unsetenv("USER")
 	origUN := os.Getenv("USERNAME")
-	t.Cleanup(func() { os.Setenv("USERNAME", origUN) })
-	os.Setenv("USERNAME", "winuser")
+	t.Cleanup(func() { _ = os.Setenv("USERNAME", origUN) })
+	if err := os.Setenv("USERNAME", "winuser"); err != nil {
+		t.Fatal(err)
+	}
 	if got := p.GetUsername(); got != "winuser" {
 		t.Errorf("GetUsername (USERNAME) = %q, want winuser", got)
 	}
 
 	// When both unset, falls back to "user".
-	os.Unsetenv("USERNAME")
+	_ = os.Unsetenv("USERNAME")
 	if got := p.GetUsername(); got != "user" {
 		t.Errorf("GetUsername (fallback) = %q, want user", got)
 	}

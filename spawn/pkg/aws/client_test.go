@@ -407,10 +407,6 @@ func TestEC2Operations(t *testing.T) {
 
 // Helper functions
 
-func strPtr(s string) *string {
-	return &s
-}
-
 func isEFACompatible(instanceType string) bool {
 	efaFamilies := []string{"c5n", "c6gn", "p3dn", "p4d", "p4de"}
 	for _, family := range efaFamilies {

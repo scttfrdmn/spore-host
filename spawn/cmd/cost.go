@@ -133,18 +133,18 @@ func runCostBreakdown(cmd *cobra.Command, args []string) error {
 		fmt.Println()
 
 		w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-		fmt.Fprintln(w, "REGION\tINSTANCES\tRUNNING-HOURS\tCOST")
-		fmt.Fprintln(w, strings.Repeat("─", 60))
+		_, _ = fmt.Fprintln(w, "REGION\tINSTANCES\tRUNNING-HOURS\tCOST")
+		_, _ = fmt.Fprintln(w, strings.Repeat("─", 60))
 
 		for _, rc := range breakdown.ByRegion {
-			fmt.Fprintf(w, "%s\t%d\t%.1f\t$%.2f\n",
+			_, _ = fmt.Fprintf(w, "%s\t%d\t%.1f\t$%.2f\n",
 				rc.Region,
 				rc.InstanceCount,
 				rc.InstanceHours,
 				rc.EstimatedCost,
 			)
 		}
-		w.Flush()
+		_ = w.Flush()
 		fmt.Println()
 	}
 
@@ -154,18 +154,18 @@ func runCostBreakdown(cmd *cobra.Command, args []string) error {
 		fmt.Println()
 
 		w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-		fmt.Fprintln(w, "INSTANCE TYPE\tINSTANCES\tRUNNING-HOURS\tCOST")
-		fmt.Fprintln(w, strings.Repeat("─", 60))
+		_, _ = fmt.Fprintln(w, "INSTANCE TYPE\tINSTANCES\tRUNNING-HOURS\tCOST")
+		_, _ = fmt.Fprintln(w, strings.Repeat("─", 60))
 
 		for _, tc := range breakdown.ByInstanceType {
-			fmt.Fprintf(w, "%s\t%d\t%.1f\t$%.2f\n",
+			_, _ = fmt.Fprintf(w, "%s\t%d\t%.1f\t$%.2f\n",
 				tc.InstanceType,
 				tc.InstanceCount,
 				tc.InstanceHours,
 				tc.EstimatedCost,
 			)
 		}
-		w.Flush()
+		_ = w.Flush()
 		fmt.Println()
 	}
 

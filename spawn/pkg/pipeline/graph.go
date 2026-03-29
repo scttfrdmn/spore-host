@@ -21,9 +21,9 @@ func (p *Pipeline) RenderGraph() (string, error) {
 	}
 
 	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("Pipeline: %s\n", p.PipelineName))
-	sb.WriteString(fmt.Sprintf("ID: %s\n", p.PipelineID))
-	sb.WriteString(fmt.Sprintf("Stages: %d\n\n", len(p.Stages)))
+	fmt.Fprintf(&sb, "Pipeline: %s\n", p.PipelineName)
+	fmt.Fprintf(&sb, "ID: %s\n", p.PipelineID)
+	fmt.Fprintf(&sb, "Stages: %d\n\n", len(p.Stages))
 
 	// Track which stages have been rendered
 	rendered := make(map[string]bool)
@@ -58,18 +58,18 @@ func renderStageNode(stage *Stage) string {
 	var sb strings.Builder
 
 	// Stage header
-	sb.WriteString(fmt.Sprintf("┌─ %s\n", stage.StageID))
+	fmt.Fprintf(&sb, "┌─ %s\n", stage.StageID)
 
 	// Instance info
 	instanceInfo := stage.InstanceType
 	if stage.InstanceCount > 1 {
 		instanceInfo += fmt.Sprintf(" (×%d)", stage.InstanceCount)
 	}
-	sb.WriteString(fmt.Sprintf("│  Type: %s\n", instanceInfo))
+	fmt.Fprintf(&sb, "│  Type: %s\n", instanceInfo)
 
 	// Region
 	if stage.Region != "" {
-		sb.WriteString(fmt.Sprintf("│  Region: %s\n", stage.Region))
+		fmt.Fprintf(&sb, "│  Region: %s\n", stage.Region)
 	}
 
 	// Spot
@@ -84,21 +84,21 @@ func renderStageNode(stage *Stage) string {
 
 	// Dependencies
 	if len(stage.DependsOn) > 0 {
-		sb.WriteString(fmt.Sprintf("│  Depends on: %s\n", strings.Join(stage.DependsOn, ", ")))
+		fmt.Fprintf(&sb, "│  Depends on: %s\n", strings.Join(stage.DependsOn, ", "))
 	}
 
 	// Data mode
 	if stage.DataInput != nil {
-		sb.WriteString(fmt.Sprintf("│  Input: %s", stage.DataInput.Mode))
+		fmt.Fprintf(&sb, "│  Input: %s", stage.DataInput.Mode)
 		if stage.DataInput.Mode == "stream" {
-			sb.WriteString(fmt.Sprintf(" (%s)", stage.DataInput.Protocol))
+			fmt.Fprintf(&sb, " (%s)", stage.DataInput.Protocol)
 		}
 		sb.WriteString("\n")
 	}
 	if stage.DataOutput != nil {
-		sb.WriteString(fmt.Sprintf("│  Output: %s", stage.DataOutput.Mode))
+		fmt.Fprintf(&sb, "│  Output: %s", stage.DataOutput.Mode)
 		if stage.DataOutput.Mode == "stream" {
-			sb.WriteString(fmt.Sprintf(" (%s:%d)", stage.DataOutput.Protocol, stage.DataOutput.Port))
+			fmt.Fprintf(&sb, " (%s:%d)", stage.DataOutput.Protocol, stage.DataOutput.Port)
 		}
 		sb.WriteString("\n")
 	}
@@ -125,11 +125,11 @@ func renderConnections(stage *Stage, downstream []string) string {
 		sb.WriteString("\n   │\n")
 		for i, ds := range downstream {
 			if i == 0 {
-				sb.WriteString(fmt.Sprintf("   ├──▶ %s\n", ds))
+				fmt.Fprintf(&sb, "   ├──▶ %s\n", ds)
 			} else if i == len(downstream)-1 {
-				sb.WriteString(fmt.Sprintf("   └──▶ %s\n", ds))
+				fmt.Fprintf(&sb, "   └──▶ %s\n", ds)
 			} else {
-				sb.WriteString(fmt.Sprintf("   ├──▶ %s\n", ds))
+				fmt.Fprintf(&sb, "   ├──▶ %s\n", ds)
 			}
 		}
 	}
@@ -159,11 +159,11 @@ func (p *Pipeline) RenderSimpleGraph() (string, error) {
 		}
 
 		// Render stage
-		sb.WriteString(fmt.Sprintf("%s%s", indent, stage.StageID))
+		fmt.Fprintf(&sb, "%s%s", indent, stage.StageID)
 
 		// Show instance count if > 1
 		if stage.InstanceCount > 1 {
-			sb.WriteString(fmt.Sprintf(" (×%d)", stage.InstanceCount))
+			fmt.Fprintf(&sb, " (×%d)", stage.InstanceCount)
 		}
 
 		sb.WriteString("\n")

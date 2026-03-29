@@ -310,10 +310,10 @@ func init() {
 	launchCmd.Flags().StringArrayVar(&launchPlugins, "plugin", nil, "Plugin to install at launch (ref[@version], repeatable)")
 
 	// Register completions for flags
-	launchCmd.RegisterFlagCompletionFunc("region", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	_ = launchCmd.RegisterFlagCompletionFunc("region", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return completeRegion(cmd, args, toComplete)
 	})
-	launchCmd.RegisterFlagCompletionFunc("instance-type", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	_ = launchCmd.RegisterFlagCompletionFunc("instance-type", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return completeInstanceType(cmd, args, toComplete)
 	})
 }
@@ -1257,7 +1257,7 @@ func launchWithProgress(ctx context.Context, awsClient *aws.Client, config *aws.
 				if !autoYes {
 					fmt.Fprintf(os.Stderr, "   Continue with cross-region launch? [y/N]: ")
 					var response string
-					fmt.Scanln(&response)
+					_, _ = fmt.Scanln(&response)
 					response = strings.ToLower(strings.TrimSpace(response))
 					if response != "y" && response != "yes" {
 						fmt.Fprintf(os.Stderr, "\n❌ Launch cancelled\n")
@@ -1466,8 +1466,8 @@ func launchWithProgress(ctx context.Context, awsClient *aws.Client, config *aws.
 
 	// Show DNS info if registered
 	if dnsRecord != "" {
-		fmt.Fprintf(os.Stdout, "\n🌐 DNS: %s\n", dnsRecord)
-		fmt.Fprintf(os.Stdout, "   Connect: ssh %s@%s\n", plat.GetUsername(), dnsRecord)
+		_, _ = fmt.Fprintf(os.Stdout, "\n🌐 DNS: %s\n", dnsRecord)
+		_, _ = fmt.Fprintf(os.Stdout, "   Connect: ssh %s@%s\n", plat.GetUsername(), dnsRecord)
 	}
 
 	return nil
@@ -2309,7 +2309,7 @@ func detectBestRegion(ctx context.Context, instanceType string) (string, error) 
 			// Skip regions we can't reach (may be blocked by SCP or network)
 			continue
 		}
-		conn.Close()
+		_ = conn.Close()
 
 		latency := time.Since(start)
 		continentMatch := matchesContinent(region, userContinent)
@@ -2347,7 +2347,7 @@ func detectUserContinent() string {
 	if err != nil {
 		return "" // Failed, will fall back to latency-only
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != 200 {
 		return ""
@@ -2840,7 +2840,7 @@ func launchSweepDetached(ctx context.Context, paramFormat *ParamFileFormat, base
 	if !autoYes {
 		fmt.Fprintf(os.Stderr, "Launch sweep? [Y/n]: ")
 		var response string
-		fmt.Scanln(&response)
+		_, _ = fmt.Scanln(&response)
 		response = strings.ToLower(strings.TrimSpace(response))
 		if response != "" && response != "y" && response != "yes" {
 			fmt.Fprintf(os.Stderr, "\n❌ Launch cancelled by user\n")
@@ -3098,13 +3098,13 @@ func launchWithBatchQueue(ctx context.Context, plat *platform.Platform, auditLog
 	if err != nil {
 		return fmt.Errorf("failed to create temp file: %w", err)
 	}
-	defer os.Remove(tmpFile.Name())
+	defer func() { _ = os.Remove(tmpFile.Name()) }()
 
 	if _, err := tmpFile.Write(queueJSON); err != nil {
-		tmpFile.Close()
+		_ = tmpFile.Close()
 		return fmt.Errorf("failed to write temp file: %w", err)
 	}
-	tmpFile.Close()
+	_ = tmpFile.Close()
 
 	// Upload to S3
 	stagingClient := staging.NewClient(devCfg, accountID)

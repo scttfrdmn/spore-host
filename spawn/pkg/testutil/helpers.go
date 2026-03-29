@@ -20,7 +20,7 @@ func CreateTempDir(t *testing.T, pattern string) string {
 	}
 
 	t.Cleanup(func() {
-		os.RemoveAll(dir)
+		_ = os.RemoveAll(dir)
 	})
 
 	return dir
@@ -34,7 +34,7 @@ func CreateTempFile(t *testing.T, dir, pattern, content string) string {
 	if err != nil {
 		t.Fatalf("failed to create temp file: %v", err)
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	if _, err := f.WriteString(content); err != nil {
 		t.Fatalf("failed to write temp file: %v", err)
@@ -114,7 +114,7 @@ func ChdirTemp(t *testing.T) string {
 	}
 
 	t.Cleanup(func() {
-		os.Chdir(oldDir)
+		_ = os.Chdir(oldDir)
 	})
 
 	return tmpDir

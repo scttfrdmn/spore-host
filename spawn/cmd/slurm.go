@@ -247,7 +247,7 @@ func runSlurmSubmit(cmd *cobra.Command, args []string) error {
 	if !slurmForceYes {
 		fmt.Fprintf(os.Stderr, "Do you want to proceed? [y/N] ")
 		var response string
-		fmt.Scanln(&response)
+		_, _ = fmt.Scanln(&response)
 		if response != "y" && response != "Y" && response != "yes" {
 			fmt.Fprintf(os.Stderr, "Cancelled.\n")
 			return nil
@@ -266,7 +266,7 @@ func runSlurmSubmit(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("failed to create temp file: %w", err)
 	}
-	defer os.Remove(tmpFile.Name())
+	defer func() { _ = os.Remove(tmpFile.Name()) }()
 
 	yamlData, err := yaml.Marshal(config)
 	if err != nil {
@@ -276,7 +276,7 @@ func runSlurmSubmit(cmd *cobra.Command, args []string) error {
 	if _, err := tmpFile.Write(yamlData); err != nil {
 		return fmt.Errorf("failed to write temp file: %w", err)
 	}
-	tmpFile.Close()
+	_ = tmpFile.Close()
 
 	// Launch using spawn launch command
 	fmt.Fprintf(os.Stderr, "Launching via spawn...\n\n")

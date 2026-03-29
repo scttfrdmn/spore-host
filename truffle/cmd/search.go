@@ -46,8 +46,8 @@ func init() {
 	searchCmd.ValidArgsFunction = completeInstanceType
 
 	// Register completion for flags
-	searchCmd.RegisterFlagCompletionFunc("architecture", completeArchitecture)
-	searchCmd.RegisterFlagCompletionFunc("family", completeInstanceFamily)
+	_ = searchCmd.RegisterFlagCompletionFunc("architecture", completeArchitecture)
+	_ = searchCmd.RegisterFlagCompletionFunc("family", completeInstanceFamily)
 }
 
 func runSearch(cmd *cobra.Command, args []string) error {

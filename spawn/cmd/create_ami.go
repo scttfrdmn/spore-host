@@ -57,7 +57,7 @@ func init() {
 	createAMICmd.Flags().BoolVar(&createAMIReboot, "reboot", false, "Reboot instance before creating AMI (default: no-reboot)")
 	createAMICmd.Flags().BoolVar(&createAMIWait, "wait", false, "Wait for AMI to become available")
 
-	createAMICmd.MarkFlagRequired("name")
+	_ = createAMICmd.MarkFlagRequired("name")
 }
 
 func runCreateAMI(cmd *cobra.Command, args []string) error {
@@ -146,18 +146,18 @@ func runCreateAMI(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to create AMI: %w", err)
 	}
 
-	fmt.Fprintf(os.Stdout, "\n✅ AMI creation initiated!\n")
-	fmt.Fprintf(os.Stdout, "   AMI ID:    %s\n", amiID)
-	fmt.Fprintf(os.Stdout, "   Name:      %s\n", createAMIName)
-	fmt.Fprintf(os.Stdout, "   Region:    %s\n", instance.Region)
-	fmt.Fprintf(os.Stdout, "   Instance:  %s\n", instance.InstanceID)
+	_, _ = fmt.Fprintf(os.Stdout, "\n✅ AMI creation initiated!\n")
+	_, _ = fmt.Fprintf(os.Stdout, "   AMI ID:    %s\n", amiID)
+	_, _ = fmt.Fprintf(os.Stdout, "   Name:      %s\n", createAMIName)
+	_, _ = fmt.Fprintf(os.Stdout, "   Region:    %s\n", instance.Region)
+	_, _ = fmt.Fprintf(os.Stdout, "   Instance:  %s\n", instance.InstanceID)
 
 	// Display tags
 	if len(tags) > 0 {
-		fmt.Fprintf(os.Stdout, "\n   Tags:\n")
+		_, _ = fmt.Fprintf(os.Stdout, "\n   Tags:\n")
 		for key, value := range tags {
 			if strings.HasPrefix(key, "spawn:") {
-				fmt.Fprintf(os.Stdout, "     %s: %s\n", key, value)
+				_, _ = fmt.Fprintf(os.Stdout, "     %s: %s\n", key, value)
 			}
 		}
 	}
@@ -172,7 +172,7 @@ func runCreateAMI(cmd *cobra.Command, args []string) error {
 			fmt.Fprintf(os.Stderr, "   AMI creation is still in progress.\n")
 			fmt.Fprintf(os.Stderr, "   Check status: aws ec2 describe-images --image-ids %s\n", amiID)
 		} else {
-			fmt.Fprintf(os.Stdout, "\n✅ AMI is now available!\n")
+			_, _ = fmt.Fprintf(os.Stdout, "\n✅ AMI is now available!\n")
 		}
 	} else {
 		fmt.Fprintf(os.Stderr, "\nAMI creation is in progress. This may take several minutes.\n")
@@ -180,8 +180,8 @@ func runCreateAMI(cmd *cobra.Command, args []string) error {
 		fmt.Fprintf(os.Stderr, "Or: aws ec2 describe-images --image-ids %s\n", amiID)
 	}
 
-	fmt.Fprintf(os.Stdout, "\nUse AMI:\n")
-	fmt.Fprintf(os.Stdout, "  spawn launch --instance-type %s --ami %s\n", instance.InstanceType, amiID)
+	_, _ = fmt.Fprintf(os.Stdout, "\nUse AMI:\n")
+	_, _ = fmt.Fprintf(os.Stdout, "  spawn launch --instance-type %s --ami %s\n", instance.InstanceType, amiID)
 
 	return nil
 }

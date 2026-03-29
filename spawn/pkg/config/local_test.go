@@ -98,8 +98,10 @@ job_array:
 			// Set environment variables
 			for k, v := range tt.env {
 				oldVal := os.Getenv(k)
-				os.Setenv(k, v)
-				defer os.Setenv(k, oldVal)
+				if err := os.Setenv(k, v); err != nil {
+					t.Fatal(err)
+				}
+				defer func(key, val string) { _ = os.Setenv(key, val) }(k, oldVal)
 			}
 
 			// Load config
@@ -184,8 +186,10 @@ ttl: 4h
 
 	for k, v := range envVars {
 		oldVal := os.Getenv(k)
-		os.Setenv(k, v)
-		defer os.Setenv(k, oldVal)
+		if err := os.Setenv(k, v); err != nil {
+			t.Fatal(err)
+		}
+		defer func(key, val string) { _ = os.Setenv(key, val) }(k, oldVal)
 	}
 
 	cfg, err := LoadLocalConfig(configPath)

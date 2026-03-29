@@ -276,7 +276,7 @@ func NewTransportPool(config TransportConfig, peerIPs []string) (*TransportPool,
 
 		transport, err := SelectTransport(peerConfig)
 		if err != nil {
-			pool.Close()
+			_ = pool.Close()
 			return nil, fmt.Errorf("create transport for %s: %w", peerIP, err)
 		}
 

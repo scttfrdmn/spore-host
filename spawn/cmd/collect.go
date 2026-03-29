@@ -76,7 +76,7 @@ func init() {
 	collectCmd.Flags().IntVar(&collectBestN, "best", 0, "Show only top N results by metric (0 = all)")
 	collectCmd.Flags().StringVar(&collectRegions, "regions", "", "Comma-separated list of regions to collect from (default: all)")
 
-	collectCmd.MarkFlagRequired("sweep-id")
+	_ = collectCmd.MarkFlagRequired("sweep-id")
 }
 
 // SweepResult represents a single result from a sweep instance
@@ -248,19 +248,19 @@ func getSweepRecord(ctx context.Context, cfg aws.Config, sweepID string) (*Sweep
 
 	if v, ok := result.Item["total_params"]; ok {
 		if n, ok := v.(*types.AttributeValueMemberN); ok {
-			fmt.Sscanf(n.Value, "%d", &record.TotalParams)
+			_, _ = fmt.Sscanf(n.Value, "%d", &record.TotalParams)
 		}
 	}
 
 	if v, ok := result.Item["launched"]; ok {
 		if n, ok := v.(*types.AttributeValueMemberN); ok {
-			fmt.Sscanf(n.Value, "%d", &record.Launched)
+			_, _ = fmt.Sscanf(n.Value, "%d", &record.Launched)
 		}
 	}
 
 	if v, ok := result.Item["failed"]; ok {
 		if n, ok := v.(*types.AttributeValueMemberN); ok {
-			fmt.Sscanf(n.Value, "%d", &record.Failed)
+			_, _ = fmt.Sscanf(n.Value, "%d", &record.Failed)
 		}
 	}
 
@@ -407,10 +407,10 @@ func downloadSweepResults(ctx context.Context, cfg aws.Config, sweep *SweepRecor
 		var resultData map[string]interface{}
 		if err := json.NewDecoder(getResult.Body).Decode(&resultData); err != nil {
 			fmt.Printf("⚠️  Failed to parse %s: %v\n", key, err)
-			getResult.Body.Close()
+			_ = getResult.Body.Close()
 			continue
 		}
-		getResult.Body.Close()
+		_ = getResult.Body.Close()
 
 		// Extract parameters and metrics
 		params := make(map[string]interface{})
@@ -506,7 +506,7 @@ func writeJSON(results []SweepResult, outputFile string) error {
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	encoder := json.NewEncoder(f)
 	encoder.SetIndent("", "  ")
@@ -518,7 +518,7 @@ func writeJSONLines(results []SweepResult, outputFile string) error {
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	encoder := json.NewEncoder(f)
 	for _, result := range results {
@@ -534,7 +534,7 @@ func writeCSV(results []SweepResult, outputFile string) error {
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	writer := csv.NewWriter(f)
 	defer writer.Flush()

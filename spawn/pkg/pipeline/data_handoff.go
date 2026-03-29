@@ -145,7 +145,7 @@ func (h *StageDataHandler) downloadFile(ctx context.Context, key, localPath stri
 	if err != nil {
 		return fmt.Errorf("create file: %w", err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	// Download from S3
 	_, err = h.s3Downloader.Download(ctx, file, &s3.GetObjectInput{
@@ -234,7 +234,7 @@ func (h *StageDataHandler) uploadFile(ctx context.Context, localPath, s3Key stri
 	if err != nil {
 		return fmt.Errorf("open file: %w", err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	// Upload to S3
 	_, err = h.s3Uploader.Upload(ctx, &s3.PutObjectInput{
@@ -348,7 +348,7 @@ func DownloadResultsToLocal(ctx context.Context, bucket, prefix, pipelineID, loc
 				Bucket: aws.String(bucket),
 				Key:    aws.String(key),
 			})
-			file.Close()
+			_ = file.Close()
 
 			if err != nil {
 				return fmt.Errorf("download %s: %w", key, err)
@@ -369,13 +369,13 @@ func CopyFile(src, dst string) error {
 	if err != nil {
 		return err
 	}
-	defer sourceFile.Close()
+	defer func() { _ = sourceFile.Close() }()
 
 	destFile, err := os.Create(dst)
 	if err != nil {
 		return err
 	}
-	defer destFile.Close()
+	defer func() { _ = destFile.Close() }()
 
 	_, err = io.Copy(destFile, sourceFile)
 	return err

@@ -83,8 +83,8 @@ func runDNSList(cmd *cobra.Command, args []string) error {
 
 	// Filter and display
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
-	fmt.Fprintln(w, "DNS NAME\tFQDN\tINSTANCE ID\tSTATE\tPUBLIC IP")
-	fmt.Fprintln(w, "--------\t----\t-----------\t-----\t---------")
+	_, _ = fmt.Fprintln(w, "DNS NAME\tFQDN\tINSTANCE ID\tSTATE\tPUBLIC IP")
+	_, _ = fmt.Fprintln(w, "--------\t----\t-----------\t-----\t---------")
 
 	count := 0
 	for _, instance := range instances {
@@ -99,7 +99,7 @@ func runDNSList(cmd *cobra.Command, args []string) error {
 			fqdn = dns.GetFullDNSName(dnsName, accountID, "spore.host")
 		}
 
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
+		_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
 			valueOrDash(dnsName),
 			valueOrDash(fqdn),
 			instance.InstanceID,
@@ -108,7 +108,7 @@ func runDNSList(cmd *cobra.Command, args []string) error {
 		count++
 	}
 
-	w.Flush()
+	_ = w.Flush()
 
 	if count == 0 {
 		if dnsListAll {
@@ -196,13 +196,13 @@ func runDNSRegister(cmd *cobra.Command, args []string) error {
 		fmt.Fprintf(os.Stderr, "⚠️  Warning: DNS registered but failed to update instance tag: %v\n", err)
 	}
 
-	fmt.Fprintf(os.Stdout, "\n✅ DNS registered successfully!\n")
-	fmt.Fprintf(os.Stdout, "   DNS:      %s\n", fqdn)
-	fmt.Fprintf(os.Stdout, "   IP:       %s\n", instance.PublicIP)
-	fmt.Fprintf(os.Stdout, "   Change:   %s\n", resp.ChangeID)
-	fmt.Fprintf(os.Stdout, "\n🔌 Connect:\n")
-	fmt.Fprintf(os.Stdout, "   ssh ec2-user@%s\n", fqdn)
-	fmt.Fprintf(os.Stdout, "   spawn connect %s\n", instance.InstanceID)
+	_, _ = fmt.Fprintf(os.Stdout, "\n✅ DNS registered successfully!\n")
+	_, _ = fmt.Fprintf(os.Stdout, "   DNS:      %s\n", fqdn)
+	_, _ = fmt.Fprintf(os.Stdout, "   IP:       %s\n", instance.PublicIP)
+	_, _ = fmt.Fprintf(os.Stdout, "   Change:   %s\n", resp.ChangeID)
+	_, _ = fmt.Fprintf(os.Stdout, "\n🔌 Connect:\n")
+	_, _ = fmt.Fprintf(os.Stdout, "   ssh ec2-user@%s\n", fqdn)
+	_, _ = fmt.Fprintf(os.Stdout, "   spawn connect %s\n", instance.InstanceID)
 
 	return nil
 }
@@ -263,9 +263,9 @@ func runDNSDelete(cmd *cobra.Command, args []string) error {
 		fmt.Fprintf(os.Stderr, "⚠️  Warning: DNS deleted but failed to remove instance tag: %v\n", err)
 	}
 
-	fmt.Fprintf(os.Stdout, "\n✅ DNS deleted successfully!\n")
-	fmt.Fprintf(os.Stdout, "   DNS:      %s (removed)\n", fqdn)
-	fmt.Fprintf(os.Stdout, "   Change:   %s\n", resp.ChangeID)
+	_, _ = fmt.Fprintf(os.Stdout, "\n✅ DNS deleted successfully!\n")
+	_, _ = fmt.Fprintf(os.Stdout, "   DNS:      %s (removed)\n", fqdn)
+	_, _ = fmt.Fprintf(os.Stdout, "   Change:   %s\n", resp.ChangeID)
 
 	return nil
 }
@@ -275,7 +275,7 @@ func runDNSDelete(cmd *cobra.Command, args []string) error {
 func isValidDNSName(name string) bool {
 	// DNS name must be alphanumeric and hyphens only
 	for _, c := range name {
-		if !((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '-') {
+		if (c < 'a' || c > 'z') && (c < '0' || c > '9') && c != '-' {
 			return false
 		}
 	}

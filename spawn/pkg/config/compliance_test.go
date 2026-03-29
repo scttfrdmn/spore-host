@@ -81,16 +81,22 @@ func TestLoadComplianceConfig(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Set env vars
 			if tt.envMode != "" {
-				os.Setenv("SPAWN_COMPLIANCE_MODE", tt.envMode)
-				defer os.Unsetenv("SPAWN_COMPLIANCE_MODE")
+				if err := os.Setenv("SPAWN_COMPLIANCE_MODE", tt.envMode); err != nil {
+					t.Fatal(err)
+				}
+				defer func() { _ = os.Unsetenv("SPAWN_COMPLIANCE_MODE") }()
 			}
 			if tt.envEBS != "" {
-				os.Setenv("SPAWN_COMPLIANCE_ENFORCE_ENCRYPTED_EBS", tt.envEBS)
-				defer os.Unsetenv("SPAWN_COMPLIANCE_ENFORCE_ENCRYPTED_EBS")
+				if err := os.Setenv("SPAWN_COMPLIANCE_ENFORCE_ENCRYPTED_EBS", tt.envEBS); err != nil {
+					t.Fatal(err)
+				}
+				defer func() { _ = os.Unsetenv("SPAWN_COMPLIANCE_ENFORCE_ENCRYPTED_EBS") }()
 			}
 			if tt.envIMDS != "" {
-				os.Setenv("SPAWN_COMPLIANCE_ENFORCE_IMDSV2", tt.envIMDS)
-				defer os.Unsetenv("SPAWN_COMPLIANCE_ENFORCE_IMDSV2")
+				if err := os.Setenv("SPAWN_COMPLIANCE_ENFORCE_IMDSV2", tt.envIMDS); err != nil {
+					t.Fatal(err)
+				}
+				defer func() { _ = os.Unsetenv("SPAWN_COMPLIANCE_ENFORCE_IMDSV2") }()
 			}
 
 			cfg, err := LoadComplianceConfig(ctx, tt.flagMode, tt.flagStrict)

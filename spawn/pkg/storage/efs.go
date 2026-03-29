@@ -167,23 +167,23 @@ func ParseCustomOptions(optString string) (EFSMountOptions, error) {
 				opts.NFSVers = value
 			case "rsize":
 				var size int
-				fmt.Sscanf(value, "%d", &size)
+				_, _ = fmt.Sscanf(value, "%d", &size)
 				opts.RSize = size
 			case "wsize":
 				var size int
-				fmt.Sscanf(value, "%d", &size)
+				_, _ = fmt.Sscanf(value, "%d", &size)
 				opts.WSize = size
 			case "timeo":
 				var t int
-				fmt.Sscanf(value, "%d", &t)
+				_, _ = fmt.Sscanf(value, "%d", &t)
 				opts.Timeo = t
 			case "retrans":
 				var r int
-				fmt.Sscanf(value, "%d", &r)
+				_, _ = fmt.Sscanf(value, "%d", &r)
 				opts.Retrans = r
 			case "actimeo":
 				var a int
-				fmt.Sscanf(value, "%d", &a)
+				_, _ = fmt.Sscanf(value, "%d", &a)
 				opts.ActimeO = a
 			default:
 				// Ignore unknown options (pass through)

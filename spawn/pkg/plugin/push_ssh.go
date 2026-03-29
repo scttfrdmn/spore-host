@@ -82,7 +82,7 @@ func (c *SSHTunnelPushClient) pushViaTunnel(ctx context.Context, token, pluginNa
 	for time.Now().Before(deadline) {
 		conn, err := net.DialTimeout("tcp", tunnelAddr, 100*time.Millisecond)
 		if err == nil {
-			conn.Close()
+			_ = conn.Close()
 			break
 		}
 		time.Sleep(50 * time.Millisecond)
@@ -106,7 +106,7 @@ func (c *SSHTunnelPushClient) pushViaTunnel(ctx context.Context, token, pluginNa
 	if err != nil {
 		return fmt.Errorf("POST push: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("push API returned HTTP %d", resp.StatusCode)

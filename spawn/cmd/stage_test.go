@@ -302,7 +302,9 @@ func TestStageFileValidation(t *testing.T) {
 			name: "valid directory",
 			setup: func(t *testing.T, dir string) string {
 				subdir := filepath.Join(dir, "testdir")
-				os.MkdirAll(subdir, 0755)
+				if err := os.MkdirAll(subdir, 0755); err != nil {
+					t.Fatal(err)
+				}
 				testutil.WriteFile(t, filepath.Join(subdir, "file.txt"), "content")
 				return subdir
 			},
@@ -319,7 +321,9 @@ func TestStageFileValidation(t *testing.T) {
 			name: "empty directory",
 			setup: func(t *testing.T, dir string) string {
 				subdir := filepath.Join(dir, "emptydir")
-				os.MkdirAll(subdir, 0755)
+				if err := os.MkdirAll(subdir, 0755); err != nil {
+					t.Fatal(err)
+				}
 				return subdir
 			},
 			wantErr: false, // Empty dirs are valid

@@ -131,7 +131,7 @@ func (s *DiskStateStore) Save(state *PluginState) error {
 	}
 	tmp := tmpf.Name()
 	if _, err := tmpf.Write(data); err != nil {
-		tmpf.Close()
+		_ = tmpf.Close()
 		_ = os.Remove(tmp)
 		return fmt.Errorf("write state for %s: %w", state.Name, err)
 	}

@@ -164,31 +164,32 @@ func FormatReportText(report *ComplianceReport) string {
 	// Header
 	builder.WriteString(strings.Repeat("=", 80))
 	builder.WriteString("\n")
-	builder.WriteString(fmt.Sprintf("Compliance Validation Report - %s\n", report.Framework))
+	fmt.Fprintf(&builder, "Compliance Validation Report - %s\n", report.Framework)
 	if report.Baseline != "" {
-		builder.WriteString(fmt.Sprintf("Baseline: %s\n", report.Baseline))
+		fmt.Fprintf(&builder, "Baseline: %s\n", report.Baseline)
 	}
-	builder.WriteString(fmt.Sprintf("Timestamp: %s\n", report.Timestamp.Format(time.RFC3339)))
+	fmt.Fprintf(&builder, "Timestamp: %s\n", report.Timestamp.Format(time.RFC3339))
 	builder.WriteString(strings.Repeat("=", 80))
 	builder.WriteString("\n\n")
 
 	// Summary
 	statusIcon := "✓"
-	if report.Summary.Status == "non-compliant" {
+	switch report.Summary.Status {
+	case "non-compliant":
 		statusIcon = "✗"
-	} else if report.Summary.Status == "warnings" {
+	case "warnings":
 		statusIcon = "⚠"
 	}
 
-	builder.WriteString(fmt.Sprintf("Status: %s %s\n", statusIcon, report.Summary.Status))
-	builder.WriteString(fmt.Sprintf("Message: %s\n\n", report.Summary.Message))
+	fmt.Fprintf(&builder, "Status: %s %s\n", statusIcon, report.Summary.Status)
+	fmt.Fprintf(&builder, "Message: %s\n\n", report.Summary.Message)
 
 	// Statistics
 	builder.WriteString("Control Statistics:\n")
-	builder.WriteString(fmt.Sprintf("  Controls Evaluated: %d\n", report.ControlsEvaluated))
-	builder.WriteString(fmt.Sprintf("  Controls Passed:    %d\n", report.ControlsPassed))
-	builder.WriteString(fmt.Sprintf("  Controls Failed:    %d\n", report.ControlsFailed))
-	builder.WriteString(fmt.Sprintf("  Warnings:           %d\n\n", len(report.Warnings)))
+	fmt.Fprintf(&builder, "  Controls Evaluated: %d\n", report.ControlsEvaluated)
+	fmt.Fprintf(&builder, "  Controls Passed:    %d\n", report.ControlsPassed)
+	fmt.Fprintf(&builder, "  Controls Failed:    %d\n", report.ControlsFailed)
+	fmt.Fprintf(&builder, "  Warnings:           %d\n\n", len(report.Warnings))
 
 	// Violations
 	if len(report.Violations) > 0 {
@@ -196,10 +197,10 @@ func FormatReportText(report *ComplianceReport) string {
 		builder.WriteString(strings.Repeat("-", 80))
 		builder.WriteString("\n")
 		for i, violation := range report.Violations {
-			builder.WriteString(fmt.Sprintf("%d. [%s] %s\n", i+1, violation.ControlID, violation.ControlName))
-			builder.WriteString(fmt.Sprintf("   %s\n", violation.Description))
+			fmt.Fprintf(&builder, "%d. [%s] %s\n", i+1, violation.ControlID, violation.ControlName)
+			fmt.Fprintf(&builder, "   %s\n", violation.Description)
 			if violation.Remediation != "" {
-				builder.WriteString(fmt.Sprintf("   Remediation: %s\n", violation.Remediation))
+				fmt.Fprintf(&builder, "   Remediation: %s\n", violation.Remediation)
 			}
 			builder.WriteString("\n")
 		}
@@ -211,7 +212,7 @@ func FormatReportText(report *ComplianceReport) string {
 		builder.WriteString(strings.Repeat("-", 80))
 		builder.WriteString("\n")
 		for i, warning := range report.Warnings {
-			builder.WriteString(fmt.Sprintf("%d. %s\n", i+1, warning))
+			fmt.Fprintf(&builder, "%d. %s\n", i+1, warning)
 		}
 		builder.WriteString("\n")
 	}
@@ -222,7 +223,7 @@ func FormatReportText(report *ComplianceReport) string {
 		builder.WriteString(strings.Repeat("-", 80))
 		builder.WriteString("\n")
 		for i, rec := range report.Recommendations {
-			builder.WriteString(fmt.Sprintf("%d. %s\n", i+1, rec))
+			fmt.Fprintf(&builder, "%d. %s\n", i+1, rec)
 		}
 		builder.WriteString("\n")
 	}
@@ -232,7 +233,7 @@ func FormatReportText(report *ComplianceReport) string {
 	builder.WriteString("\n")
 	builder.WriteString("For more information:\n")
 	builder.WriteString("  spawn validate --help\n")
-	builder.WriteString(fmt.Sprintf("  docs/compliance/%s-quickstart.md\n", strings.ToLower(report.Framework)))
+	fmt.Fprintf(&builder, "  docs/compliance/%s-quickstart.md\n", strings.ToLower(report.Framework))
 	builder.WriteString(strings.Repeat("=", 80))
 	builder.WriteString("\n")
 

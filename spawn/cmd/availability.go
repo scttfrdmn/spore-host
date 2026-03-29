@@ -34,7 +34,7 @@ func init() {
 
 	availabilityCmd.Flags().StringVar(&availabilityInstanceType, "instance-type", "", "Instance type to check (required)")
 	availabilityCmd.Flags().StringVar(&availabilityRegions, "regions", "", "Comma-separated list of regions (default: common regions)")
-	availabilityCmd.MarkFlagRequired("instance-type")
+	_ = availabilityCmd.MarkFlagRequired("instance-type")
 }
 
 func runAvailability(cmd *cobra.Command, args []string) error {
@@ -78,8 +78,8 @@ func runAvailability(cmd *cobra.Command, args []string) error {
 	fmt.Fprintf(os.Stderr, "\nAvailability Statistics for %s\n\n", availabilityInstanceType)
 
 	w := tabwriter.NewWriter(os.Stderr, 0, 0, 2, ' ', 0)
-	fmt.Fprintln(w, "Region\tSuccess Rate\tLast Success\tStatus")
-	fmt.Fprintln(w, "------\t------------\t------------\t------")
+	_, _ = fmt.Fprintln(w, "Region\tSuccess Rate\tLast Success\tStatus")
+	_, _ = fmt.Fprintln(w, "------\t------------\t------------\t------")
 
 	for _, region := range regions {
 		stat := stats[region]
@@ -113,9 +113,9 @@ func runAvailability(cmd *cobra.Command, args []string) error {
 		// Determine status
 		status := getAvailabilityStatus(stat)
 
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", region, successRate, lastSuccess, status)
+		_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", region, successRate, lastSuccess, status)
 	}
-	w.Flush()
+	_ = w.Flush()
 
 	fmt.Fprintln(os.Stderr)
 	return nil

@@ -53,8 +53,10 @@ region: local
 
 			// Set environment variable
 			oldEnv := os.Getenv("SPAWN_CONFIG")
-			os.Setenv("SPAWN_CONFIG", configPath)
-			defer os.Setenv("SPAWN_CONFIG", oldEnv)
+			if err := os.Setenv("SPAWN_CONFIG", configPath); err != nil {
+				t.Fatal(err)
+			}
+			defer func() { _ = os.Setenv("SPAWN_CONFIG", oldEnv) }()
 
 			provider, err := NewLocalProvider(context.Background())
 			if (err != nil) != tt.wantErr {
@@ -132,8 +134,10 @@ region: local
 			}
 
 			oldEnv := os.Getenv("SPAWN_CONFIG")
-			os.Setenv("SPAWN_CONFIG", configPath)
-			defer os.Setenv("SPAWN_CONFIG", oldEnv)
+			if err := os.Setenv("SPAWN_CONFIG", configPath); err != nil {
+				t.Fatal(err)
+			}
+			defer func() { _ = os.Setenv("SPAWN_CONFIG", oldEnv) }()
 
 			provider, err := NewLocalProvider(context.Background())
 			if err != nil {
@@ -174,8 +178,10 @@ region: local
 	}
 
 	oldEnv := os.Getenv("SPAWN_CONFIG")
-	os.Setenv("SPAWN_CONFIG", configPath)
-	defer os.Setenv("SPAWN_CONFIG", oldEnv)
+	if err := os.Setenv("SPAWN_CONFIG", configPath); err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = os.Setenv("SPAWN_CONFIG", oldEnv) }()
 
 	provider, err := NewLocalProvider(context.Background())
 	if err != nil {
@@ -199,8 +205,10 @@ region: local
 	}
 
 	oldEnv := os.Getenv("SPAWN_CONFIG")
-	os.Setenv("SPAWN_CONFIG", configPath)
-	defer os.Setenv("SPAWN_CONFIG", oldEnv)
+	if err := os.Setenv("SPAWN_CONFIG", configPath); err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = os.Setenv("SPAWN_CONFIG", oldEnv) }()
 
 	provider, err := NewLocalProvider(context.Background())
 	if err != nil {
@@ -228,8 +236,10 @@ region: local
 	}
 
 	oldEnv := os.Getenv("SPAWN_CONFIG")
-	os.Setenv("SPAWN_CONFIG", configPath)
-	defer os.Setenv("SPAWN_CONFIG", oldEnv)
+	if err := os.Setenv("SPAWN_CONFIG", configPath); err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = os.Setenv("SPAWN_CONFIG", oldEnv) }()
 
 	provider, err := NewLocalProvider(context.Background())
 	if err != nil {
@@ -254,8 +264,10 @@ region: local
 	}
 
 	oldEnv := os.Getenv("SPAWN_CONFIG")
-	os.Setenv("SPAWN_CONFIG", configPath)
-	defer os.Setenv("SPAWN_CONFIG", oldEnv)
+	if err := os.Setenv("SPAWN_CONFIG", configPath); err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = os.Setenv("SPAWN_CONFIG", oldEnv) }()
 
 	provider, err := NewLocalProvider(context.Background())
 	if err != nil {

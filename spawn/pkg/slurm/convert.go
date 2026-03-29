@@ -141,18 +141,18 @@ func generateArrayTaskScript(job *SlurmJob, taskID int) string {
 
 	// Export SLURM-compatible environment variables
 	sb.WriteString("# SLURM environment variables\n")
-	sb.WriteString(fmt.Sprintf("export SLURM_ARRAY_TASK_ID=%d\n", taskID))
+	fmt.Fprintf(&sb, "export SLURM_ARRAY_TASK_ID=%d\n", taskID)
 	sb.WriteString("export SLURM_ARRAY_JOB_ID=${SPAWN_SWEEP_ID:-unknown}\n")
 	sb.WriteString("export SLURM_JOB_ID=${SPAWN_INSTANCE_ID:-unknown}\n")
-	sb.WriteString(fmt.Sprintf("export SLURM_ARRAY_TASK_MIN=%d\n", job.Array.Start))
-	sb.WriteString(fmt.Sprintf("export SLURM_ARRAY_TASK_MAX=%d\n", job.Array.End))
-	sb.WriteString(fmt.Sprintf("export SLURM_ARRAY_TASK_STEP=%d\n", job.Array.Step))
+	fmt.Fprintf(&sb, "export SLURM_ARRAY_TASK_MIN=%d\n", job.Array.Start)
+	fmt.Fprintf(&sb, "export SLURM_ARRAY_TASK_MAX=%d\n", job.Array.End)
+	fmt.Fprintf(&sb, "export SLURM_ARRAY_TASK_STEP=%d\n", job.Array.Step)
 
 	if job.JobName != "" {
-		sb.WriteString(fmt.Sprintf("export SLURM_JOB_NAME=%s\n", job.JobName))
+		fmt.Fprintf(&sb, "export SLURM_JOB_NAME=%s\n", job.JobName)
 	}
 	if job.WorkingDir != "" {
-		sb.WriteString(fmt.Sprintf("cd %s\n", job.WorkingDir))
+		fmt.Fprintf(&sb, "cd %s\n", job.WorkingDir)
 	}
 	sb.WriteString("\n")
 
@@ -177,15 +177,15 @@ func generateMPIScript(job *SlurmJob) string {
 	// Export SLURM-compatible environment variables
 	sb.WriteString("# SLURM environment variables\n")
 	sb.WriteString("export SLURM_JOB_ID=${SPAWN_INSTANCE_ID:-unknown}\n")
-	sb.WriteString(fmt.Sprintf("export SLURM_NNODES=%d\n", job.Nodes))
-	sb.WriteString(fmt.Sprintf("export SLURM_NTASKS=%d\n", job.Nodes*job.TasksPerNode))
-	sb.WriteString(fmt.Sprintf("export SLURM_NTASKS_PER_NODE=%d\n", job.TasksPerNode))
+	fmt.Fprintf(&sb, "export SLURM_NNODES=%d\n", job.Nodes)
+	fmt.Fprintf(&sb, "export SLURM_NTASKS=%d\n", job.Nodes*job.TasksPerNode)
+	fmt.Fprintf(&sb, "export SLURM_NTASKS_PER_NODE=%d\n", job.TasksPerNode)
 
 	if job.JobName != "" {
-		sb.WriteString(fmt.Sprintf("export SLURM_JOB_NAME=%s\n", job.JobName))
+		fmt.Fprintf(&sb, "export SLURM_JOB_NAME=%s\n", job.JobName)
 	}
 	if job.WorkingDir != "" {
-		sb.WriteString(fmt.Sprintf("cd %s\n", job.WorkingDir))
+		fmt.Fprintf(&sb, "cd %s\n", job.WorkingDir)
 	}
 	sb.WriteString("\n")
 
@@ -212,10 +212,10 @@ func generateSingleTaskScript(job *SlurmJob) string {
 	sb.WriteString("export SLURM_JOB_ID=${SPAWN_INSTANCE_ID:-unknown}\n")
 
 	if job.JobName != "" {
-		sb.WriteString(fmt.Sprintf("export SLURM_JOB_NAME=%s\n", job.JobName))
+		fmt.Fprintf(&sb, "export SLURM_JOB_NAME=%s\n", job.JobName)
 	}
 	if job.WorkingDir != "" {
-		sb.WriteString(fmt.Sprintf("cd %s\n", job.WorkingDir))
+		fmt.Fprintf(&sb, "cd %s\n", job.WorkingDir)
 	}
 	sb.WriteString("\n")
 

@@ -34,7 +34,7 @@ func TestPlugin_Lifecycle(t *testing.T) {
 	if err != nil {
 		t.Fatalf("push: %v", err)
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("push: got %d, want 200", resp.StatusCode)
 	}
@@ -57,7 +57,7 @@ func TestPlugin_Lifecycle(t *testing.T) {
 	if err != nil {
 		t.Fatalf("status: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("status: got %d, want 200", resp.StatusCode)
 	}
@@ -76,7 +76,7 @@ func TestPlugin_Lifecycle(t *testing.T) {
 	if err != nil {
 		t.Fatalf("list: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("list: got %d, want 200", resp.StatusCode)
 	}
@@ -102,7 +102,7 @@ func TestPlugin_Lifecycle(t *testing.T) {
 	if err != nil {
 		t.Fatalf("remove: %v", err)
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("remove: got %d, want 200", resp.StatusCode)
 	}
@@ -114,7 +114,7 @@ func TestPlugin_Lifecycle(t *testing.T) {
 	if err != nil {
 		t.Fatalf("status after remove: %v", err)
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 	if resp.StatusCode != http.StatusNotFound {
 		t.Errorf("status after remove: got %d, want 404", resp.StatusCode)
 	}
@@ -135,7 +135,7 @@ func TestPlugin_PushToRunning(t *testing.T) {
 	if err != nil {
 		t.Fatalf("push: %v", err)
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("push to running: got %d, want 200", resp.StatusCode)
 	}

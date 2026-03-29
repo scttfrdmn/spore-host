@@ -222,10 +222,10 @@ func displayStandaloneInstances(instances []aws.InstanceInfo, hasOtherGroups boo
 	}
 
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-	defer w.Flush()
+	defer func() { _ = w.Flush() }()
 
 	// Header
-	fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
+	_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
 		i18n.T("spawn.list.header.instance_id"),
 		i18n.T("spawn.list.header.name"),
 		i18n.T("spawn.list.header.type"),
@@ -262,7 +262,7 @@ func displayStandaloneInstances(instances []aws.InstanceInfo, hasOtherGroups boo
 			iamRole = "-"
 		}
 
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
+		_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
 			inst.InstanceID,
 			name,
 			inst.InstanceType,
@@ -295,10 +295,6 @@ func calculateSweepStats(instances []aws.InstanceInfo) (completed, running, pend
 // displayInstanceWithParams shows instance details with parameters
 func displayInstanceWithParams(inst aws.InstanceInfo, prefix string) {
 	state := colorizeState(inst.State)
-	publicIP := inst.PublicIP
-	if publicIP == "" {
-		publicIP = "-"
-	}
 	name := inst.Name
 	if name == "" {
 		name = "-"

@@ -203,7 +203,7 @@ func runListSweeps(cmd *cobra.Command, args []string) error {
 	fmt.Fprintf(os.Stderr, "\n📊 Parameter Sweeps\n\n")
 
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-	fmt.Fprintf(w, "SWEEP ID\tNAME\tSTATUS\tPROGRESS\tREGION\tCREATED\n")
+	_, _ = fmt.Fprintf(w, "SWEEP ID\tNAME\tSTATUS\tPROGRESS\tREGION\tCREATED\n")
 
 	for _, sweep := range sweeps {
 		// Status icon
@@ -218,7 +218,7 @@ func runListSweeps(cmd *cobra.Command, args []string) error {
 		// Created time (relative)
 		createdStr := formatRelativeTime(sweep.CreatedAt)
 
-		fmt.Fprintf(w, "%s\t%s\t%s %s\t%s\t%s\t%s\n",
+		_, _ = fmt.Fprintf(w, "%s\t%s\t%s %s\t%s\t%s\t%s\n",
 			sweep.SweepID,
 			sweep.SweepName,
 			statusIcon,
@@ -229,7 +229,7 @@ func runListSweeps(cmd *cobra.Command, args []string) error {
 		)
 	}
 
-	w.Flush()
+	_ = w.Flush()
 
 	fmt.Fprintf(os.Stderr, "\nTotal: %d sweep(s)\n", len(sweeps))
 	fmt.Fprintf(os.Stderr, "\nTip: Use 'spawn status --sweep-id <id>' for details\n\n")

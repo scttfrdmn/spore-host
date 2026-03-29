@@ -61,7 +61,7 @@ func main() {
 		log.Printf("Warning: Could not open log file: %v", err)
 		log.SetOutput(os.Stderr)
 	} else {
-		defer logFile.Close()
+		defer func() { _ = logFile.Close() }()
 		log.SetOutput(logFile)
 	}
 

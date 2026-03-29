@@ -100,7 +100,7 @@ func handler(ctx context.Context, event PipelineEvent) error {
 		if err := setupPipelineResources(ctx, state, pipelineDef); err != nil {
 			state.Status = pipeline.StatusFailed
 			state.CompletedAt = timePtr(time.Now())
-			savePipelineState(ctx, state)
+			_ = savePipelineState(ctx, state)
 			return fmt.Errorf("failed to setup resources: %w", err)
 		}
 		state.Status = pipeline.StatusRunning
@@ -187,7 +187,7 @@ func downloadPipelineDefinition(ctx context.Context, s3Key string) (*pipeline.Pi
 	if err != nil {
 		return nil, fmt.Errorf("s3 get failed: %w", err)
 	}
-	defer result.Body.Close()
+	defer func() { _ = result.Body.Close() }()
 
 	var p pipeline.Pipeline
 	if err := json.NewDecoder(result.Body).Decode(&p); err != nil {
@@ -196,7 +196,7 @@ func downloadPipelineDefinition(ctx context.Context, s3Key string) (*pipeline.Pi
 
 	// Cache to /tmp
 	if data, err := json.Marshal(p); err == nil {
-		os.WriteFile(cacheFile, data, 0644)
+		_ = os.WriteFile(cacheFile, data, 0644)
 	}
 
 	return &p, nil

@@ -31,7 +31,7 @@ var i18nInitialized = false
 
 func Execute() {
 	// Parse flags early to get --lang value before help is displayed
-	rootCmd.ParseFlags(os.Args[1:])
+	_ = rootCmd.ParseFlags(os.Args[1:])
 	ensureI18nInitialized()
 
 	if err := rootCmd.Execute(); err != nil {
@@ -62,10 +62,10 @@ func init() {
 	rootCmd.CompletionOptions.DisableDescriptions = false
 
 	// Register completion for persistent flags
-	rootCmd.RegisterFlagCompletionFunc("output", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	_ = rootCmd.RegisterFlagCompletionFunc("output", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return []string{"table", "json", "yaml", "csv"}, cobra.ShellCompDirectiveNoFileComp
 	})
-	rootCmd.RegisterFlagCompletionFunc("regions", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	_ = rootCmd.RegisterFlagCompletionFunc("regions", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return completeRegion(cmd, args, toComplete)
 	})
 }

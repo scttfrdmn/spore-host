@@ -135,7 +135,7 @@ func (r *QueueRunner) Run() error {
 		case <-r.ctx.Done():
 			r.state.Status = "failed"
 			r.state.UpdatedAt = time.Now()
-			r.saveState()
+			_ = r.saveState()
 			return fmt.Errorf("queue execution cancelled")
 		default:
 		}
@@ -162,13 +162,13 @@ func (r *QueueRunner) Run() error {
 				ExitCode:     result.ExitCode,
 				ErrorMessage: fmt.Sprintf("%v", err),
 			})
-			r.saveState()
+			_ = r.saveState()
 
 			// Handle failure
 			if r.config.OnFailure == "stop" {
 				r.state.Status = "failed"
 				r.state.UpdatedAt = time.Now()
-				r.saveState()
+				_ = r.saveState()
 				return fmt.Errorf("job %s failed (exit code %d), stopping queue", jobID, result.ExitCode)
 			}
 			// Continue to next job if OnFailure == "continue"
@@ -182,7 +182,7 @@ func (r *QueueRunner) Run() error {
 			CompletedAt: result.CompletedAt,
 			ExitCode:    result.ExitCode,
 		})
-		r.saveState()
+		_ = r.saveState()
 
 		// Upload results
 		if len(jobConfig.ResultPaths) > 0 {
@@ -192,7 +192,7 @@ func (r *QueueRunner) Run() error {
 				fmt.Printf("Warning: failed to upload results for %s: %v\n", jobID, err)
 			} else {
 				r.markResultsUploaded(jobID)
-				r.saveState()
+				_ = r.saveState()
 			}
 		}
 
@@ -202,10 +202,10 @@ func (r *QueueRunner) Run() error {
 	// Final state update
 	r.state.Status = "completed"
 	r.state.UpdatedAt = time.Now()
-	r.saveState()
+	_ = r.saveState()
 
 	// Upload final state to S3
-	r.uploadFinalState()
+	_ = r.uploadFinalState()
 
 	fmt.Println("Queue execution completed successfully")
 	return nil
@@ -285,13 +285,13 @@ func (r *QueueRunner) executeJob(job *queue.JobConfig, attempt int) (*JobResult,
 	if err != nil {
 		return nil, fmt.Errorf("create stdout file: %w", err)
 	}
-	defer stdout.Close()
+	defer func() { _ = stdout.Close() }()
 
 	stderr, err := os.Create(stderrFile)
 	if err != nil {
 		return nil, fmt.Errorf("create stderr file: %w", err)
 	}
-	defer stderr.Close()
+	defer func() { _ = stderr.Close() }()
 
 	cmd.Stdout = stdout
 	cmd.Stderr = stderr
@@ -310,7 +310,7 @@ func (r *QueueRunner) executeJob(job *queue.JobConfig, attempt int) (*JobResult,
 		Attempt:   attempt,
 		PID:       cmd.Process.Pid,
 	})
-	r.saveState()
+	_ = r.saveState()
 
 	// Wait for command to complete
 	err = cmd.Wait()
@@ -361,12 +361,12 @@ func (r *QueueRunner) uploadJobResults(jobID string, resultPaths []string) error
 	}
 
 	// Also upload stdout/stderr logs
-	r.uploadFile(
+	_ = r.uploadFile(
 		fmt.Sprintf("/var/log/spored/jobs/%s-stdout.log", jobID),
 		r.config.ResultS3Bucket,
 		fmt.Sprintf("%s/jobs/%s/stdout.log", r.config.ResultS3Prefix, jobID),
 	)
-	r.uploadFile(
+	_ = r.uploadFile(
 		fmt.Sprintf("/var/log/spored/jobs/%s-stderr.log", jobID),
 		r.config.ResultS3Bucket,
 		fmt.Sprintf("%s/jobs/%s/stderr.log", r.config.ResultS3Prefix, jobID),
@@ -381,7 +381,7 @@ func (r *QueueRunner) uploadFile(localPath, bucket, key string) error {
 	if err != nil {
 		return fmt.Errorf("open file: %w", err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	_, err = r.s3Uploader.Upload(r.ctx, &s3.PutObjectInput{
 		Bucket: aws.String(bucket),

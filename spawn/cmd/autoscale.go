@@ -240,10 +240,10 @@ func init() {
 	autoscaleLaunchCmd.Flags().IntVar(&periodSeconds, "metric-period", 300,
 		"Metric evaluation period in seconds")
 
-	autoscaleLaunchCmd.MarkFlagRequired("name")
-	autoscaleLaunchCmd.MarkFlagRequired("desired-capacity")
-	autoscaleLaunchCmd.MarkFlagRequired("instance-type")
-	autoscaleLaunchCmd.MarkFlagRequired("ami")
+	_ = autoscaleLaunchCmd.MarkFlagRequired("name")
+	_ = autoscaleLaunchCmd.MarkFlagRequired("desired-capacity")
+	_ = autoscaleLaunchCmd.MarkFlagRequired("instance-type")
+	_ = autoscaleLaunchCmd.MarkFlagRequired("ami")
 
 	// Update flags
 	autoscaleUpdateCmd.Flags().IntVar(&autoscaleNewDesired, "desired-capacity", -1, "New desired capacity")
@@ -531,9 +531,9 @@ func runAutoscaleStatus(cmd *cobra.Command, args []string) error {
 	}
 
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-	fmt.Fprintln(w, "NAME\tSTATUS\tDESIRED\tMIN\tMAX\tCREATED")
+	_, _ = fmt.Fprintln(w, "NAME\tSTATUS\tDESIRED\tMIN\tMAX\tCREATED")
 	for _, group := range groups {
-		fmt.Fprintf(w, "%s\t%s\t%d\t%d\t%d\t%s\n",
+		_, _ = fmt.Fprintf(w, "%s\t%s\t%d\t%d\t%d\t%s\n",
 			group.GroupName,
 			group.Status,
 			group.DesiredCapacity,
@@ -542,9 +542,7 @@ func runAutoscaleStatus(cmd *cobra.Command, args []string) error {
 			group.CreatedAt.Format("2006-01-02 15:04"),
 		)
 	}
-	w.Flush()
-
-	return nil
+	return w.Flush()
 }
 
 func runAutoscaleHealth(cmd *cobra.Command, args []string) error {
@@ -601,7 +599,7 @@ func runAutoscaleHealth(cmd *cobra.Command, args []string) error {
 	}
 
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-	fmt.Fprintln(w, "INSTANCE\tSTATE\tHEARTBEAT\tSPOT\tHEALTH")
+	_, _ = fmt.Fprintln(w, "INSTANCE\tSTATE\tHEARTBEAT\tSPOT\tHEALTH")
 	for _, h := range health {
 		spotStr := "no"
 		if h.SpotInterruption {
@@ -618,12 +616,10 @@ func runAutoscaleHealth(cmd *cobra.Command, args []string) error {
 			healthStr = fmt.Sprintf("✗ %s", h.Reason)
 		}
 
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
+		_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
 			h.InstanceID, h.EC2State, heartbeatStr, spotStr, healthStr)
 	}
-	w.Flush()
-
-	return nil
+	return w.Flush()
 }
 
 func runAutoscalePause(cmd *cobra.Command, args []string) error {
@@ -1291,7 +1287,7 @@ func runAutoscaleListSchedules(cmd *cobra.Command, args []string) error {
 
 	fmt.Printf("Scheduled Actions for %s:\n\n", groupName)
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-	fmt.Fprintln(w, "NAME\tSCHEDULE\tDESIRED\tMIN\tMAX\tTIMEZONE\tENABLED\tNEXT TRIGGER")
+	_, _ = fmt.Fprintln(w, "NAME\tSCHEDULE\tDESIRED\tMIN\tMAX\tTIMEZONE\tENABLED\tNEXT TRIGGER")
 
 	for _, action := range group.ScheduleConfig.Actions {
 		status := "yes"
@@ -1322,11 +1318,10 @@ func runAutoscaleListSchedules(cmd *cobra.Command, args []string) error {
 			}
 		}
 
-		fmt.Fprintf(w, "%s\t%s\t%d\t%s\t%s\t%s\t%s\t%s\n",
+		_, _ = fmt.Fprintf(w, "%s\t%s\t%d\t%s\t%s\t%s\t%s\t%s\n",
 			action.Name, action.Schedule, action.DesiredCapacity,
 			minStr, maxStr, tz, status, nextTrigger)
 	}
 
-	w.Flush()
-	return nil
+	return w.Flush()
 }

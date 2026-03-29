@@ -28,7 +28,7 @@ var i18nInitialized = false
 
 func Execute() {
 	// Parse flags early to get --lang value before help is displayed
-	rootCmd.ParseFlags(os.Args[1:])
+	_ = rootCmd.ParseFlags(os.Args[1:])
 	ensureI18nInitialized()
 
 	if err := rootCmd.Execute(); err != nil {

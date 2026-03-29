@@ -160,9 +160,9 @@ func queryPipelineInstances(ctx context.Context, ec2Client *ec2.Client, pipeline
 				case "spawn:stage-id":
 					peer.StageID = *tag.Value
 				case "spawn:stage-index":
-					fmt.Sscanf(*tag.Value, "%d", &peer.StageIndex)
+					_, _ = fmt.Sscanf(*tag.Value, "%d", &peer.StageIndex)
 				case "spawn:instance-index":
-					fmt.Sscanf(*tag.Value, "%d", &peer.Index)
+					_, _ = fmt.Sscanf(*tag.Value, "%d", &peer.Index)
 				case "spawn:dns-name":
 					peer.DNSName = *tag.Value
 				}

@@ -74,7 +74,7 @@ func (b *Bridge) HandleWebhook(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to read request body", http.StatusBadRequest)
 		return
 	}
-	defer r.Body.Close()
+	defer func() { _ = r.Body.Close() }()
 
 	var webhook AlertmanagerWebhook
 	if err := json.Unmarshal(body, &webhook); err != nil {
@@ -94,7 +94,7 @@ func (b *Bridge) HandleWebhook(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("OK"))
+	_, _ = w.Write([]byte("OK"))
 }
 
 // formatAlert converts an Alertmanager alert to FormattedAlert
@@ -155,7 +155,7 @@ func (b *Bridge) Start(ctx context.Context, addr string) error {
 	mux.HandleFunc("/alertmanager/webhook", b.HandleWebhook)
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
+		_, _ = w.Write([]byte("OK"))
 	})
 
 	server := &http.Server{
@@ -167,7 +167,7 @@ func (b *Bridge) Start(ctx context.Context, addr string) error {
 		<-ctx.Done()
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
-		server.Shutdown(shutdownCtx)
+		_ = server.Shutdown(shutdownCtx)
 	}()
 
 	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -210,7 +210,7 @@ func (w *WebhookSender) Send(ctx context.Context, alert FormattedAlert) error {
 	if err != nil {
 		return fmt.Errorf("send webhook: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode >= 400 {
 		return fmt.Errorf("webhook returned status %d", resp.StatusCode)

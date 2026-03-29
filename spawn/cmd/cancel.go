@@ -34,7 +34,7 @@ Examples:
 
 func init() {
 	cancelCmd.Flags().StringVar(&cancelSweepID, "sweep-id", "", "Sweep ID to cancel (required)")
-	cancelCmd.MarkFlagRequired("sweep-id")
+	_ = cancelCmd.MarkFlagRequired("sweep-id")
 
 	rootCmd.AddCommand(cancelCmd)
 }

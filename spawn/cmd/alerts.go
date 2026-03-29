@@ -316,8 +316,8 @@ func runAlertsList(cmd *cobra.Command, args []string) error {
 
 	// Print table
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-	fmt.Fprintln(w, "ALERT ID\tSWEEP/SCHEDULE\tTRIGGERS\tDESTINATIONS\tCREATED")
-	fmt.Fprintln(w, strings.Repeat("─", 100))
+	_, _ = fmt.Fprintln(w, "ALERT ID\tSWEEP/SCHEDULE\tTRIGGERS\tDESTINATIONS\tCREATED")
+	_, _ = fmt.Fprintln(w, strings.Repeat("─", 100))
 
 	for _, alert := range alertsList {
 		target := alert.SweepID
@@ -325,7 +325,7 @@ func runAlertsList(cmd *cobra.Command, args []string) error {
 			target = alert.ScheduleID
 		}
 
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
+		_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
 			alert.AlertID,
 			target,
 			formatTriggers(alert.Triggers),
@@ -334,9 +334,7 @@ func runAlertsList(cmd *cobra.Command, args []string) error {
 		)
 	}
 
-	w.Flush()
-
-	return nil
+	return w.Flush()
 }
 
 func runAlertsDelete(cmd *cobra.Command, args []string) error {
@@ -390,8 +388,8 @@ func runAlertsHistory(cmd *cobra.Command, args []string) error {
 
 	// Print table
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-	fmt.Fprintln(w, "TIMESTAMP\tTRIGGER\tSUCCESS\tMESSAGE")
-	fmt.Fprintln(w, strings.Repeat("─", 100))
+	_, _ = fmt.Fprintln(w, "TIMESTAMP\tTRIGGER\tSUCCESS\tMESSAGE")
+	_, _ = fmt.Fprintln(w, strings.Repeat("─", 100))
 
 	for _, h := range history {
 		success := "✓"
@@ -404,7 +402,7 @@ func runAlertsHistory(cmd *cobra.Command, args []string) error {
 			message = message[:57] + "..."
 		}
 
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\n",
+		_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\n",
 			h.Timestamp.Format("2006-01-02 15:04:05"),
 			h.Trigger,
 			success,
@@ -412,9 +410,7 @@ func runAlertsHistory(cmd *cobra.Command, args []string) error {
 		)
 	}
 
-	w.Flush()
-
-	return nil
+	return w.Flush()
 }
 
 func formatTriggers(triggers []alerts.TriggerType) string {

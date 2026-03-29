@@ -97,7 +97,7 @@ func (p *Printer) PrintTable(results []aws.InstanceTypeResult, includeAZs bool) 
 	})
 	if p.useColor {
 		cyan := color.New(color.FgCyan, color.Bold)
-		cyan.Printf("\n%s %s\n\n", i18n.Emoji("mushroom"), summaryMsg)
+		_, _ = cyan.Printf("\n%s %s\n\n", i18n.Emoji("mushroom"), summaryMsg)
 	} else {
 		fmt.Printf("\n%s\n\n", summaryMsg)
 	}
@@ -116,7 +116,7 @@ func (p *Printer) PrintJSON(results []aws.InstanceTypeResult) error {
 func (p *Printer) PrintYAML(results []aws.InstanceTypeResult) error {
 	encoder := yaml.NewEncoder(os.Stdout)
 	encoder.SetIndent(2)
-	defer encoder.Close()
+	defer func() { _ = encoder.Close() }()
 	return encoder.Encode(results)
 }
 
@@ -208,7 +208,7 @@ func (p *Printer) PrintSpotJSON(results []aws.SpotPriceResult) error {
 func (p *Printer) PrintSpotYAML(results []aws.SpotPriceResult) error {
 	encoder := yaml.NewEncoder(os.Stdout)
 	encoder.SetIndent(2)
-	defer encoder.Close()
+	defer func() { _ = encoder.Close() }()
 	return encoder.Encode(results)
 }
 
@@ -287,7 +287,7 @@ func (p *Printer) PrintCapacityJSON(results []aws.CapacityReservationResult) err
 func (p *Printer) PrintCapacityYAML(results []aws.CapacityReservationResult) error {
 	encoder := yaml.NewEncoder(os.Stdout)
 	encoder.SetIndent(2)
-	defer encoder.Close()
+	defer func() { _ = encoder.Close() }()
 	return encoder.Encode(results)
 }
 
