@@ -250,6 +250,63 @@ func TestHandlerMissingTeamID(t *testing.T) {
 	}
 }
 
+// TestHandlerStrataGetCatalog verifies GET /api/strata/catalog returns the formation list.
+func TestHandlerStrataGetCatalog(t *testing.T) {
+	resp, err := handleStrataGetCatalog()
+	if err != nil {
+		t.Fatalf("handleStrataGetCatalog returned error: %v", err)
+	}
+	if resp.StatusCode != 200 {
+		t.Errorf("status = %d, want 200", resp.StatusCode)
+	}
+
+	var body struct {
+		Success    bool              `json:"success"`
+		Formations []StrataFormation `json:"formations"`
+	}
+	if err := json.Unmarshal([]byte(resp.Body), &body); err != nil {
+		t.Fatalf("body not valid JSON: %v", err)
+	}
+	if !body.Success {
+		t.Error("expected success=true")
+	}
+	if len(body.Formations) == 0 {
+		t.Error("expected non-empty formations list")
+	}
+	for _, f := range body.Formations {
+		if f.Name == "" {
+			t.Error("formation has empty name")
+		}
+		if f.DisplayName == "" {
+			t.Errorf("formation %q has empty display_name", f.Name)
+		}
+	}
+}
+
+// TestHandlerStrataResolve_InvalidBody verifies POST /api/strata/resolve rejects bad input.
+func TestHandlerStrataResolve_InvalidBody(t *testing.T) {
+	tests := []struct {
+		name string
+		body string
+	}{
+		{name: "empty body", body: ""},
+		{name: "invalid JSON", body: "{not json}"},
+		{name: "missing formation", body: `{"arch":"x86_64"}`},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			resp, err := handleStrataResolve(context.Background(), tc.body)
+			if err != nil {
+				t.Fatalf("handleStrataResolve returned error: %v", err)
+			}
+			if resp.StatusCode != 400 {
+				t.Errorf("status = %d, want 400", resp.StatusCode)
+			}
+		})
+	}
+}
+
 // TestSuccessResponse verifies successResponse structure.
 func TestSuccessResponse(t *testing.T) {
 	data := APIResponse{

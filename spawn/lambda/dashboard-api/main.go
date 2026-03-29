@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/url"
@@ -13,6 +14,8 @@ import (
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/scttfrdmn/strata/pkg/strata"
+	"github.com/scttfrdmn/strata/spec"
 )
 
 // handler is the main Lambda handler
@@ -203,6 +206,12 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	case path == "/api/user/profile" && method == "GET":
 		return handleGetUserProfile(ctx, cfg, userID, cliIamArn, accountBase36)
 
+	case path == "/api/strata/catalog" && method == "GET":
+		return handleStrataGetCatalog()
+
+	case path == "/api/strata/resolve" && method == "POST":
+		return handleStrataResolve(ctx, request.Body)
+
 	default:
 		return errorResponse(404, "Endpoint not found"), nil
 	}
@@ -295,6 +304,88 @@ func handleGetUserProfile(ctx context.Context, cfg aws.Config, userID, cliIamArn
 	}
 
 	return successResponse(response)
+}
+
+// StrataFormation describes a software formation available in the catalog.
+type StrataFormation struct {
+	Name        string `json:"name"`
+	DisplayName string `json:"display_name"`
+	Description string `json:"description"`
+}
+
+// StrataResolveRequest is the body for POST /api/strata/resolve.
+type StrataResolveRequest struct {
+	Formation string `json:"formation"`
+	Arch      string `json:"arch"` // x86_64 | arm64
+	OS        string `json:"os"`   // al2023 | ubuntu24 | rocky9
+}
+
+// StrataResolveResponse is returned by POST /api/strata/resolve.
+type StrataResolveResponse struct {
+	LockfileURI string `json:"lockfile_uri"`
+}
+
+var strataCatalog = []StrataFormation{
+	{Name: "r-research@2024.03", DisplayName: "R + Quarto Workstation", Description: "R 4.3, Quarto, tidyverse, ggplot2, BiocManager"},
+	{Name: "python-ml@2024.03", DisplayName: "Python ML (JupyterLab)", Description: "Python 3.11, JupyterLab, PyTorch, scikit-learn, pandas"},
+	{Name: "hpc-mpi@2024.03", DisplayName: "HPC / MPI Cluster", Description: "OpenMPI 4.1, FFTW, ScaLAPACK, HDF5"},
+	{Name: "genomics@2024.03", DisplayName: "Genomics", Description: "Python 3.11, samtools, bcftools, bwa, netcdf4"},
+	{Name: "cuda-ml@2024.03", DisplayName: "CUDA + Python ML", Description: "CUDA 12.2, PyTorch GPU, cuDNN, tensorboard"},
+}
+
+// handleStrataGetCatalog handles GET /api/strata/catalog.
+func handleStrataGetCatalog() (events.APIGatewayProxyResponse, error) {
+	type catalogResponse struct {
+		Success    bool              `json:"success"`
+		Formations []StrataFormation `json:"formations"`
+	}
+	return successResponse(catalogResponse{Success: true, Formations: strataCatalog})
+}
+
+// handleStrataResolve handles POST /api/strata/resolve.
+func handleStrataResolve(ctx context.Context, body string) (events.APIGatewayProxyResponse, error) {
+	var req StrataResolveRequest
+	if err := json.Unmarshal([]byte(body), &req); err != nil || req.Formation == "" {
+		return errorResponse(400, "invalid request body: formation required"), nil
+	}
+
+	registryURL := "s3://strata-registry"
+	uri, err := resolveStrataFormation(ctx, req.Formation, req.OS, registryURL)
+	if err != nil {
+		log.Printf("strata resolve error: %v", err)
+		return errorResponse(500, fmt.Sprintf("strata resolve failed: %v", err)), nil
+	}
+
+	return successResponse(StrataResolveResponse{LockfileURI: uri})
+}
+
+// resolveStrataFormation resolves a formation name to an S3 lockfile URI.
+func resolveStrataFormation(ctx context.Context, formation, os, registry string) (string, error) {
+	if os == "" {
+		os = "al2023"
+	}
+
+	c, err := strata.NewClient(ctx, strata.Options{RegistryURL: registry})
+	if err != nil {
+		return "", fmt.Errorf("new client: %w", err)
+	}
+
+	profile := &spec.Profile{
+		Name:     formation,
+		Base:     spec.BaseRef{OS: os},
+		Software: []spec.SoftwareRef{{Formation: formation}},
+	}
+
+	lf, err := c.Resolve(ctx, profile, strata.ResolveOptions{})
+	if err != nil {
+		return "", fmt.Errorf("resolve: %w", err)
+	}
+
+	uri, err := c.UploadLockfile(ctx, lf)
+	if err != nil {
+		return "", fmt.Errorf("upload lockfile: %w", err)
+	}
+	return uri, nil
 }
 
 // main is the entry point for the Lambda function

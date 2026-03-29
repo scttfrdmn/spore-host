@@ -1175,7 +1175,7 @@ let sweepSortState = { column: null, direction: 'asc' };
 function switchDashboardTab(tab) {
     currentDashboardTab = tab;
 
-    const allTabs = ['instances', 'sweeps', 'autoscale', 'settings'];
+    const allTabs = ['instances', 'sweeps', 'autoscale', 'settings', 'software'];
     allTabs.forEach(t => {
         const btn = document.getElementById(`tab-${t}`);
         const content = document.getElementById(`${t}-tab-content`);
@@ -1206,6 +1206,8 @@ function switchDashboardTab(tab) {
         loadCostChart(30);
     } else if (tab === 'settings') {
         loadAlertPreferences();
+    } else if (tab === 'software') {
+        loadStrataCatalog();
     }
 }
 
@@ -2727,6 +2729,70 @@ async function deleteTeam(teamId) {
     } catch (e) {
         alert(`Failed to delete team: ${e.message}`);
     }
+}
+
+// ── Strata Software Environment ──────────────────────────────────────────────
+
+let selectedStrataFormation = null;
+
+async function loadStrataCatalog() {
+    const loading = document.getElementById('strata-catalog-loading');
+    const errDiv  = document.getElementById('strata-catalog-error');
+    const grid    = document.getElementById('strata-catalog-grid');
+    if (!loading || !grid) return;
+
+    loading.style.display = 'block';
+    errDiv.style.display  = 'none';
+    grid.style.display    = 'none';
+
+    try {
+        const data = await DashboardAPI.get('/api/strata/catalog');
+        loading.style.display = 'none';
+
+        const formations = data.formations || [];
+        grid.innerHTML = formations.map(f => `
+            <div class="strata-card" id="strata-card-${CSS.escape(f.name)}"
+                 onclick="selectStrataFormation(${JSON.stringify(f.name)})"
+                 style="padding: 1rem; background: var(--bg-card); border: 2px solid var(--border-color); border-radius: 8px; cursor: pointer; transition: border-color 0.15s;">
+                <div style="font-weight: 600; margin-bottom: 0.25rem;">${escapeHtml(f.display_name)}</div>
+                <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem;">${escapeHtml(f.description)}</div>
+                <code style="font-size: 0.75rem; color: var(--text-secondary);">${escapeHtml(f.name)}</code>
+            </div>`).join('');
+
+        grid.style.display = 'grid';
+    } catch (e) {
+        loading.style.display = 'none';
+        errDiv.textContent    = `Failed to load catalog: ${e.message}`;
+        errDiv.style.display  = 'block';
+    }
+}
+
+function selectStrataFormation(name) {
+    selectedStrataFormation = name;
+
+    // Highlight selected card
+    document.querySelectorAll('.strata-card').forEach(el => {
+        el.style.borderColor = 'var(--border-color)';
+    });
+    const card = document.getElementById(`strata-card-${CSS.escape(name)}`);
+    if (card) card.style.borderColor = 'var(--accent-blue)';
+
+    // Show launch flag banner
+    const banner = document.getElementById('strata-selection-banner');
+    const flag   = document.getElementById('strata-launch-flag');
+    if (banner && flag) {
+        flag.textContent  = `--strata-formation "${name}"`;
+        banner.style.display = 'block';
+    }
+}
+
+function copyStrataFlag() {
+    if (!selectedStrataFormation) return;
+    const text = `--strata-formation "${selectedStrataFormation}"`;
+    navigator.clipboard.writeText(text).then(() => {
+        const btn = document.querySelector('#strata-selection-banner button');
+        if (btn) { btn.textContent = 'Copied!'; setTimeout(() => { btn.textContent = 'Copy flag'; }, 1500); }
+    });
 }
 
 // Export for use in other scripts

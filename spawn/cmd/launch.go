@@ -37,6 +37,8 @@ import (
 	"github.com/scttfrdmn/spore-host/spawn/pkg/sweep"
 	"github.com/scttfrdmn/spore-host/spawn/pkg/userdata"
 	"github.com/scttfrdmn/spore-host/spawn/pkg/wizard"
+	"github.com/scttfrdmn/strata/pkg/strata"
+	"github.com/scttfrdmn/strata/spec"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )
@@ -167,6 +169,11 @@ var (
 	// Plugin declarations
 	launchConfigFile string
 	launchPlugins    []string
+
+	// Strata software environment
+	strataFormation string
+	strataProfile   string
+	strataRegistry  string
 )
 
 var launchCmd = &cobra.Command{
@@ -309,6 +316,11 @@ func init() {
 	launchCmd.Flags().StringVar(&launchConfigFile, "config", "", "Launch config YAML file (supports plugins: list)")
 	launchCmd.Flags().StringArrayVar(&launchPlugins, "plugin", nil, "Plugin to install at launch (ref[@version], repeatable)")
 
+	// Strata software environment
+	launchCmd.Flags().StringVar(&strataFormation, "strata-formation", "", "Strata formation to activate (e.g. r-research@2024.03)")
+	launchCmd.Flags().StringVar(&strataProfile, "strata-profile", "", "Path to a Strata profile YAML file")
+	launchCmd.Flags().StringVar(&strataRegistry, "strata-registry", "s3://strata-registry", "Strata registry S3 URL")
+
 	// Register completions for flags
 	_ = launchCmd.RegisterFlagCompletionFunc("region", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return completeRegion(cmd, args, toComplete)
@@ -406,6 +418,17 @@ func runLaunch(cmd *cobra.Command, args []string) error {
 		if teamName, err := resolveTeamName(ctx, launchTeamID); err == nil && teamName != "" {
 			config.Tags["spawn:team-name"] = teamName
 		}
+	}
+
+	// Strata software environment selection
+	if strataFormation != "" || strataProfile != "" {
+		fmt.Fprintf(os.Stderr, "Resolving Strata environment...\n")
+		uri, err := resolveStrataEnvironment(ctx, strataFormation, strataProfile, strataRegistry)
+		if err != nil {
+			return fmt.Errorf("strata: %w", err)
+		}
+		config.Tags["strata:lockfile-s3-uri"] = uri
+		fmt.Fprintf(os.Stderr, "Strata environment resolved: %s\n", uri)
 	}
 
 	// Validate
@@ -1629,6 +1652,41 @@ func buildLaunchConfig(truffleInput *input.TruffleInput) (*aws.LaunchConfig, err
 	}
 
 	return config, nil
+}
+
+// resolveStrataEnvironment resolves a Strata formation or profile to a lockfile
+// S3 URI, which is set as the strata:lockfile-s3-uri EC2 instance tag at launch.
+// strata-agent on the instance reads this tag at boot and mounts the environment.
+func resolveStrataEnvironment(ctx context.Context, formation, profilePath, registry string) (string, error) {
+	var profile *spec.Profile
+	if profilePath != "" {
+		data, err := os.ReadFile(profilePath)
+		if err != nil {
+			return "", fmt.Errorf("read profile: %w", err)
+		}
+		if err := yaml.Unmarshal(data, &profile); err != nil {
+			return "", fmt.Errorf("parse profile: %w", err)
+		}
+	} else {
+		profile = &spec.Profile{
+			Name:     formation,
+			Base:     spec.BaseRef{OS: "al2023"},
+			Software: []spec.SoftwareRef{{Formation: formation}},
+		}
+	}
+	c, err := strata.NewClient(ctx, strata.Options{RegistryURL: registry})
+	if err != nil {
+		return "", fmt.Errorf("new client: %w", err)
+	}
+	lf, err := c.Resolve(ctx, profile, strata.ResolveOptions{})
+	if err != nil {
+		return "", fmt.Errorf("resolve: %w", err)
+	}
+	uri, err := c.UploadLockfile(ctx, lf)
+	if err != nil {
+		return "", fmt.Errorf("upload lockfile: %w", err)
+	}
+	return uri, nil
 }
 
 func setupSSHKey(ctx context.Context, awsClient *aws.Client, region string, plat *platform.Platform) (string, error) {
