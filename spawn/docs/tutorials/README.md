@@ -163,6 +163,34 @@ Fleet-scale workflows:
 
 ---
 
+## Plugins (Intermediate)
+
+### [Tutorial 12: Private Networking with the Tailscale Plugin](12-tailscale-plugin.md)
+**Duration:** 15 minutes | **Level:** Intermediate
+
+Connect instances to your private Tailnet:
+- Install the Tailscale plugin with an ephemeral auth key
+- SSH and access services via stable 100.x.x.x address
+- No security group rules or public IP required
+- Remove the plugin and auto-expire the Tailscale node
+
+**Prerequisites:** [Tutorial 2](02-first-instance.md), Tailscale account with auth key
+
+---
+
+### [Tutorial 13: High-Speed Data Transfer with the Globus Plugin](13-globus-plugin.md)
+**Duration:** 20 minutes | **Level:** Intermediate
+
+Move large datasets to and from instances using Globus:
+- Install the Globus plugin (push flow: local creates endpoint, pushes setup key)
+- Transfer datasets from HPC clusters, XSEDE/ACCESS, or another personal endpoint
+- Transfer results back with checksum verification
+- Remove the plugin and auto-delete the Globus endpoint
+
+**Prerequisites:** [Tutorial 2](02-first-instance.md), globus-cli installed and logged in
+
+---
+
 ## Learning Paths
 
 ### Path 1: Quick Start (Get Running Fast)
