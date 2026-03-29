@@ -191,6 +191,33 @@ Move large datasets to and from instances using Globus:
 
 ---
 
+### [Tutorial 14: Live Directory Sync with the spore-sync Plugin](14-spore-sync-plugin.md)
+**Duration:** 20 minutes | **Level:** Intermediate
+
+Keep a local directory in sync with an instance in real time via mutagen:
+- Install mutagen locally (the sync engine)
+- Start a bi-directional sync session with one command
+- Watch edits propagate in both directions within seconds
+- Switch sync modes (two-way, one-way-safe, one-way-replica)
+- Combine with Tailscale for private-network sync
+
+**Prerequisites:** [Tutorial 2](02-first-instance.md), mutagen installed locally
+
+---
+
+### [Tutorial 15: RStudio Server with Environment Replication](15-rstudio-server-plugin.md)
+**Duration:** 25 minutes | **Level:** Intermediate
+
+Launch RStudio Server on a spore instance with your local R environment pre-installed:
+- Capture your local renv.lock (or generate one automatically)
+- Install RStudio Server and restore packages via renv::restore()
+- Log in to RStudio in your browser with the familiar IDE
+- Combine with Tailscale to avoid exposing port 8787 publicly
+
+**Prerequisites:** [Tutorial 2](02-first-instance.md), R and renv installed locally
+
+---
+
 ## Learning Paths
 
 ### Path 1: Quick Start (Get Running Fast)
@@ -243,8 +270,12 @@ Complete all tutorials for comprehensive understanding.
 9. [Tutorial 9: Instance Lifecycle](09-instance-lifecycle.md) - 20 min
 10. [Tutorial 10: truffle → spawn Workflow](10-truffle-to-spawn-workflow.md) - 25 min
 11. [Tutorial 11: Advanced spawn](11-advanced-spawn.md) - 30 min
+12. [Tutorial 12: Tailscale Plugin](12-tailscale-plugin.md) - 15 min
+13. [Tutorial 13: Globus Plugin](13-globus-plugin.md) - 20 min
+14. [Tutorial 14: spore-sync Plugin](14-spore-sync-plugin.md) - 20 min
+15. [Tutorial 15: RStudio Server Plugin](15-rstudio-server-plugin.md) - 25 min
 
-**Total:** 4 hours 45 minutes
+**Total:** 5 hours 45 minutes
 
 ---
 
@@ -259,6 +290,19 @@ For users who want to minimize cost while maximizing reliability.
 6. [Tutorial 11: Advanced spawn](11-advanced-spawn.md) - 30 min
 
 **Total:** 2 hours 10 minutes
+
+---
+
+### Path 6: R Research Environment
+For R users who want a cloud RStudio IDE with their local package environment.
+
+1. [Tutorial 1: Getting Started](01-getting-started.md) - 15 min
+2. [Tutorial 2: Your First Instance](02-first-instance.md) - 20 min
+3. [Tutorial 12: Tailscale Plugin](12-tailscale-plugin.md) - 15 min *(optional, for private access)*
+4. [Tutorial 15: RStudio Server Plugin](15-rstudio-server-plugin.md) - 25 min
+5. [Tutorial 14: spore-sync Plugin](14-spore-sync-plugin.md) - 20 min *(optional, for live script sync)*
+
+**Total:** 1 hour 35 minutes (core: 1 hour)
 
 ---
 
