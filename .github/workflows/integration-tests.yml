@@ -1,10 +1,6 @@
 name: Integration Tests
 
 on:
-  push:
-    branches: [main, dev]
-  pull_request:
-    branches: [main]
   schedule:
     - cron: '0 2 * * *'  # Nightly at 2 AM UTC
   workflow_dispatch:
@@ -21,16 +17,15 @@ jobs:
       AWS_REGION: us-east-1
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
       - name: Setup Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v5
         with:
-          go-version: '1.21'
+          go-version: '1.26'
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v6
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_INTEGRATION_TEST_ROLE }}
           role-session-name: spawn-integration-tests
@@ -39,35 +34,29 @@ jobs:
       - name: Build spawn binary
         run: |
           cd spawn
-          go build -o bin/spawn
+          go build -o bin/spawn .
 
       - name: Run scheduler integration tests
         run: |
           cd spawn
-          go test -v -tags=integration -run TestScheduler -timeout 20m
+          go test -v -tags=integration -run TestScheduler -timeout 20m ./...
 
       - name: Cleanup test resources
         if: always()
         run: |
-          # Terminate any test instances
-          aws ec2 describe-instances \
-            --filters "Name=tag:spawn:test,Values=true" "Name=instance-state-name,Values=pending,running,stopping,stopped" \
-            --query 'Reservations[].Instances[].InstanceId' \
-            --output text | xargs -r aws ec2 terminate-instances --instance-ids || true
-
-          # Delete test schedules
           aws dynamodb scan \
             --table-name spawn-schedules \
             --filter-expression "begins_with(schedule_id, :prefix)" \
             --expression-attribute-values '{":prefix":{"S":"test-"}}' \
             --projection-expression "schedule_id" \
             --query 'Items[].schedule_id.S' \
-            --output text | xargs -I {} aws dynamodb delete-item \
-            --table-name spawn-schedules \
-            --key '{"schedule_id":{"S":"{}"}}' || true
+            --output text 2>/dev/null \
+          | tr '\t' '\n' \
+          | xargs -I {} aws dynamodb delete-item \
+              --table-name spawn-schedules \
+              --key '{"schedule_id":{"S":"{}"}}' 2>/dev/null || true
 
-          # Delete test S3 files
-          aws s3 rm s3://spawn-schedules-us-east-1/test/ --recursive || true
+          aws s3 rm s3://spawn-schedules-us-east-1/test/ --recursive 2>/dev/null || true
 
   integration-tests-queue:
     runs-on: ubuntu-latest
@@ -80,41 +69,32 @@ jobs:
       AWS_REGION: us-east-1
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
       - name: Setup Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v5
         with:
-          go-version: '1.21'
+          go-version: '1.26'
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v6
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_INTEGRATION_TEST_ROLE }}
           role-session-name: spawn-integration-tests-queue
           aws-region: us-east-1
 
-      - name: Build spawn and spored binaries
+      - name: Build spawn binary
         run: |
           cd spawn
-          go build -o bin/spawn
-          cd ../spored
-          go build -o bin/spored
+          go build -o bin/spawn .
+          go build -o bin/spored ./cmd/spored/
 
       - name: Run queue integration tests
         run: |
           cd spawn
-          go test -v -tags=integration -run TestQueue -timeout 20m
+          go test -v -tags=integration -run TestQueue -timeout 20m ./...
 
       - name: Cleanup test resources
         if: always()
         run: |
-          # Terminate any test instances
-          aws ec2 describe-instances \
-            --filters "Name=tag:spawn:test,Values=true" "Name=instance-state-name,Values=pending,running,stopping,stopped" \
-            --query 'Reservations[].Instances[].InstanceId' \
-            --output text | xargs -r aws ec2 terminate-instances --instance-ids || true
-
-          # Delete test queue results from S3
-          aws s3 rm s3://spawn-queue-results-test/test- --recursive || true
+          aws s3 rm s3://spawn-queue-results-test/test/ --recursive 2>/dev/null || true
