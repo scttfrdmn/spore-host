@@ -2166,6 +2166,11 @@ fi
 chmod 644 /etc/motd
 echo "✅ Login banner created"
 
+# Install acpid so AWS stop/terminate signals trigger a graceful shutdown
+# rather than a hard kill after the ACPI timeout.
+dnf install -y acpid 2>/dev/null || yum install -y acpid 2>/dev/null || true
+systemctl enable --now acpid
+
 # Create systemd service
 cat > /etc/systemd/system/spored.service <<'EOFSERVICE'
 [Unit]
@@ -2176,8 +2181,15 @@ Wants=network-online.target
 [Service]
 Type=simple
 ExecStart=/usr/local/bin/spored
-Restart=always
+# on-failure (not always) prevents restart attempts during graceful shutdown
+Restart=on-failure
 RestartSec=10
+# Give spored time to deregister DNS and clean up before SIGKILL
+TimeoutStopSec=30
+StandardOutput=journal
+StandardError=journal
+NoNewPrivileges=true
+PrivateTmp=true
 
 [Install]
 WantedBy=multi-user.target

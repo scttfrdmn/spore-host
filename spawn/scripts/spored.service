@@ -1,14 +1,17 @@
 [Unit]
 Description=Spored Agent - Instance self-monitoring and auto-termination
-Documentation=https://github.com/scttfrdmn/mycelium
+Documentation=https://github.com/scttfrdmn/spore-host
 After=network-online.target
 Wants=network-online.target
 
 [Service]
 Type=simple
 ExecStart=/usr/local/bin/spored
-Restart=always
+# on-failure (not always) prevents restart attempts during graceful shutdown
+Restart=on-failure
 RestartSec=10
+# Give spored time to deregister DNS and clean up before SIGKILL
+TimeoutStopSec=30
 StandardOutput=journal
 StandardError=journal
 

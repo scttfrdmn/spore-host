@@ -70,20 +70,29 @@ else
     exit 1
 fi
 
+# Install acpid so AWS stop/terminate ACPI signals trigger a graceful OS
+# shutdown rather than a hard kill after the AWS-side timeout.
+echo "Installing acpid for graceful AWS stop/terminate handling..."
+dnf install -y acpid 2>/dev/null || yum install -y acpid 2>/dev/null || true
+systemctl enable --now acpid
+
 # Create systemd service
 echo "Installing systemd service..."
 cat > /etc/systemd/system/spored.service <<'EOF'
 [Unit]
 Description=Spawn Agent - Instance self-monitoring
-Documentation=https://github.com/yourusername/spawn
+Documentation=https://github.com/scttfrdmn/spore-host
 After=network-online.target
 Wants=network-online.target
 
 [Service]
 Type=simple
 ExecStart=/usr/local/bin/spored
-Restart=always
+# on-failure (not always) prevents restart attempts during graceful shutdown
+Restart=on-failure
 RestartSec=10
+# Give spored time to deregister DNS and clean up before SIGKILL
+TimeoutStopSec=30
 StandardOutput=journal
 StandardError=journal
 
