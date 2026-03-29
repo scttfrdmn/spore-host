@@ -44,7 +44,7 @@ Before starting this tutorial:
    - Navigate to **Settings → Keys → Generate auth key**
    - Check the **Ephemeral** box — this ensures the node is automatically removed from your Tailnet when the instance terminates
    - Optionally set an expiry (1 day is sufficient for this tutorial)
-   - Copy the key value — it looks like `tskey-auth-kXXXXXXXXXX-XXXXXXXXXXXXXXXXXXXXXXXX`
+   - Copy the key value — it looks like `tskey-auth-k<random>-<random>`
 
 3. **Tailscale on your laptop** — install from [tailscale.com/download](https://tailscale.com/download) and log in. You need to be on the same Tailnet as the instance to connect to it.
 
@@ -99,10 +99,10 @@ Install the Tailscale plugin using `spawn plugin install`. The `--config` flag p
 spawn plugin install \
   github:scttfrdmn/spore-host-plugin-tailscale/tailscale \
   --instance ts-demo \
-  --config auth_key=tskey-auth-kXXXXXXXXXX-XXXXXXXXXXXXXXXXXXXXXXXX
+  --config auth_key=tskey-auth-<YOUR_AUTH_KEY>
 ```
 
-Replace `tskey-auth-kXXXXXXXXXX-XXXXXXXXXXXXXXXXXXXXXXXX` with your actual auth key.
+Replace `tskey-auth-<YOUR_AUTH_KEY>` with your actual auth key.
 
 **Expected output:**
 ```
