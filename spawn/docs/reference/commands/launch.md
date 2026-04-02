@@ -187,6 +187,54 @@ spawn launch --instance-type m7i.large --on-complete terminate --completion-file
 spawn launch --instance-type m7i.large --on-complete terminate --completion-delay 1m
 ```
 
+#### --cost-limit
+**Type:** Float64 (USD)
+**Default:** `0` (disabled)
+**Description:** Terminate the instance when accumulated compute spend reaches this amount. Uses on-demand pricing recorded at launch time; conservative for Spot instances. Can be used alone or combined with `--ttl` — whichever fires first wins.
+
+```bash
+# Terminate after spending $2.00
+spawn launch --instance-type m7i.large --cost-limit 2.00
+
+# Combined with TTL — whichever fires first
+spawn launch --instance-type p3.2xlarge --cost-limit 5.00 --ttl 4h
+```
+
+**Note:** `spored status` shows current spend, percentage used, and remaining budget.
+
+#### --pre-stop
+**Type:** String (shell command)
+**Default:** None
+**Description:** Shell command to run before any lifecycle-triggered shutdown (TTL, idle, cost limit, Spot interruption, completion signal). Useful for flushing data, syncing files, or notifying external systems.
+
+```bash
+# Sync results to S3 before shutdown
+spawn launch --instance-type c5.2xlarge \
+  --pre-stop "aws s3 sync /results s3://my-bucket/results/" \
+  --ttl 4h
+
+# Save checkpoint and notify Slack
+spawn launch --instance-type p3.8xlarge \
+  --pre-stop "python save_checkpoint.py && curl -X POST $SLACK_WEBHOOK -d '{\"text\":\"Job complete\"}'" \
+  --on-complete terminate
+```
+
+The hook runs with a configurable timeout (default 5 minutes). If it exits non-zero or times out, the shutdown proceeds anyway.
+
+#### --pre-stop-timeout
+**Type:** Duration
+**Default:** `5m` (90s when triggered by Spot interruption)
+**Description:** Maximum time to wait for the `--pre-stop` hook to complete before proceeding with shutdown.
+
+```bash
+spawn launch --instance-type c5.2xlarge \
+  --pre-stop "python save_state.py" \
+  --pre-stop-timeout 10m \
+  --ttl 4h
+```
+
+**Note:** When triggered by a Spot interruption notice (2-minute warning), the timeout is automatically capped at 90 seconds regardless of this setting, to ensure the instance shuts down gracefully within the interruption window.
+
 ### Spot Instances
 
 #### --spot
@@ -740,6 +788,10 @@ spawn launch --instance-type m7i.large --tags env=prod,team=ml,project=training
 - `spawn:created-at=<timestamp>`
 - `spawn:ttl=<duration>` (if `--ttl` specified)
 - `spawn:idle-timeout=<duration>` (if `--idle-timeout` specified)
+- `spawn:cost-limit=<amount>` (if `--cost-limit` specified)
+- `spawn:price-per-hour=<price>` (if `--cost-limit` specified; on-demand rate at launch time)
+- `spawn:pre-stop=<command>` (if `--pre-stop` specified)
+- `spawn:pre-stop-timeout=<duration>` (if `--pre-stop-timeout` specified)
 
 ### Capacity Reservations
 

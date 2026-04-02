@@ -25,7 +25,7 @@ spawn list --region us-east-1
 spawn list --state running
 
 # List specific instance family
-spawn list --family m7i
+spawn list --instance-family m7i
 ```
 
 ## Flags
@@ -39,6 +39,15 @@ spawn list --family m7i
 
 ```bash
 spawn list --region us-west-2
+```
+
+#### --az
+**Type:** String
+**Default:** None
+**Description:** Filter by availability zone.
+
+```bash
+spawn list --az us-east-1a
 ```
 
 #### --state
@@ -61,13 +70,13 @@ spawn list --state stopped
 spawn list --instance-type m7i.large
 ```
 
-#### --family
+#### --instance-family
 **Type:** String
 **Default:** None
 **Description:** Filter by instance family (all sizes in family).
 
 ```bash
-spawn list --family m7i
+spawn list --instance-family m7i
 # Matches: m7i.large, m7i.xlarge, m7i.2xlarge, etc.
 ```
 
@@ -82,17 +91,52 @@ spawn list --tag env=prod --tag team=ml
 # AND logic: both tags must match
 ```
 
-### Output Format
-
-#### --format
+#### --job-array-id
 **Type:** String
-**Allowed Values:** `table`, `json`, `yaml`
-**Default:** `table`
-**Description:** Output format.
+**Default:** None
+**Description:** Filter by job array ID.
 
 ```bash
-spawn list --format json
-spawn list --format yaml
+spawn list --job-array-id abc123
+```
+
+#### --job-array-name
+**Type:** String
+**Default:** None
+**Description:** Filter by job array name.
+
+```bash
+spawn list --job-array-name training-run
+```
+
+#### --sweep-id
+**Type:** String
+**Default:** None
+**Description:** Filter by parameter sweep ID.
+
+```bash
+spawn list --sweep-id sweep-abc123
+```
+
+#### --sweep-name
+**Type:** String
+**Default:** None
+**Description:** Filter by parameter sweep name.
+
+```bash
+spawn list --sweep-name hyperparameter-search
+```
+
+### Output Format
+
+#### --json
+**Type:** Boolean
+**Default:** `false`
+**Description:** Output as JSON array.
+
+```bash
+spawn list --json
+spawn list --state running --json
 ```
 
 #### --quiet, -q
@@ -172,7 +216,7 @@ spawn list --region us-east-1 --state running
 
 ### List Specific Instance Family
 ```bash
-spawn list --family m7i
+spawn list --instance-family m7i
 ```
 
 ### List with Multiple Filters
@@ -180,20 +224,20 @@ spawn list --family m7i
 spawn list \
   --region us-east-1 \
   --state running \
-  --family m7i \
+  --instance-family m7i \
   --tag env=prod
 # Shows only running m7i instances in us-east-1 tagged env=prod
 ```
 
 ### JSON Output for Automation
 ```bash
-spawn list --format json | jq '.[] | select(.State == "running")'
+spawn list --json | jq '.[] | select(.State == "running")'
 
 # Get IPs of all running instances
-spawn list --state running --format json | jq -r '.[].public_ip'
+spawn list --state running --json | jq -r '.[].public_ip'
 
 # Count instances by region
-spawn list --format json | jq -r '.[].region' | sort | uniq -c
+spawn list --json | jq -r '.[].region' | sort | uniq -c
 ```
 
 ### Get First Running Instance ID
@@ -205,13 +249,18 @@ spawn connect "$INSTANCE"
 
 ### List Specific Job Array
 ```bash
-spawn list --tag spawn:job-array-name=training-sweep
+spawn list --job-array-name training-sweep
+```
+
+### List Specific Parameter Sweep
+```bash
+spawn list --sweep-name hyperparameter-search
 ```
 
 ### List Instances Older Than 1 Day
 ```bash
 # JSON output with jq filtering
-spawn list --format json | \
+spawn list --json | \
   jq '.[] | select(.age | contains("d"))'
 ```
 
