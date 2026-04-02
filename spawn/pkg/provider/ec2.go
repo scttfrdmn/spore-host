@@ -349,6 +349,10 @@ func loadConfigFromEC2Tags(ctx context.Context, client *ec2.Client, instanceID s
 			if limit, err := strconv.ParseFloat(*tag.Value, 64); err == nil {
 				config.CostLimit = limit
 			}
+		case "spawn:price-per-hour":
+			if price, err := strconv.ParseFloat(*tag.Value, 64); err == nil {
+				config.PricePerHour = price
+			}
 		case "spawn:idle-cpu":
 			if cpu, err := strconv.ParseFloat(*tag.Value, 64); err == nil {
 				config.IdleCPUPercent = cpu

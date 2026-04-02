@@ -31,6 +31,7 @@ type Config struct {
 	IdleTimeout     time.Duration
 	HibernateOnIdle bool
 	CostLimit       float64
+	PricePerHour    float64 // On-demand price per hour (recorded at launch; used for cost-limit enforcement)
 	IdleCPUPercent  float64
 
 	// Completion signal settings

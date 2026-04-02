@@ -209,7 +209,26 @@ func (a *Agent) checkAndAct(ctx context.Context) {
 		}
 	}
 
-	// 3. Check idle
+	// 3. Check cost limit (fires independently of or alongside TTL — first-to-fire wins)
+	if a.config.CostLimit > 0 && a.config.PricePerHour > 0 {
+		uptime := time.Since(a.startTime)
+		accumulated := a.config.PricePerHour * uptime.Hours()
+		remaining := a.config.CostLimit - accumulated
+
+		if remaining <= 0 {
+			log.Printf("Cost limit reached (limit: $%.4f, accumulated: $%.4f)", a.config.CostLimit, accumulated)
+			a.terminate(ctx, fmt.Sprintf("cost limit reached ($%.2f)", a.config.CostLimit))
+			return
+		}
+
+		// Warn when 90%+ of budget consumed
+		if accumulated/a.config.CostLimit >= 0.90 {
+			a.warnUsers(fmt.Sprintf("⚠️  COST LIMIT: $%.4f of $%.2f spent (%.0f%%) — terminating soon",
+				accumulated, a.config.CostLimit, (accumulated/a.config.CostLimit)*100))
+		}
+	}
+
+	// 4. Check idle
 	if a.config.IdleTimeout > 0 {
 		idle := a.isIdle()
 		if idle {

@@ -126,6 +126,7 @@ var (
 	autoYes                bool
 	distributionMode       string
 	budget                 float64
+	costLimit              float64
 
 	// Region constraints
 	regionsInclude    []string
@@ -267,7 +268,8 @@ func init() {
 	launchCmd.Flags().BoolVar(&detach, "detach", false, "Run sweep orchestration in Lambda (auto-enabled for parameter sweeps)")
 	launchCmd.Flags().BoolVar(&noDetach, "no-detach", false, "Disable auto-detach for parameter sweeps (requires --ttl or --idle-timeout)")
 	launchCmd.Flags().StringVar(&sweepName, "sweep-name", "", "Human-readable sweep identifier (auto-generated if empty)")
-	launchCmd.Flags().Float64Var(&budget, "budget", 0, "Budget limit in dollars (0 = no limit)")
+	launchCmd.Flags().Float64Var(&budget, "budget", 0, "Budget limit in dollars for parameter sweeps (0 = no limit)")
+	launchCmd.Flags().Float64Var(&costLimit, "cost-limit", 0, "Terminate/stop when compute spend reaches this amount in USD (compute cost only; 0 = disabled)")
 	launchCmd.Flags().BoolVar(&estimateOnly, "estimate-only", false, "Show cost estimate and exit without launching")
 	launchCmd.Flags().BoolVarP(&autoYes, "yes", "y", false, "Auto-approve cost estimate (skip confirmation)")
 	launchCmd.Flags().StringVar(&distributionMode, "mode", "balanced", "Distribution mode: balanced (fair share) or opportunistic (prioritize available regions)")
@@ -1625,6 +1627,10 @@ func buildLaunchConfig(truffleInput *input.TruffleInput) (*aws.LaunchConfig, err
 	}
 	if fsxMountPoint != "" {
 		config.FSxMountPoint = fsxMountPoint
+	}
+
+	if costLimit > 0 {
+		config.CostLimit = costLimit
 	}
 
 	// Validate FSx flags

@@ -15,6 +15,7 @@ import (
 	iamtypes "github.com/aws/aws-sdk-go-v2/service/iam/types"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 	"github.com/scttfrdmn/spore-host/spawn/pkg/observability/tracing"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/pricing"
 )
 
 type Client struct {
@@ -349,6 +350,14 @@ func buildTags(config LaunchConfig, accountID string, userARN string) []types.Ta
 
 	if config.CompletionDelay != "" {
 		tags = append(tags, types.Tag{Key: aws.String("spawn:completion-delay"), Value: aws.String(config.CompletionDelay)})
+	}
+
+	// Cost limit
+	if config.CostLimit > 0 {
+		tags = append(tags, types.Tag{Key: aws.String("spawn:cost-limit"), Value: aws.String(fmt.Sprintf("%.4f", config.CostLimit))})
+		// Pre-compute on-demand price per hour so spored can track spend without knowing the instance type
+		pricePerHour := pricing.GetEC2HourlyRate(config.Region, config.InstanceType)
+		tags = append(tags, types.Tag{Key: aws.String("spawn:price-per-hour"), Value: aws.String(fmt.Sprintf("%.6f", pricePerHour))})
 	}
 
 	// Session management

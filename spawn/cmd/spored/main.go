@@ -271,6 +271,18 @@ func handleStatus() {
 		fmt.Println("  TTL:              disabled")
 	}
 
+	if config.CostLimit > 0 && config.PricePerHour > 0 {
+		accumulated := config.PricePerHour * uptime.Hours()
+		remaining := config.CostLimit - accumulated
+		pct := (accumulated / config.CostLimit) * 100
+		fmt.Printf("  Cost Limit:       $%.2f (spent: $%.4f, %.0f%% used, $%.4f remaining)\n",
+			config.CostLimit, accumulated, pct, remaining)
+	} else if config.CostLimit > 0 {
+		fmt.Printf("  Cost Limit:       $%.2f (price data unavailable)\n", config.CostLimit)
+	} else {
+		fmt.Println("  Cost Limit:       disabled")
+	}
+
 	if config.IdleTimeout > 0 {
 		status := "active"
 		if isIdle {
