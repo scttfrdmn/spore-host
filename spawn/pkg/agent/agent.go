@@ -26,6 +26,7 @@ type Agent struct {
 	pluginRuntime    *pluginruntime.Runtime
 	startTime        time.Time
 	lastActivityTime time.Time
+	preStopDone      bool // guards against running pre-stop hook more than once
 }
 
 func NewAgent(ctx context.Context, prov provider.Provider) (*Agent, error) {
@@ -544,6 +545,9 @@ func (a *Agent) checkSpotInterruption(ctx context.Context) bool {
 
 	a.warnUsers(message)
 
+	// Run pre-stop hook with shortened timeout (stay within the 2-min window)
+	a.runPreStop(true)
+
 	// Send notifications (if configured)
 	a.sendSpotInterruptionNotification(info.Action, info.Time.Format(time.RFC3339))
 
@@ -632,6 +636,8 @@ func (a *Agent) checkCompletion(ctx context.Context) bool {
 func (a *Agent) stop(ctx context.Context, reason string) {
 	log.Printf("Stopping instance (reason: %s)", reason)
 
+	a.runPreStop(false)
+
 	// Clean up DNS before stopping
 	a.Cleanup(ctx)
 
@@ -648,6 +654,8 @@ func (a *Agent) stop(ctx context.Context, reason string) {
 
 func (a *Agent) hibernate(ctx context.Context) {
 	log.Printf("Hibernating instance")
+
+	a.runPreStop(false)
 
 	// Clean up DNS before hibernating
 	a.Cleanup(ctx)
@@ -720,8 +728,48 @@ func (a *Agent) Cleanup(ctx context.Context) {
 	log.Printf("Cleanup complete")
 }
 
+// runPreStop executes the user-configured pre-stop command before any
+// lifecycle-triggered shutdown. It runs at most once (guarded by preStopDone).
+// The default timeout is 5 minutes; spot interruptions use 90 seconds.
+func (a *Agent) runPreStop(spotMode bool) {
+	if a.config.PreStop == "" || a.preStopDone {
+		return
+	}
+	a.preStopDone = true
+
+	timeout := 5 * time.Minute
+	if a.config.PreStopTimeout > 0 {
+		timeout = a.config.PreStopTimeout
+	} else if spotMode {
+		timeout = 90 * time.Second // stay within the 2-min spot window
+	}
+
+	log.Printf("Running pre-stop hook (timeout: %v): %s", timeout, a.config.PreStop)
+	a.warnUsers(fmt.Sprintf("⏳ Running pre-stop hook (%v timeout)...", timeout))
+
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, "sh", "-c", a.config.PreStop)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Run(); err != nil {
+		if ctx.Err() == context.DeadlineExceeded {
+			log.Printf("Pre-stop hook timed out after %v — proceeding with shutdown", timeout)
+		} else {
+			log.Printf("Pre-stop hook exited with error: %v — proceeding with shutdown", err)
+		}
+		return
+	}
+
+	log.Printf("Pre-stop hook completed successfully")
+}
+
 func (a *Agent) terminate(ctx context.Context, reason string) {
 	log.Printf("Terminating instance (reason: %s)", reason)
+
+	a.runPreStop(false)
 
 	// Clean up DNS before terminating
 	a.Cleanup(ctx)

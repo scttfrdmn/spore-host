@@ -34,6 +34,10 @@ type Config struct {
 	PricePerHour    float64 // On-demand price per hour (recorded at launch; used for cost-limit enforcement)
 	IdleCPUPercent  float64
 
+	// Pre-stop hook
+	PreStop        string        // Shell command to run before any lifecycle-triggered stop
+	PreStopTimeout time.Duration // Max time to wait (default: 5m)
+
 	// Completion signal settings
 	OnComplete      string        // Action: terminate, stop, hibernate, exit
 	CompletionFile  string        // File path to watch

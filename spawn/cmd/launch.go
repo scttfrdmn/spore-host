@@ -67,6 +67,8 @@ var (
 	ttl             string
 	idleTimeout     string
 	hibernateOnIdle bool
+	preStop        string
+	preStopTimeout string
 	onComplete      string
 	completionFile  string
 	completionDelay string
@@ -214,6 +216,8 @@ func init() {
 	launchCmd.Flags().StringVar(&idleTimeout, "idle-timeout", "", "Auto-terminate if idle (defaults to 1h if neither --ttl nor --idle-timeout set)")
 	launchCmd.Flags().BoolVar(&noTimeout, "no-timeout", false, "Disable automatic timeout (NOT RECOMMENDED: creates zombie risk)")
 	launchCmd.Flags().BoolVar(&hibernateOnIdle, "hibernate-on-idle", false, "Hibernate instead of terminate when idle")
+	launchCmd.Flags().StringVar(&preStop, "pre-stop", "", "Shell command to run on the instance before any lifecycle-triggered stop/terminate (e.g., \"aws s3 sync /results s3://bucket/\")")
+	launchCmd.Flags().StringVar(&preStopTimeout, "pre-stop-timeout", "", "Max time to wait for --pre-stop command (default: 5m, spot: 90s)")
 	launchCmd.Flags().StringVar(&onComplete, "on-complete", "", "Action when workload signals completion: terminate, stop, hibernate")
 	launchCmd.Flags().StringVar(&completionFile, "completion-file", "/tmp/SPAWN_COMPLETE", "File to watch for completion signal")
 	launchCmd.Flags().StringVar(&completionDelay, "completion-delay", "30s", "Grace period after completion signal")
@@ -1582,6 +1586,12 @@ func buildLaunchConfig(truffleInput *input.TruffleInput) (*aws.LaunchConfig, err
 	}
 	if hibernateOnIdle {
 		config.HibernateOnIdle = true
+	}
+	if preStop != "" {
+		config.PreStop = preStop
+	}
+	if preStopTimeout != "" {
+		config.PreStopTimeout = preStopTimeout
 	}
 	if onComplete != "" {
 		config.OnComplete = onComplete

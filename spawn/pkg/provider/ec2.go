@@ -359,6 +359,12 @@ func loadConfigFromEC2Tags(ctx context.Context, client *ec2.Client, instanceID s
 			}
 		case "spawn:dns-name":
 			config.DNSName = *tag.Value
+		case "spawn:pre-stop":
+			config.PreStop = *tag.Value
+		case "spawn:pre-stop-timeout":
+			if duration, err := time.ParseDuration(*tag.Value); err == nil {
+				config.PreStopTimeout = duration
+			}
 		case "spawn:on-complete":
 			config.OnComplete = *tag.Value
 		case "spawn:completion-file":

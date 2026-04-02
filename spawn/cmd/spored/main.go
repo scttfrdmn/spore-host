@@ -271,6 +271,17 @@ func handleStatus() {
 		fmt.Println("  TTL:              disabled")
 	}
 
+	if config.PreStop != "" {
+		timeout := config.PreStopTimeout
+		if timeout == 0 {
+			timeout = 5 * time.Minute
+		}
+		fmt.Printf("  Pre-Stop Hook:    %s\n", config.PreStop)
+		fmt.Printf("  Pre-Stop Timeout: %s\n", formatDuration(timeout))
+	} else {
+		fmt.Println("  Pre-Stop Hook:    disabled")
+	}
+
 	if config.CostLimit > 0 && config.PricePerHour > 0 {
 		accumulated := config.PricePerHour * uptime.Hours()
 		remaining := config.CostLimit - accumulated

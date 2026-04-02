@@ -97,6 +97,10 @@ type LaunchConfig struct {
 	CostLimit       float64
 	DNSName         string
 
+	// Pre-stop hook: runs before any lifecycle-triggered terminate/stop/hibernate
+	PreStop        string // Shell command to run before stopping (e.g., "aws s3 sync /results s3://bucket/")
+	PreStopTimeout string // Max time to wait for pre-stop command (default: 5m)
+
 	// Completion signal settings
 	OnComplete      string // Action: terminate, stop, hibernate
 	CompletionFile  string // File path to watch (default: /tmp/SPAWN_COMPLETE)
@@ -350,6 +354,14 @@ func buildTags(config LaunchConfig, accountID string, userARN string) []types.Ta
 
 	if config.CompletionDelay != "" {
 		tags = append(tags, types.Tag{Key: aws.String("spawn:completion-delay"), Value: aws.String(config.CompletionDelay)})
+	}
+
+	// Pre-stop hook
+	if config.PreStop != "" {
+		tags = append(tags, types.Tag{Key: aws.String("spawn:pre-stop"), Value: aws.String(config.PreStop)})
+		if config.PreStopTimeout != "" {
+			tags = append(tags, types.Tag{Key: aws.String("spawn:pre-stop-timeout"), Value: aws.String(config.PreStopTimeout)})
+		}
 	}
 
 	// Cost limit
