@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	"github.com/scttfrdmn/spore-host/pkg/i18n"
 	"github.com/scttfrdmn/spore-host/spawn/pkg/agent"
 	"github.com/scttfrdmn/spore-host/spawn/pkg/observability/metrics"
 	"github.com/scttfrdmn/spore-host/spawn/pkg/observability/tracing"
@@ -21,6 +23,21 @@ import (
 	"github.com/scttfrdmn/spore-host/spawn/pkg/pluginruntime"
 	"github.com/scttfrdmn/spore-host/spawn/pkg/provider"
 )
+
+// detectLang reads the system locale from environment variables and returns a
+// two-letter language code, defaulting to "en".
+func detectLang() string {
+	for _, env := range []string{"LANG", "LC_ALL", "LC_MESSAGES"} {
+		if v := os.Getenv(env); v != "" {
+			// "en_US.UTF-8" → "en"
+			lang := strings.Split(strings.Split(v, ".")[0], "_")[0]
+			if len(lang) == 2 {
+				return lang
+			}
+		}
+	}
+	return "en"
+}
 
 var Version = "0.1.0"
 
@@ -66,6 +83,11 @@ func main() {
 	}
 
 	log.Printf("spored v%s starting...", Version)
+
+	// Initialize i18n so agent lifecycle warnings are translated
+	if err := i18n.Init(i18n.Config{Language: detectLang()}); err != nil {
+		log.Printf("Warning: failed to initialize i18n: %v", err)
+	}
 
 	// Create agent with provider
 	ctx, cancel := context.WithCancel(context.Background())

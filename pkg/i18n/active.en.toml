@@ -845,6 +845,22 @@ other = "HIBERNATING NOW - Instance will pause..."
 description = "Termination announcement"
 other = "🔴 TERMINATING NOW - Reason: {{.Reason}}"
 
+[spawn.agent.cost_limit_warning]
+description = "Warning shown when accumulated spend is approaching the cost limit"
+other = "⚠️  COST LIMIT: ${{.Accumulated}} of ${{.Limit}} spent ({{.Percentage}}%) — terminating soon"
+
+[spawn.agent.workload_complete]
+description = "Confirmation shown when the workload signals completion"
+other = "✓ Workload complete - {{.Action}} in {{.Delay}}"
+
+[spawn.agent.stopping]
+description = "Warning shown when instance is about to stop"
+other = "🛑 STOPPING NOW - {{.Reason}}"
+
+[spawn.agent.pre_stop_running]
+description = "Notice shown when the pre-stop hook is executing"
+other = "⏳ Running pre-stop hook ({{.Timeout}} timeout)..."
+
 # =============================================================================
 # TRUFFLE - ROOT COMMAND
 # =============================================================================

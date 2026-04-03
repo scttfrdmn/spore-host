@@ -874,6 +874,18 @@ other = "RUHEZUSTAND JETZT - Instanz wird pausiert..."
 [spawn.agent.terminating]
 other = "🔴 HERUNTERFAHREN JETZT - Grund: {{.Reason}}"
 
+[spawn.agent.cost_limit_warning]
+other = "⚠️  KOSTENLIMIT: ${{.Accumulated}} von ${{.Limit}} ausgegeben ({{.Percentage}}%) — Beendigung bald"
+
+[spawn.agent.workload_complete]
+other = "✓ Arbeitslast abgeschlossen - {{.Action}} in {{.Delay}}"
+
+[spawn.agent.stopping]
+other = "🛑 STOPPE JETZT - {{.Reason}}"
+
+[spawn.agent.pre_stop_running]
+other = "⏳ Ausführen des Pre-Stop-Hooks (Zeitlimit: {{.Timeout}})..."
+
 [truffle.root.use]
 other = "truffle"
 

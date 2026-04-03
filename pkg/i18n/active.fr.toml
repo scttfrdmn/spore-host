@@ -874,6 +874,18 @@ other = "HIBERNATION MAINTENANT - L'instance va se mettre en pause..."
 [spawn.agent.terminating]
 other = "🔴 ARRÊT MAINTENANT - Raison : {{.Reason}}"
 
+[spawn.agent.cost_limit_warning]
+other = "⚠️  LIMITE DE COÛT : ${{.Accumulated}} sur ${{.Limit}} dépensés ({{.Percentage}}%) — arrêt imminent"
+
+[spawn.agent.workload_complete]
+other = "✓ Charge de travail terminée - {{.Action}} dans {{.Delay}}"
+
+[spawn.agent.stopping]
+other = "🛑 ARRÊT EN COURS - {{.Reason}}"
+
+[spawn.agent.pre_stop_running]
+other = "⏳ Exécution du hook de pré-arrêt (délai : {{.Timeout}})..."
+
 [truffle.root.use]
 other = "truffle"
 

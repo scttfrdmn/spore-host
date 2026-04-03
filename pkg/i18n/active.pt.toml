@@ -669,6 +669,18 @@ other = "HIBERNANDO AGORA - Instância pausará..."
 [spawn.agent.terminating]
 other = "🔴 TERMINANDO AGORA - Motivo: {{.Reason}}"
 
+[spawn.agent.cost_limit_warning]
+other = "⚠️  LIMITE DE CUSTO: ${{.Accumulated}} de ${{.Limit}} gastos ({{.Percentage}}%) — encerrando em breve"
+
+[spawn.agent.workload_complete]
+other = "✓ Carga de trabalho concluída - {{.Action}} em {{.Delay}}"
+
+[spawn.agent.stopping]
+other = "🛑 PARANDO AGORA - {{.Reason}}"
+
+[spawn.agent.pre_stop_running]
+other = "⏳ Executando hook de pré-parada (tempo limite: {{.Timeout}})..."
+
 # =============================================================================
 # TRUFFLE - COMANDO RAIZ
 # =============================================================================

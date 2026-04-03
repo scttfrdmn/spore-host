@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/scttfrdmn/spore-host/pkg/i18n"
 	"github.com/scttfrdmn/spore-host/spawn/pkg/dns"
 	"github.com/scttfrdmn/spore-host/spawn/pkg/plugin"
 	"github.com/scttfrdmn/spore-host/spawn/pkg/pluginruntime"
@@ -206,7 +207,9 @@ func (a *Agent) checkAndAct(ctx context.Context) {
 
 		// Warn at 5 minutes
 		if remaining > 0 && remaining <= 5*time.Minute {
-			a.warnUsers(fmt.Sprintf("⚠️  TERMINATING IN %v (TTL limit)", remaining.Round(time.Minute)))
+			a.warnUsers(i18n.Tf("spawn.agent.ttl_warning", map[string]interface{}{
+				"Duration": remaining.Round(time.Minute),
+			}))
 		}
 	}
 
@@ -224,8 +227,11 @@ func (a *Agent) checkAndAct(ctx context.Context) {
 
 		// Warn when 90%+ of budget consumed
 		if accumulated/a.config.CostLimit >= 0.90 {
-			a.warnUsers(fmt.Sprintf("⚠️  COST LIMIT: $%.4f of $%.2f spent (%.0f%%) — terminating soon",
-				accumulated, a.config.CostLimit, (accumulated/a.config.CostLimit)*100))
+			a.warnUsers(i18n.Tf("spawn.agent.cost_limit_warning", map[string]interface{}{
+				"Accumulated": fmt.Sprintf("%.4f", accumulated),
+				"Limit":       fmt.Sprintf("%.2f", a.config.CostLimit),
+				"Percentage":  fmt.Sprintf("%.0f", (accumulated/a.config.CostLimit)*100),
+			}))
 		}
 	}
 
@@ -249,8 +255,10 @@ func (a *Agent) checkAndAct(ctx context.Context) {
 			// Warn at 5 minutes before idle timeout
 			remaining := a.config.IdleTimeout - idleTime
 			if remaining > 0 && remaining <= 5*time.Minute {
-				a.warnUsers(fmt.Sprintf("⚠️  IDLE for %v, will terminate in %v",
-					idleTime.Round(time.Minute), remaining.Round(time.Minute)))
+				a.warnUsers(i18n.Tf("spawn.agent.idle_warning", map[string]interface{}{
+					"IdleDuration": idleTime.Round(time.Minute),
+					"Remaining":    remaining.Round(time.Minute),
+				}))
 			}
 		} else {
 			// Activity detected, reset timer
@@ -538,12 +546,11 @@ func (a *Agent) checkSpotInterruption(ctx context.Context) bool {
 	a.Cleanup(cleanupCtx)
 
 	// Alert users immediately
-	message := fmt.Sprintf("🚨 SPOT INTERRUPTION WARNING! 🚨\n"+
-		"AWS will %s this instance at %s\n"+
-		"You have ~2 minutes to save your work!\n"+
-		"SAVE ALL FILES NOW!", info.Action, info.Time.Format(time.RFC3339))
-
-	a.warnUsers(message)
+	a.warnUsers(i18n.T("spawn.agent.spot_interruption.title") + "\n" +
+		i18n.Tf("spawn.agent.spot_interruption.message", map[string]interface{}{
+			"Action": info.Action,
+			"Time":   info.Time.Format("15:04:05"),
+		}))
 
 	// Run pre-stop hook with shortened timeout (stay within the 2-min window)
 	a.runPreStop(true)
@@ -604,7 +611,10 @@ func (a *Agent) checkCompletion(ctx context.Context) bool {
 
 		// Warn users with grace period
 		delay := a.config.CompletionDelay
-		a.warnUsers(fmt.Sprintf("✓ Workload complete - %s in %v", a.config.OnComplete, delay))
+		a.warnUsers(i18n.Tf("spawn.agent.workload_complete", map[string]interface{}{
+			"Action": a.config.OnComplete,
+			"Delay":  delay,
+		}))
 
 		log.Printf("Grace period: waiting %v before action", delay)
 		time.Sleep(delay)
@@ -641,7 +651,9 @@ func (a *Agent) stop(ctx context.Context, reason string) {
 	// Clean up DNS before stopping
 	a.Cleanup(ctx)
 
-	a.warnUsers(fmt.Sprintf("🛑 STOPPING NOW - %s", reason))
+	a.warnUsers(i18n.Tf("spawn.agent.stopping", map[string]interface{}{
+		"Reason": reason,
+	}))
 
 	// Wait a moment for users to see warning
 	time.Sleep(5 * time.Second)
@@ -660,7 +672,7 @@ func (a *Agent) hibernate(ctx context.Context) {
 	// Clean up DNS before hibernating
 	a.Cleanup(ctx)
 
-	a.warnUsers("💤 HIBERNATING NOW - Instance will pause, resume later")
+	a.warnUsers(i18n.T("spawn.agent.hibernating"))
 
 	// Wait a moment for users to see warning
 	time.Sleep(5 * time.Second)
@@ -745,7 +757,9 @@ func (a *Agent) runPreStop(spotMode bool) {
 	}
 
 	log.Printf("Running pre-stop hook (timeout: %v): %s", timeout, a.config.PreStop)
-	a.warnUsers(fmt.Sprintf("⏳ Running pre-stop hook (%v timeout)...", timeout))
+	a.warnUsers(i18n.Tf("spawn.agent.pre_stop_running", map[string]interface{}{
+		"Timeout": timeout,
+	}))
 
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
@@ -774,7 +788,9 @@ func (a *Agent) terminate(ctx context.Context, reason string) {
 	// Clean up DNS before terminating
 	a.Cleanup(ctx)
 
-	a.warnUsers(fmt.Sprintf("🔴 TERMINATING NOW - Reason: %s", reason))
+	a.warnUsers(i18n.Tf("spawn.agent.terminating", map[string]interface{}{
+		"Reason": reason,
+	}))
 
 	// Wait a moment for users to see warning
 	time.Sleep(5 * time.Second)
