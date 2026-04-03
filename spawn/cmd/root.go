@@ -16,6 +16,7 @@ var (
 	flagLang          string
 	flagNoEmoji       bool
 	flagAccessibility bool
+	flagNoColor       bool
 )
 
 var rootCmd = &cobra.Command{
@@ -48,6 +49,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&flagLang, "lang", "", "Language for output (en, es, fr, de, ja, pt)")
 	rootCmd.PersistentFlags().BoolVar(&flagNoEmoji, "no-emoji", false, "Disable emoji in output")
 	rootCmd.PersistentFlags().BoolVar(&flagAccessibility, "accessibility", false, "Enable accessibility mode (implies --no-emoji)")
+	rootCmd.PersistentFlags().BoolVar(&flagNoColor, "no-color", false, "Disable colorized output")
 
 	// Enable shell completion for all supported shells
 	rootCmd.CompletionOptions.DisableDefaultCmd = false

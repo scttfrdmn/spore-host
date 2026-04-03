@@ -139,7 +139,11 @@ func outputTable(instances []aws.InstanceInfo) error {
 
 // displayParameterSweeps shows all parameter sweeps with stats and instances
 func displayParameterSweeps(sweeps map[string][]aws.InstanceInfo) {
-	fmt.Println("\033[1mParameter Sweeps:\033[0m")
+	if flagNoColor || flagAccessibility {
+		fmt.Println("Parameter Sweeps:")
+	} else {
+		fmt.Println("\033[1mParameter Sweeps:\033[0m")
+	}
 
 	// Sort sweep IDs for consistent output
 	var sweepIDs []string
@@ -178,7 +182,11 @@ func displayParameterSweeps(sweeps map[string][]aws.InstanceInfo) {
 
 // displayStandaloneJobArrays shows standalone job arrays (not part of a sweep)
 func displayStandaloneJobArrays(jobArrays map[string][]aws.InstanceInfo) {
-	fmt.Println("\033[1mJob Arrays:\033[0m")
+	if flagNoColor || flagAccessibility {
+		fmt.Println("Job Arrays:")
+	} else {
+		fmt.Println("\033[1mJob Arrays:\033[0m")
+	}
 
 	// Sort job array IDs for consistent output
 	var jobArrayIDs []string
@@ -218,7 +226,11 @@ func displayStandaloneJobArrays(jobArrays map[string][]aws.InstanceInfo) {
 // displayStandaloneInstances shows standalone instances (not part of sweep or job array)
 func displayStandaloneInstances(instances []aws.InstanceInfo, hasOtherGroups bool) {
 	if hasOtherGroups {
-		fmt.Println("\033[1mStandalone Instances:\033[0m")
+		if flagNoColor || flagAccessibility {
+			fmt.Println("Standalone Instances:")
+		} else {
+			fmt.Println("\033[1mStandalone Instances:\033[0m")
+		}
 	}
 
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
@@ -389,6 +401,9 @@ func displayInstance(inst aws.InstanceInfo, prefix string) {
 }
 
 func colorizeState(state string) string {
+	if flagNoColor || flagAccessibility {
+		return state
+	}
 	switch state {
 	case "running":
 		return "\033[32m" + state + "\033[0m" // Green

@@ -9,6 +9,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/olekukonko/tablewriter"
 	"github.com/olekukonko/tablewriter/tw"
+	"github.com/scttfrdmn/spore-host/pkg/i18n"
 	"github.com/spf13/cobra"
 	"github.com/scttfrdmn/spore-host/truffle/pkg/quotas"
 )
@@ -58,20 +59,7 @@ func runQuotas(cmd *cobra.Command, args []string) error {
 	// Create quota client
 	quotaClient, err := quotas.NewClient(ctx)
 	if err != nil {
-		return fmt.Errorf(`
-❌ AWS credentials required for quota checking
-
-To configure credentials:
-  1. Export environment variables:
-     export AWS_ACCESS_KEY_ID=...
-     export AWS_SECRET_ACCESS_KEY=...
-     export AWS_DEFAULT_REGION=us-east-1
-
-  OR
-
-  2. Run: aws configure
-
-Error: %v`, err)
+		return fmt.Errorf("%s AWS credentials required for quota checking\n\nTo configure credentials:\n  1. Export environment variables:\n     export AWS_ACCESS_KEY_ID=...\n     export AWS_SECRET_ACCESS_KEY=...\n     export AWS_DEFAULT_REGION=us-east-1\n\n  OR\n\n  2. Run: aws configure\n\nError: %v", i18n.Symbol("error"), err)
 	}
 
 	// Get quotas for each region
@@ -141,9 +129,20 @@ func displayRegionQuotas(region string, info *quotas.QuotaInfo, filterFamily str
 		quotas.FamilyX,
 	}
 
-	green := color.New(color.FgGreen).SprintFunc()
-	yellow := color.New(color.FgYellow).SprintFunc()
-	red := color.New(color.FgRed).SprintFunc()
+	var applyGreen, applyYellow, applyRed func(a ...interface{}) string
+	if noColor {
+		id := func(a ...interface{}) string {
+			if len(a) > 0 {
+				return fmt.Sprint(a[0])
+			}
+			return ""
+		}
+		applyGreen, applyYellow, applyRed = id, id, id
+	} else {
+		applyGreen = color.New(color.FgGreen).SprintFunc()
+		applyYellow = color.New(color.FgYellow).SprintFunc()
+		applyRed = color.New(color.FgRed).SprintFunc()
+	}
 
 	for _, family := range families {
 		// Skip if filtering and doesn't match
@@ -161,13 +160,13 @@ func displayRegionQuotas(region string, info *quotas.QuotaInfo, filterFamily str
 			statusStr := ""
 			switch status {
 			case "healthy":
-				statusStr = green("✅ OK")
+				statusStr = applyGreen(i18n.Symbol("success") + " OK")
 			case "warning":
-				statusStr = yellow("⚠️  Low")
+				statusStr = applyYellow(i18n.Symbol("warning") + " Low")
 			case "critical":
-				statusStr = red("🔴 Full")
+				statusStr = applyRed(i18n.Symbol("error") + " Full")
 			case "zero":
-				statusStr = red("❌ Zero")
+				statusStr = applyRed(i18n.Symbol("error") + " Zero")
 			}
 
 			_ = table.Append([]string{
@@ -186,9 +185,9 @@ func displayRegionQuotas(region string, info *quotas.QuotaInfo, filterFamily str
 			_ = getQuotaStatus(spotQuota, 0) // Can't track Spot usage easily
 			statusStr := ""
 			if spotQuota == 0 {
-				statusStr = red("❌ Zero")
+				statusStr = applyRed(i18n.Symbol("error") + " Zero")
 			} else {
-				statusStr = green("✅ OK")
+				statusStr = applyGreen(i18n.Symbol("success") + " OK")
 			}
 
 			_ = table.Append([]string{
@@ -208,12 +207,12 @@ func displayRegionQuotas(region string, info *quotas.QuotaInfo, filterFamily str
 
 	// Show instance count
 	fmt.Println()
-	fmt.Printf("🖥️  Running Instances: %d / %d\n", 
-		info.RunningInstances, info.RunningInstancesMax)
-	
+	fmt.Printf("%s Running Instances: %d / %d\n",
+		i18n.Emoji("computer"), info.RunningInstances, info.RunningInstancesMax)
+
 	// Show family descriptions
 	fmt.Println()
-	fmt.Println("📚 Instance Family Reference:")
+	fmt.Printf("%s Instance Family Reference:\n", i18n.Emoji("books"))
 	fmt.Println("   Standard: A, C, D, H, I, M, R, T, Z (general purpose)")
 	fmt.Println("   G: Graphics/GPU instances (g4dn, g5, g6)")
 	fmt.Println("   P: GPU training instances (p3, p4, p5)")

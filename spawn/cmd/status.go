@@ -304,7 +304,7 @@ func runSweepStatus(ctx context.Context, sweepID string) error {
 
 	// Display error message if any
 	if status.ErrorMessage != "" {
-		_, _ = fmt.Fprintf(os.Stdout, "⚠️  Error: %s\n\n", status.ErrorMessage)
+		_, _ = fmt.Fprintf(os.Stdout, "%s Error: %s\n\n", i18n.Symbol("warning"), status.ErrorMessage)
 	}
 
 	// Display instance details (limited to most recent 10)
@@ -367,9 +367,9 @@ func runSweepStatus(ctx context.Context, sweepID string) error {
 		_, _ = fmt.Fprintf(os.Stdout, "The sweep is currently running in Lambda.\n")
 		_, _ = fmt.Fprintf(os.Stdout, "Re-run this command to see updated progress.\n")
 	case "COMPLETED":
-		_, _ = fmt.Fprintf(os.Stdout, "✅ Sweep completed successfully!\n")
+		_, _ = fmt.Fprintf(os.Stdout, "%s Sweep completed successfully!\n", i18n.Symbol("success"))
 	case "FAILED":
-		_, _ = fmt.Fprintf(os.Stdout, "❌ Sweep failed. Check error message above.\n")
+		_, _ = fmt.Fprintf(os.Stdout, "%s Sweep failed. Check error message above.\n", i18n.Symbol("error"))
 		_, _ = fmt.Fprintf(os.Stdout, "\nTo resume:\n")
 		_, _ = fmt.Fprintf(os.Stdout, "  spawn resume --sweep-id %s --detach\n", status.SweepID)
 	}
@@ -380,15 +380,15 @@ func runSweepStatus(ctx context.Context, sweepID string) error {
 func colorizeStatus(status string) string {
 	switch status {
 	case "INITIALIZING":
-		return "🔄 " + status
+		return i18n.Symbol("progress") + " " + status
 	case "RUNNING":
-		return "🚀 " + status
+		return i18n.Symbol("progress") + " " + status
 	case "COMPLETED":
-		return "✅ " + status
+		return i18n.Symbol("success") + " " + status
 	case "FAILED":
-		return "❌ " + status
+		return i18n.Symbol("error") + " " + status
 	case "CANCELLED":
-		return "⚠️  " + status
+		return i18n.Symbol("warning") + " " + status
 	default:
 		return status
 	}
@@ -397,13 +397,13 @@ func colorizeStatus(status string) string {
 func colorizeInstanceState(state string) string {
 	switch state {
 	case "pending":
-		return "🔄 " + state
+		return i18n.Symbol("pending") + " " + state
 	case "running":
-		return "🟢 " + state
+		return i18n.Symbol("success") + " " + state
 	case "terminated", "stopped":
-		return "⚪ " + state
+		return i18n.Symbol("pause") + " " + state
 	case "failed":
-		return "❌ " + state
+		return i18n.Symbol("error") + " " + state
 	default:
 		return state
 	}

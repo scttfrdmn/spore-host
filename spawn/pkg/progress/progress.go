@@ -92,13 +92,11 @@ func (p *Progress) Skip(stepName string) {
 
 // display shows the current progress
 func (p *Progress) display() {
-	// Clear screen and move cursor to top
-	if runtime.GOOS == "windows" {
-		// Windows: just print progress without clearing
-		fmt.Println()
-	} else {
-		// Unix: clear and redraw
+	// Clear screen and move cursor to top (skip in accessibility mode or when not a TTY)
+	if i18n.Global == nil || (!i18n.Global.AccessibilityMode() && runtime.GOOS != "windows") {
 		fmt.Print("\033[2J\033[H")
+	} else {
+		fmt.Println()
 	}
 
 	fmt.Println()
@@ -214,9 +212,13 @@ type Spinner struct {
 
 // NewSpinner creates a new spinner
 func NewSpinner(message string) *Spinner {
+	frames := []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
+	if i18n.Global != nil && i18n.Global.AccessibilityMode() {
+		frames = []string{"|", "/", "-", "\\"}
+	}
 	return &Spinner{
 		message: message,
-		frames:  []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"},
+		frames:  frames,
 		stop:    make(chan bool),
 	}
 }
