@@ -15,11 +15,13 @@ import (
 )
 
 var (
-	spotMaxPrice     float64
-	spotShowSavings  bool
-	spotSortByPrice  bool
-	spotOnlyActive   bool
+	spotMaxPrice      float64
+	spotShowSavings   bool
+	spotSortByPrice   bool
+	spotOnlyActive    bool
 	spotLookbackHours int
+	spotPickFirst     bool
+	spotLocalZones    bool
 )
 
 var spotCmd = &cobra.Command{
@@ -37,6 +39,8 @@ func init() {
 	spotCmd.Flags().BoolVar(&spotSortByPrice, "sort-by-price", false, "Sort by price (cheapest first)")
 	spotCmd.Flags().BoolVar(&spotOnlyActive, "active-only", false, "Only show AZs with active Spot capacity")
 	spotCmd.Flags().IntVar(&spotLookbackHours, "lookback-hours", 1, "Hours to look back for price history (1-720)")
+	spotCmd.Flags().BoolVar(&spotPickFirst, "pick-first", false, "Output only the top result's instance type (useful for piping to spawn)")
+	spotCmd.Flags().BoolVar(&spotLocalZones, "local-zones", false, "Include local zones in results (excluded by default)")
 	spotCmd.Flags().DurationVar(&timeout, "timeout", 5*time.Minute, "Timeout for AWS API calls")
 
 	// Register completion for instance type argument
@@ -126,6 +130,19 @@ func runSpot(cmd *cobra.Command, args []string) error {
 		return i18n.Te("truffle.spot.error.get_pricing_failed", err)
 	}
 
+	// Filter out local zones unless --local-zones is set
+	if !spotLocalZones {
+		filtered := spotResults[:0]
+		for _, r := range spotResults {
+			// Local zones have names like us-east-1-bos-1a (region + city code + letter)
+			// Regular zones are just region + letter, e.g., us-east-1a
+			if len(r.AvailabilityZone) <= len(r.Region)+1 {
+				filtered = append(filtered, r)
+			}
+		}
+		spotResults = filtered
+	}
+
 	if len(spotResults) == 0 {
 		fmt.Println(i18n.T("truffle.spot.no_pricing_data"))
 		return nil
@@ -147,6 +164,12 @@ func runSpot(cmd *cobra.Command, args []string) error {
 			}
 			return spotResults[i].AvailabilityZone < spotResults[j].AvailabilityZone
 		})
+	}
+
+	// --pick-first: output just the instance type of the top result and exit
+	if spotPickFirst {
+		fmt.Println(spotResults[0].InstanceType)
+		return nil
 	}
 
 	// Print summary

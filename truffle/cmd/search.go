@@ -22,6 +22,7 @@ var (
 	minVCPUs       int
 	minMemory      float64
 	instanceFamily string
+	searchPickFirst bool
 	timeout        time.Duration
 )
 
@@ -40,6 +41,7 @@ func init() {
 	searchCmd.Flags().IntVar(&minVCPUs, "min-vcpu", 0, "Minimum number of vCPUs")
 	searchCmd.Flags().Float64Var(&minMemory, "min-memory", 0, "Minimum memory in GiB")
 	searchCmd.Flags().StringVar(&instanceFamily, "family", "", "Filter by instance family (e.g., m5, c5)")
+	searchCmd.Flags().BoolVar(&searchPickFirst, "pick-first", false, "Output only the top result's instance type (useful for piping to spawn)")
 	searchCmd.Flags().DurationVar(&timeout, "timeout", 5*time.Minute, "Timeout for AWS API calls")
 
 	// Register completion for instance type argument
@@ -135,6 +137,12 @@ func runSearch(cmd *cobra.Command, args []string) error {
 
 	if len(results) == 0 {
 		fmt.Println(i18n.T("truffle.search.no_results"))
+		return nil
+	}
+
+	// --pick-first: output just the instance type of the top result and exit
+	if searchPickFirst {
+		fmt.Println(results[0].InstanceType)
 		return nil
 	}
 
