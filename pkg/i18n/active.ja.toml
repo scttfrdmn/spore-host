@@ -820,19 +820,19 @@ other = "GPU/MLインスタンスのみ"
 other = "キャパシティ予約サマリー:"
 
 [truffle.capacity.summary.total]
-other = "総予約数: {{.Count}}"
+other = "総予約数"
 
 [truffle.capacity.summary.active]
-other = "アクティブな予約: {{.Count}}"
+other = "アクティブな予約"
 
 [truffle.capacity.summary.instance_types]
-other = "インスタンスタイプ: {{.Count}}"
+other = "インスタンスタイプ"
 
 [truffle.capacity.summary.regions]
-other = "リージョン: {{.Count}}"
+other = "リージョン"
 
 [truffle.capacity.summary.azs]
-other = "アベイラビリティーゾーン: {{.Count}}"
+other = "アベイラビリティーゾーン"
 
 [truffle.capacity.summary.total_capacity]
 other = "総キャパシティ: {{.Count}}インスタンス"
@@ -893,22 +893,22 @@ other = "スポット価格データを取得中..."
 other = "スポットインスタンスサマリー:"
 
 [truffle.spot.summary.instance_types]
-other = "インスタンスタイプ: {{.Count}}"
+other = "インスタンスタイプ"
 
 [truffle.spot.summary.regions]
-other = "リージョン: {{.Count}}"
+other = "リージョン"
 
 [truffle.spot.summary.azs]
-other = "アベイラビリティーゾーン: {{.Count}}"
+other = "アベイラビリティーゾーン"
 
 [truffle.spot.summary.price_range]
-other = "価格範囲: ${{.Min}} - ${{.Max}}/時間"
+other = "価格範囲"
 
 [truffle.spot.summary.avg_price]
-other = "平均価格: ${{.Avg}}/時間"
+other = "平均価格"
 
 [truffle.spot.summary.avg_savings]
-other = "平均節約額: オンデマンドと比較して{{.Percent}}%"
+other = "平均節約額"
 
 # =============================================================================
 # TRUFFLE - QUOTASコマンド

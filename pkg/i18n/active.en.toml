@@ -1121,28 +1121,28 @@ description = "Summary section title"
 other = "Spot Instance Summary:"
 
 [truffle.spot.summary.instance_types]
-description = "Instance types count"
-other = "Instance Types: {{.Count}}"
+description = "Instance types label"
+other = "Instance Types"
 
 [truffle.spot.summary.regions]
-description = "Regions count"
-other = "Regions: {{.Count}}"
+description = "Regions label"
+other = "Regions"
 
 [truffle.spot.summary.azs]
-description = "Availability zones count"
-other = "Availability Zones: {{.Count}}"
+description = "Availability zones label"
+other = "Availability Zones"
 
 [truffle.spot.summary.price_range]
-description = "Price range"
-other = "Price Range: ${{.Min}} - ${{.Max}} per hour"
+description = "Price range label"
+other = "Price Range"
 
 [truffle.spot.summary.avg_price]
-description = "Average price"
-other = "Average Price: ${{.Avg}} per hour"
+description = "Average price label"
+other = "Average Spot Price"
 
 [truffle.spot.summary.avg_savings]
-description = "Average savings"
-other = "Average Savings: {{.Percent}}% vs On-Demand"
+description = "Average savings label"
+other = "Average Savings"
 
 # =============================================================================
 # TRUFFLE - QUOTAS COMMAND

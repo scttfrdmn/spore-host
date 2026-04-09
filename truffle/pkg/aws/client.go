@@ -482,8 +482,18 @@ func (c *Client) getRegionSpotPricing(ctx context.Context, region string, instan
 	// Calculate start time for price history
 	startTime := time.Now().Add(-time.Duration(opts.LookbackHours) * time.Hour)
 
-	// Query each instance type
+	// Deduplicate instances by type (callers may pass the same type multiple times)
+	seen := make(map[string]bool)
+	var deduped []InstanceTypeResult
 	for _, inst := range instances {
+		if !seen[inst.InstanceType] {
+			seen[inst.InstanceType] = true
+			deduped = append(deduped, inst)
+		}
+	}
+
+	// Query each instance type
+	for _, inst := range deduped {
 		// Get Spot price history
 		input := &ec2.DescribeSpotPriceHistoryInput{
 			InstanceTypes: []types.InstanceType{types.InstanceType(inst.InstanceType)},

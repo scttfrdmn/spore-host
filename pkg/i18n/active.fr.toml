@@ -1010,19 +1010,19 @@ other = "format de sortie non pris en charge : {{.Format}}"
 other = "Résumé des réservations de capacité :"
 
 [truffle.capacity.summary.total]
-other = "Réservations totales : {{.Count}}"
+other = "Réservations totales "
 
 [truffle.capacity.summary.active]
-other = "Réservations actives : {{.Count}}"
+other = "Réservations actives "
 
 [truffle.capacity.summary.instance_types]
-other = "Types d'instance : {{.Count}}"
+other = "Types d'instance "
 
 [truffle.capacity.summary.regions]
-other = "Régions : {{.Count}}"
+other = "Régions "
 
 [truffle.capacity.summary.azs]
-other = "Zones de disponibilité : {{.Count}}"
+other = "Zones de disponibilité "
 
 [truffle.capacity.summary.total_capacity]
 other = "Capacité totale : {{.Count}} instances"
@@ -1121,22 +1121,22 @@ other = "format de sortie non pris en charge : {{.Format}}"
 other = "Résumé des instances Spot :"
 
 [truffle.spot.summary.instance_types]
-other = "Types d'instance : {{.Count}}"
+other = "Types d'instance "
 
 [truffle.spot.summary.regions]
-other = "Régions : {{.Count}}"
+other = "Régions "
 
 [truffle.spot.summary.azs]
-other = "Zones de disponibilité : {{.Count}}"
+other = "Zones de disponibilité "
 
 [truffle.spot.summary.price_range]
-other = "Plage de prix : ${{.Min}} - ${{.Max}} par heure"
+other = "Plage de prix"
 
 [truffle.spot.summary.avg_price]
-other = "Prix moyen : ${{.Avg}} par heure"
+other = "Prix moyen"
 
 [truffle.spot.summary.avg_savings]
-other = "Économies moyennes : {{.Percent}}% vs On-Demand"
+other = "Économies moyennes"
 
 [truffle.spot.summary.availability_zones]
 other = "Zones de disponibilité"

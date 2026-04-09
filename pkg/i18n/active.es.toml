@@ -1201,19 +1201,19 @@ other = "formato de salida no soportado: {{.Format}}"
 other = "Resumen de reservas de capacidad:"
 
 [truffle.capacity.summary.total]
-other = "Reservas totales: {{.Count}}"
+other = "Reservas totales"
 
 [truffle.capacity.summary.active]
-other = "Reservas activas: {{.Count}}"
+other = "Reservas activas"
 
 [truffle.capacity.summary.instance_types]
-other = "Tipos de instancia: {{.Count}}"
+other = "Tipos de instancia"
 
 [truffle.capacity.summary.regions]
-other = "Regiones: {{.Count}}"
+other = "Regiones"
 
 [truffle.capacity.summary.azs]
-other = "Zonas de disponibilidad: {{.Count}}"
+other = "Zonas de disponibilidad"
 
 [truffle.capacity.summary.total_capacity]
 other = "Capacidad total: {{.Count}} instancias"
@@ -1328,22 +1328,22 @@ other = "formato de salida no soportado: {{.Format}}"
 other = "Resumen de instancias Spot:"
 
 [truffle.spot.summary.instance_types]
-other = "Tipos de instancia: {{.Count}}"
+other = "Tipos de instancia"
 
 [truffle.spot.summary.regions]
-other = "Regiones: {{.Count}}"
+other = "Regiones"
 
 [truffle.spot.summary.azs]
-other = "Zonas de disponibilidad: {{.Count}}"
+other = "Zonas de disponibilidad"
 
 [truffle.spot.summary.price_range]
-other = "Rango de precios: ${{.Min}} - ${{.Max}} por hora"
+other = "Rango de precios"
 
 [truffle.spot.summary.avg_price]
-other = "Precio promedio: ${{.Avg}} por hora"
+other = "Precio promedio"
 
 [truffle.spot.summary.avg_savings]
-other = "Ahorro promedio: {{.Percent}}% vs On-Demand"
+other = "Ahorro promedio"
 
 [truffle.spot.summary.availability_zones]
 other = "Zonas de disponibilidad"

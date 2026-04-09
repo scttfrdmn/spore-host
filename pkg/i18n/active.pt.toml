@@ -820,19 +820,19 @@ other = "Apenas instâncias GPU/ML"
 other = "Resumo de Reserva de Capacidade:"
 
 [truffle.capacity.summary.total]
-other = "Total de Reservas: {{.Count}}"
+other = "Total de Reservas"
 
 [truffle.capacity.summary.active]
-other = "Reservas Ativas: {{.Count}}"
+other = "Reservas Ativas"
 
 [truffle.capacity.summary.instance_types]
-other = "Tipos de Instância: {{.Count}}"
+other = "Tipos de Instância"
 
 [truffle.capacity.summary.regions]
-other = "Regiões: {{.Count}}"
+other = "Regiões"
 
 [truffle.capacity.summary.azs]
-other = "Zonas de Disponibilidade: {{.Count}}"
+other = "Zonas de Disponibilidade"
 
 [truffle.capacity.summary.total_capacity]
 other = "Capacidade Total: {{.Count}} instâncias"
@@ -893,22 +893,22 @@ other = "Buscando dados de preços Spot..."
 other = "Resumo de Instâncias Spot:"
 
 [truffle.spot.summary.instance_types]
-other = "Tipos de Instância: {{.Count}}"
+other = "Tipos de Instância"
 
 [truffle.spot.summary.regions]
-other = "Regiões: {{.Count}}"
+other = "Regiões"
 
 [truffle.spot.summary.azs]
-other = "Zonas de Disponibilidade: {{.Count}}"
+other = "Zonas de Disponibilidade"
 
 [truffle.spot.summary.price_range]
-other = "Faixa de Preço: ${{.Min}} - ${{.Max}} por hora"
+other = "Faixa de Preço"
 
 [truffle.spot.summary.avg_price]
-other = "Preço Médio: ${{.Avg}} por hora"
+other = "Preço Médio"
 
 [truffle.spot.summary.avg_savings]
-other = "Economia Média: {{.Percent}}% vs On-Demand"
+other = "Economia Média"
 
 # =============================================================================
 # TRUFFLE - COMANDO QUOTAS
