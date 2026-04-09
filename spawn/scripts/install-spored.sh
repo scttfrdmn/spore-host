@@ -1,8 +1,14 @@
 #!/bin/bash
 # spored installer - Downloads from S3 for fast regional access
+#
+# Environment variables:
+#   PROJECT  - Project name for S3 key prefix (default: spawn)
+#              Prism usage: PROJECT=prism ./install-spored.sh
 set -e
 
-echo "=== Installing spored ==="
+PROJECT=${PROJECT:-spawn}
+
+echo "=== Installing spored (project: ${PROJECT}) ==="
 
 # Detect architecture
 ARCH=$(uname -m)
@@ -38,9 +44,9 @@ else
     echo "Region: $REGION"
 fi
 
-# S3 bucket name (regional)
+# S3 bucket name (regional) with project key prefix
 S3_BUCKET="spawn-binaries-${REGION}"
-S3_PATH="s3://${S3_BUCKET}/${BINARY}"
+S3_PATH="s3://${S3_BUCKET}/${PROJECT}/${BINARY}"
 
 echo "Downloading spored from ${S3_PATH}..."
 
@@ -50,7 +56,7 @@ if aws s3 cp "$S3_PATH" /usr/local/bin/spored --region "$REGION" 2>/dev/null; th
 else
     echo "⚠️  Regional bucket not available, trying us-east-1..."
     # Fallback to us-east-1
-    aws s3 cp "s3://spawn-binaries-us-east-1/${BINARY}" /usr/local/bin/spored --region us-east-1
+    aws s3 cp "s3://spawn-binaries-us-east-1/${PROJECT}/${BINARY}" /usr/local/bin/spored --region us-east-1
     if [ $? -eq 0 ]; then
         echo "✅ Downloaded from us-east-1"
     else

@@ -52,7 +52,7 @@ POLICY_DOCUMENT=$(cat <<'EOF'
       "Action": [
         "s3:GetObject"
       ],
-      "Resource": "arn:aws:s3:::spawn-binaries-*/spored-*"
+      "Resource": "arn:aws:s3:::spawn-binaries-*/*/spored-*"
     },
     {
       "Effect": "Allow",

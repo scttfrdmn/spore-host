@@ -1,8 +1,18 @@
 #!/bin/bash
 # deploy-spored.sh - Deploy spored binaries to regional S3 buckets
+#
+# Usage:
+#   ./deploy-spored.sh [VERSION] [PROJECT]
+#
+# Examples:
+#   ./deploy-spored.sh                  # deploy spawn/latest
+#   ./deploy-spored.sh v0.32.0          # deploy spawn/v0.32.0
+#   ./deploy-spored.sh latest prism     # deploy prism/latest
+#   PROJECT=prism ./deploy-spored.sh    # deploy prism/latest via env var
 set -e
 
 VERSION=${1:-latest}
+PROJECT=${2:-${PROJECT:-spawn}}
 REGIONS=(
     "us-east-1"
     "us-east-2"
@@ -17,7 +27,7 @@ REGIONS=(
 )
 
 echo "╔════════════════════════════════════════════════════════╗"
-echo "║  Deploying spored v${VERSION} to S3                     "
+echo "║  Deploying spored v${VERSION} (project: ${PROJECT}) to S3"
 echo "╚════════════════════════════════════════════════════════╝"
 echo ""
 
@@ -81,28 +91,28 @@ upload_to_region() {
     # Upload AMD64
     echo "   Uploading spored-linux-amd64..."
     aws s3 cp bin/spored-linux-amd64 \
-        "s3://${bucket}/spored-linux-amd64" \
+        "s3://${bucket}/${PROJECT}/spored-linux-amd64" \
         --region "$region" \
         --metadata version="${VERSION}" \
         --quiet
-    
+
     # Upload ARM64
     echo "   Uploading spored-linux-arm64..."
     aws s3 cp bin/spored-linux-arm64 \
-        "s3://${bucket}/spored-linux-arm64" \
+        "s3://${bucket}/${PROJECT}/spored-linux-arm64" \
         --region "$region" \
         --metadata version="${VERSION}" \
         --quiet
-    
+
     # Upload to versioned path
     echo "   Uploading versioned copies..."
     aws s3 cp bin/spored-linux-amd64 \
-        "s3://${bucket}/versions/${VERSION}/spored-linux-amd64" \
+        "s3://${bucket}/${PROJECT}/versions/${VERSION}/spored-linux-amd64" \
         --region "$region" \
         --quiet
-    
+
     aws s3 cp bin/spored-linux-arm64 \
-        "s3://${bucket}/versions/${VERSION}/spored-linux-arm64" \
+        "s3://${bucket}/${PROJECT}/versions/${VERSION}/spored-linux-arm64" \
         --region "$region" \
         --quiet
     
@@ -119,9 +129,9 @@ echo "╔═══════════════════════�
 echo "║  ✅ Deployment Complete!                               ║"
 echo "╚════════════════════════════════════════════════════════╝"
 echo ""
-echo "Deployed to ${#REGIONS[@]} regions:"
+echo "Deployed to ${#REGIONS[@]} regions (project: ${PROJECT}):"
 for region in "${REGIONS[@]}"; do
-    echo "  • s3://spawn-binaries-${region}"
+    echo "  • s3://spawn-binaries-${region}/${PROJECT}/"
 done
 echo ""
 echo "Instances will download from their regional bucket automatically."
@@ -129,8 +139,8 @@ echo ""
 
 # Print verification commands
 echo "Verify deployment:"
-echo "  aws s3 ls s3://spawn-binaries-us-east-1/ --region us-east-1"
+echo "  aws s3 ls s3://spawn-binaries-us-east-1/${PROJECT}/ --region us-east-1"
 echo ""
 echo "Test download (as instance would):"
-echo "  aws s3 cp s3://spawn-binaries-us-east-1/spored-linux-amd64 /tmp/test --region us-east-1"
+echo "  aws s3 cp s3://spawn-binaries-us-east-1/${PROJECT}/spored-linux-amd64 /tmp/test --region us-east-1"
 echo ""
