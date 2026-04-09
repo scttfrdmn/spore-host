@@ -53,6 +53,7 @@ func init() {
 	dnsCmd.AddCommand(dnsDeleteCmd)
 
 	// Flags
+	dnsCmd.PersistentFlags().StringVar(&dnsDomain, "domain", "", "DNS domain for record registration (default: spore.host)")
 	dnsListCmd.Flags().BoolVarP(&dnsListAll, "all", "a", false, "Show all instances (including those without DNS)")
 
 	// Register completions
@@ -96,7 +97,7 @@ func runDNSList(cmd *cobra.Command, args []string) error {
 
 		fqdn := ""
 		if dnsName != "" {
-			fqdn = dns.GetFullDNSName(dnsName, accountID, "spore.host")
+			fqdn = dns.GetFullDNSName(dnsName, accountID, resolveDNSDomain())
 		}
 
 		_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
@@ -169,7 +170,7 @@ func runDNSRegister(cmd *cobra.Command, args []string) error {
 	}
 
 	// Build FQDN
-	fqdn := dns.GetFullDNSName(dnsName, accountID, "spore.host")
+	fqdn := dns.GetFullDNSName(dnsName, accountID, resolveDNSDomain())
 
 	fmt.Fprintf(os.Stderr, "Registering DNS...\n")
 	fmt.Fprintf(os.Stderr, "  Short name: %s\n", dnsName)
@@ -236,7 +237,7 @@ func runDNSDelete(cmd *cobra.Command, args []string) error {
 	}
 
 	// Build FQDN
-	fqdn := dns.GetFullDNSName(dnsName, accountID, "spore.host")
+	fqdn := dns.GetFullDNSName(dnsName, accountID, resolveDNSDomain())
 
 	fmt.Fprintf(os.Stderr, "Instance: %s\n", instance.InstanceID)
 	fmt.Fprintf(os.Stderr, "DNS:      %s\n", fqdn)
@@ -271,6 +272,13 @@ func runDNSDelete(cmd *cobra.Command, args []string) error {
 }
 
 // Helper functions
+
+func resolveDNSDomain() string {
+	if dnsDomain != "" {
+		return dnsDomain
+	}
+	return "spore.host"
+}
 
 func isValidDNSName(name string) bool {
 	// DNS name must be alphanumeric and hyphens only

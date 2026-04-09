@@ -29,6 +29,7 @@ type DNSUpdateRequest struct {
 	RecordName                string `json:"record_name"`
 	IPAddress                 string `json:"ip_address"`
 	Action                    string `json:"action"`
+	Domain                    string `json:"domain,omitempty"`
 	JobArrayID                string `json:"job_array_id,omitempty"`   // Optional: for group DNS
 	JobArrayName              string `json:"job_array_name,omitempty"` // Optional: for group DNS
 }
@@ -120,6 +121,7 @@ func (c *Client) RegisterDNS(ctx context.Context, recordName, ipAddress string) 
 		RecordName:                recordName,
 		IPAddress:                 ipAddress,
 		Action:                    "UPSERT",
+		Domain:                    c.domain,
 	}
 
 	return c.callAPI(ctx, req)
@@ -167,6 +169,7 @@ func (c *Client) RegisterJobArrayDNS(ctx context.Context, recordName, ipAddress,
 		RecordName:                recordName,
 		IPAddress:                 ipAddress,
 		Action:                    "UPSERT",
+		Domain:                    c.domain,
 		JobArrayID:                jobArrayID,
 		JobArrayName:              jobArrayName,
 	}
@@ -206,6 +209,7 @@ func (c *Client) DeleteJobArrayDNS(ctx context.Context, recordName, ipAddress, j
 		RecordName:                recordName,
 		IPAddress:                 ipAddress,
 		Action:                    "DELETE",
+		Domain:                    c.domain,
 		JobArrayID:                jobArrayID,
 		JobArrayName:              jobArrayName,
 	}
@@ -245,6 +249,7 @@ func (c *Client) DeleteDNS(ctx context.Context, recordName, ipAddress string) (*
 		RecordName:                recordName,
 		IPAddress:                 ipAddress,
 		Action:                    "DELETE",
+		Domain:                    c.domain,
 	}
 
 	return c.callAPI(ctx, req)

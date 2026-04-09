@@ -70,67 +70,78 @@ func TestGetFullDNSName(t *testing.T) {
 		name       string
 		recordName string
 		accountID  string
+		domain     string
 		wantSuffix string
 	}{
 		{
 			name:       "basic name",
 			recordName: "my-instance",
 			accountID:  "123456789012",
+			domain:     "spore.host",
 			wantSuffix: ".spore.host",
 		},
 		{
 			name:       "short name",
 			recordName: "a",
 			accountID:  "966362334030",
+			domain:     "spore.host",
 			wantSuffix: ".spore.host",
 		},
 		{
-			name:       "hyphenated name",
+			name:       "alternate domain",
 			recordName: "gpu-node-01",
 			accountID:  "435415984226",
-			wantSuffix: ".spore.host",
+			domain:     "prismcloud.host",
+			wantSuffix: ".prismcloud.host",
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			got := getFullDNSName(tc.recordName, tc.accountID)
+			got := getFullDNSName(tc.recordName, tc.accountID, tc.domain)
 
-			// Must end with .spore.host
 			if !strings.HasSuffix(got, tc.wantSuffix) {
-				t.Errorf("getFullDNSName(%q, %q) = %q, want suffix %q", tc.recordName, tc.accountID, got, tc.wantSuffix)
+				t.Errorf("getFullDNSName(%q, %q, %q) = %q, want suffix %q", tc.recordName, tc.accountID, tc.domain, got, tc.wantSuffix)
 			}
 
-			// Must start with the record name
 			if !strings.HasPrefix(got, tc.recordName+".") {
-				t.Errorf("getFullDNSName(%q, %q) = %q, want prefix %q.", tc.recordName, tc.accountID, got, tc.recordName)
+				t.Errorf("getFullDNSName(%q, %q, %q) = %q, want prefix %q.", tc.recordName, tc.accountID, tc.domain, got, tc.recordName)
 			}
 
-			// Must contain the base36-encoded account subdomain
 			encoded := encodeAccountID(tc.accountID)
 			if !strings.Contains(got, "."+encoded+".") {
-				t.Errorf("getFullDNSName(%q, %q) = %q, want to contain .%s.", tc.recordName, tc.accountID, got, encoded)
+				t.Errorf("getFullDNSName(%q, %q, %q) = %q, want to contain .%s.", tc.recordName, tc.accountID, tc.domain, got, encoded)
 			}
 		})
 	}
 
-	t.Run("format is name.base36.spore.host", func(t *testing.T) {
+	t.Run("format is name.base36.domain", func(t *testing.T) {
 		recordName := "my-instance"
 		accountID := "123456789012"
 		encoded := encodeAccountID(accountID)
 		want := recordName + "." + encoded + ".spore.host"
-		got := getFullDNSName(recordName, accountID)
+		got := getFullDNSName(recordName, accountID, "spore.host")
 		if got != want {
-			t.Errorf("getFullDNSName(%q, %q) = %q, want %q", recordName, accountID, got, want)
+			t.Errorf("getFullDNSName(%q, %q, %q) = %q, want %q", recordName, accountID, "spore.host", got, want)
 		}
 	})
 
 	t.Run("different accounts produce different fqdns", func(t *testing.T) {
 		name := "worker"
-		fqdn1 := getFullDNSName(name, "123456789012")
-		fqdn2 := getFullDNSName(name, "966362334030")
+		fqdn1 := getFullDNSName(name, "123456789012", "spore.host")
+		fqdn2 := getFullDNSName(name, "966362334030", "spore.host")
 		if fqdn1 == fqdn2 {
 			t.Errorf("same fqdn for different accounts: %q", fqdn1)
+		}
+	})
+
+	t.Run("different domains produce different fqdns", func(t *testing.T) {
+		name := "worker"
+		accountID := "123456789012"
+		fqdn1 := getFullDNSName(name, accountID, "spore.host")
+		fqdn2 := getFullDNSName(name, accountID, "prismcloud.host")
+		if fqdn1 == fqdn2 {
+			t.Errorf("same fqdn for different domains: %q", fqdn1)
 		}
 	})
 }

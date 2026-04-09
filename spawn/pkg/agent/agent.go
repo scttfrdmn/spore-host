@@ -23,6 +23,7 @@ type Agent struct {
 	identity         *provider.Identity
 	config           *provider.Config
 	dnsClient        *dns.Client
+	dnsDomain        string // DNS domain (e.g. "spore.host" or "prismcloud.host")
 	registry         *registry.PeerRegistry
 	pluginRuntime    *pluginruntime.Runtime
 	startTime        time.Time
@@ -58,8 +59,14 @@ func NewAgent(ctx context.Context, prov provider.Provider) (*Agent, error) {
 
 	// Initialize DNS client and register if DNS name is configured
 	// Skip DNS for local provider (Phase 1 decision)
+	dnsDomain := os.Getenv("SPORED_DNS_DOMAIN")
+	if dnsDomain == "" {
+		dnsDomain = "spore.host"
+	}
+	agent.dnsDomain = dnsDomain
+
 	if config.DNSName != "" && identity.PublicIP != "" && identity.Provider == "ec2" {
-		dnsClient, err := dns.NewClient(ctx, "", "") // Use defaults
+		dnsClient, err := dns.NewClient(ctx, dnsDomain, "")
 		if err != nil {
 			log.Printf("Warning: Failed to create DNS client: %v", err)
 		} else {
@@ -74,7 +81,7 @@ func NewAgent(ctx context.Context, prov provider.Provider) (*Agent, error) {
 				if err != nil {
 					log.Printf("Warning: Failed to register job array DNS: %v", err)
 				} else {
-					fqdn := dns.GetFullDNSName(config.DNSName, identity.AccountID, "spore.host")
+					fqdn := dns.GetFullDNSName(config.DNSName, identity.AccountID, dnsDomain)
 					log.Printf("✓ Job array DNS registered: %s -> %s (change: %s)", fqdn, identity.PublicIP, resp.ChangeID)
 					if resp.Message != "" {
 						log.Printf("  %s", resp.Message)
@@ -86,7 +93,7 @@ func NewAgent(ctx context.Context, prov provider.Provider) (*Agent, error) {
 				if err != nil {
 					log.Printf("Warning: Failed to register DNS: %v", err)
 				} else {
-					fqdn := dns.GetFullDNSName(config.DNSName, identity.AccountID, "spore.host")
+					fqdn := dns.GetFullDNSName(config.DNSName, identity.AccountID, dnsDomain)
 					log.Printf("✓ DNS registered: %s -> %s (change: %s)", fqdn, identity.PublicIP, resp.ChangeID)
 				}
 			}
@@ -719,7 +726,7 @@ func (a *Agent) Cleanup(ctx context.Context) {
 			if err != nil {
 				log.Printf("Warning: Failed to delete job array DNS: %v", err)
 			} else {
-				fqdn := dns.GetFullDNSName(a.config.DNSName, a.identity.AccountID, "spore.host")
+				fqdn := dns.GetFullDNSName(a.config.DNSName, a.identity.AccountID, a.dnsDomain)
 				log.Printf("✓ Job array DNS deleted: %s", fqdn)
 				if resp.Message != "" {
 					log.Printf("  %s", resp.Message)
@@ -731,7 +738,7 @@ func (a *Agent) Cleanup(ctx context.Context) {
 			if err != nil {
 				log.Printf("Warning: Failed to delete DNS: %v", err)
 			} else {
-				fqdn := dns.GetFullDNSName(a.config.DNSName, a.identity.AccountID, "spore.host")
+				fqdn := dns.GetFullDNSName(a.config.DNSName, a.identity.AccountID, a.dnsDomain)
 				log.Printf("✓ DNS deleted: %s", fqdn)
 			}
 		}

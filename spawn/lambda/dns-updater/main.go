@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"os"
 	"regexp"
 	"strings"
 	"time"
@@ -19,11 +20,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/route53/types"
 )
 
-const (
-	hostedZoneID = "Z048907324UNXKEK9KX93"
-	domain       = "spore.host"
-	defaultTTL   = 60
-)
+const defaultTTL = 60
 
 type DNSUpdateRequest struct {
 	InstanceIdentityDocument  string `json:"instance_identity_document"`
@@ -31,6 +28,7 @@ type DNSUpdateRequest struct {
 	RecordName                string `json:"record_name"`
 	IPAddress                 string `json:"ip_address"`
 	Action                    string `json:"action"` // UPSERT or DELETE
+	Domain                    string `json:"domain,omitempty"`
 }
 
 type InstanceIdentityDocument struct {
@@ -51,6 +49,11 @@ type DNSUpdateResponse struct {
 var (
 	cfg           aws.Config
 	route53Client *route53.Client
+
+	// domainZones maps domain names to Route53 hosted zone IDs.
+	// Parsed from the DOMAIN_ZONES env var: "spore.host=Z048...,prismcloud.host=Z09ABC..."
+	domainZones   map[string]string
+	defaultDomain string
 )
 
 // encodeAccountID converts AWS account ID to base36 (7 chars)
@@ -60,11 +63,11 @@ func encodeAccountID(accountID string) string {
 	return strings.ToLower(n.Text(36))
 }
 
-// getFullDNSName returns the complete DNS name with base36-encoded account subdomain
-// Example: ("my-instance", "123456789012") -> "my-instance.1kpqzg2c.spore.host"
-func getFullDNSName(recordName, accountID string) string {
+// getFullDNSName returns the complete DNS name with base36-encoded account subdomain.
+// Example: ("my-instance", "123456789012", "spore.host") -> "my-instance.1kpqzg2c.spore.host"
+func getFullDNSName(recordName, accountID, dom string) string {
 	encoded := encodeAccountID(accountID)
-	return fmt.Sprintf("%s.%s.%s", recordName, encoded, domain)
+	return fmt.Sprintf("%s.%s.%s", recordName, encoded, dom)
 }
 
 func init() {
@@ -74,6 +77,31 @@ func init() {
 		panic(fmt.Sprintf("unable to load SDK config: %v", err))
 	}
 	route53Client = route53.NewFromConfig(cfg)
+
+	// Parse DOMAIN_ZONES env var: "spore.host=Z048...,prismcloud.host=Z09ABC..."
+	domainZones = make(map[string]string)
+	if zones := os.Getenv("DOMAIN_ZONES"); zones != "" {
+		for _, entry := range strings.Split(zones, ",") {
+			parts := strings.SplitN(strings.TrimSpace(entry), "=", 2)
+			if len(parts) == 2 {
+				domainZones[strings.TrimSpace(parts[0])] = strings.TrimSpace(parts[1])
+			}
+		}
+	}
+
+	// Backward compatibility: if DOMAIN_ZONES is empty, use legacy env vars or defaults
+	if len(domainZones) == 0 {
+		zoneID := os.Getenv("HOSTED_ZONE_ID")
+		if zoneID == "" {
+			zoneID = "Z048907324UNXKEK9KX93" // legacy default
+		}
+		domainZones["spore.host"] = zoneID
+	}
+
+	defaultDomain = os.Getenv("DEFAULT_DOMAIN")
+	if defaultDomain == "" {
+		defaultDomain = "spore.host"
+	}
 }
 
 func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
@@ -133,22 +161,32 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		return errorResponse(403, err.Error())
 	}
 
+	// Resolve domain and hosted zone
+	reqDomain := req.Domain
+	if reqDomain == "" {
+		reqDomain = defaultDomain
+	}
+	zoneID, ok := domainZones[reqDomain]
+	if !ok {
+		return errorResponse(400, fmt.Sprintf("Unknown domain: %s", reqDomain))
+	}
+
 	// Build full DNS name with base36-encoded account subdomain
 	// Example: my-instance.1kpqzg2c.spore.host (for account 123456789012)
-	fqdn := getFullDNSName(req.RecordName, identityDoc.AccountID)
+	fqdn := getFullDNSName(req.RecordName, identityDoc.AccountID, reqDomain)
 
 	// Update DNS record
 	var changeID string
 	var message string
 
 	if req.Action == "UPSERT" {
-		changeID, err = upsertDNSRecord(ctx, fqdn, req.IPAddress)
+		changeID, err = upsertDNSRecord(ctx, fqdn, req.IPAddress, zoneID)
 		if err != nil {
 			return errorResponse(500, fmt.Sprintf("Failed to update DNS: %v", err))
 		}
 		message = fmt.Sprintf("DNS record updated: %s -> %s", fqdn, req.IPAddress)
 	} else {
-		changeID, err = deleteDNSRecord(ctx, fqdn)
+		changeID, err = deleteDNSRecord(ctx, fqdn, zoneID)
 		if err != nil {
 			return errorResponse(500, fmt.Sprintf("Failed to delete DNS: %v", err))
 		}
@@ -204,16 +242,17 @@ func validateInstance(ctx context.Context, instanceID, region, ipAddress, action
 
 	instance := output.Reservations[0].Instances[0]
 
-	// Check for spawn:managed tag
-	hasSpawnTag := false
+	// Check for a *:managed tag (e.g. spawn:managed, prism:managed)
+	hasManagedTag := false
 	for _, tag := range instance.Tags {
-		if aws.ToString(tag.Key) == "spawn:managed" && aws.ToString(tag.Value) == "true" {
-			hasSpawnTag = true
+		key := aws.ToString(tag.Key)
+		if strings.HasSuffix(key, ":managed") && aws.ToString(tag.Value) == "true" {
+			hasManagedTag = true
 			break
 		}
 	}
-	if !hasSpawnTag {
-		return fmt.Errorf("instance %s does not have spawn:managed tag", instanceID)
+	if !hasManagedTag {
+		return fmt.Errorf("instance %s does not have a managed tag (e.g. spawn:managed=true)", instanceID)
 	}
 
 	// For UPSERT, verify IP address matches
@@ -236,11 +275,11 @@ func validateInstance(ctx context.Context, instanceID, region, ipAddress, action
 	return nil
 }
 
-func upsertDNSRecord(ctx context.Context, fqdn, ipAddress string) (string, error) {
+func upsertDNSRecord(ctx context.Context, fqdn, ipAddress, zoneID string) (string, error) {
 	comment := fmt.Sprintf("Updated by spawn instance at %s", time.Now().UTC().Format(time.RFC3339))
 
 	output, err := route53Client.ChangeResourceRecordSets(ctx, &route53.ChangeResourceRecordSetsInput{
-		HostedZoneId: aws.String(hostedZoneID),
+		HostedZoneId: aws.String(zoneID),
 		ChangeBatch: &types.ChangeBatch{
 			Comment: aws.String(comment),
 			Changes: []types.Change{
@@ -265,10 +304,10 @@ func upsertDNSRecord(ctx context.Context, fqdn, ipAddress string) (string, error
 	return aws.ToString(output.ChangeInfo.Id), nil
 }
 
-func deleteDNSRecord(ctx context.Context, fqdn string) (string, error) {
+func deleteDNSRecord(ctx context.Context, fqdn, zoneID string) (string, error) {
 	// First, get the current record
 	listOutput, err := route53Client.ListResourceRecordSets(ctx, &route53.ListResourceRecordSetsInput{
-		HostedZoneId:    aws.String(hostedZoneID),
+		HostedZoneId:    aws.String(zoneID),
 		StartRecordName: aws.String(fqdn),
 		StartRecordType: types.RRTypeA,
 		MaxItems:        aws.Int32(1),
@@ -293,7 +332,7 @@ func deleteDNSRecord(ctx context.Context, fqdn string) (string, error) {
 	// Delete the record
 	comment := fmt.Sprintf("Deleted by spawn instance at %s", time.Now().UTC().Format(time.RFC3339))
 	output, err := route53Client.ChangeResourceRecordSets(ctx, &route53.ChangeResourceRecordSetsInput{
-		HostedZoneId: aws.String(hostedZoneID),
+		HostedZoneId: aws.String(zoneID),
 		ChangeBatch: &types.ChangeBatch{
 			Comment: aws.String(comment),
 			Changes: []types.Change{
