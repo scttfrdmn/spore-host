@@ -22,6 +22,7 @@ import (
 	"github.com/scttfrdmn/spore-host/spawn/pkg/pipeline"
 	"github.com/scttfrdmn/spore-host/spawn/pkg/pluginruntime"
 	"github.com/scttfrdmn/spore-host/spawn/pkg/provider"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/tagprefix"
 )
 
 // detectLang reads the system locale from environment variables and returns a
@@ -83,6 +84,12 @@ func main() {
 	}
 
 	log.Printf("spored v%s starting...", Version)
+
+	// Initialize tag prefix from SPORED_TAG_PREFIX env var (default: "spawn")
+	tagprefix.Init()
+	if p := tagprefix.Prefix(); p != "spawn" {
+		log.Printf("Using tag prefix: %s", p)
+	}
 
 	// Initialize i18n so agent lifecycle warnings are translated
 	if err := i18n.Init(i18n.Config{Language: detectLang()}); err != nil {

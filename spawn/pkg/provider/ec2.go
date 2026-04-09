@@ -19,6 +19,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"github.com/scttfrdmn/spore-host/spawn/pkg/observability"
 	"github.com/scttfrdmn/spore-host/spawn/pkg/observability/tracing"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/tagprefix"
 )
 
 // EC2Provider implements Provider for EC2 instances
@@ -182,7 +183,7 @@ func (p *EC2Provider) DiscoverPeers(ctx context.Context, jobArrayID string) ([]P
 	instances, err := p.ec2Client.DescribeInstances(ctx, &ec2.DescribeInstancesInput{
 		Filters: []types.Filter{
 			{
-				Name:   aws.String("tag:spawn:job-array-id"),
+				Name:   aws.String(tagprefix.FilterTag("job-array-id")),
 				Values: []string{jobArrayID},
 			},
 			{
@@ -205,7 +206,7 @@ func (p *EC2Provider) DiscoverPeers(ctx context.Context, jobArrayID string) ([]P
 			var index int
 			var name string
 			for _, tag := range instance.Tags {
-				if *tag.Key == "spawn:job-array-index" {
+				if *tag.Key == tagprefix.Tag("job-array-index") {
 					index, _ = strconv.Atoi(*tag.Value)
 				}
 				if *tag.Key == "Name" {
@@ -335,79 +336,79 @@ func loadConfigFromEC2Tags(ctx context.Context, client *ec2.Client, instanceID s
 		switch *tag.Key {
 		case "Name":
 			instanceName = *tag.Value
-		case "spawn:ttl":
+		case tagprefix.Tag("ttl"):
 			if duration, err := time.ParseDuration(*tag.Value); err == nil {
 				config.TTL = duration
 			}
-		case "spawn:idle-timeout":
+		case tagprefix.Tag("idle-timeout"):
 			if duration, err := time.ParseDuration(*tag.Value); err == nil {
 				config.IdleTimeout = duration
 			}
-		case "spawn:hibernate-on-idle":
+		case tagprefix.Tag("hibernate-on-idle"):
 			config.HibernateOnIdle = *tag.Value == "true"
-		case "spawn:cost-limit":
+		case tagprefix.Tag("cost-limit"):
 			if limit, err := strconv.ParseFloat(*tag.Value, 64); err == nil {
 				config.CostLimit = limit
 			}
-		case "spawn:price-per-hour":
+		case tagprefix.Tag("price-per-hour"):
 			if price, err := strconv.ParseFloat(*tag.Value, 64); err == nil {
 				config.PricePerHour = price
 			}
-		case "spawn:idle-cpu":
+		case tagprefix.Tag("idle-cpu"):
 			if cpu, err := strconv.ParseFloat(*tag.Value, 64); err == nil {
 				config.IdleCPUPercent = cpu
 			}
-		case "spawn:dns-name":
+		case tagprefix.Tag("dns-name"):
 			config.DNSName = *tag.Value
-		case "spawn:pre-stop":
+		case tagprefix.Tag("pre-stop"):
 			config.PreStop = *tag.Value
-		case "spawn:pre-stop-timeout":
+		case tagprefix.Tag("pre-stop-timeout"):
 			if duration, err := time.ParseDuration(*tag.Value); err == nil {
 				config.PreStopTimeout = duration
 			}
-		case "spawn:on-complete":
+		case tagprefix.Tag("on-complete"):
 			config.OnComplete = *tag.Value
-		case "spawn:completion-file":
+		case tagprefix.Tag("completion-file"):
 			config.CompletionFile = *tag.Value
-		case "spawn:completion-delay":
+		case tagprefix.Tag("completion-delay"):
 			if duration, err := time.ParseDuration(*tag.Value); err == nil {
 				config.CompletionDelay = duration
 			}
-		case "spawn:job-array-id":
+		case tagprefix.Tag("job-array-id"):
 			config.JobArrayID = *tag.Value
-		case "spawn:job-array-name":
+		case tagprefix.Tag("job-array-name"):
 			config.JobArrayName = *tag.Value
-		case "spawn:job-array-size":
+		case tagprefix.Tag("job-array-size"):
 			if size, err := strconv.Atoi(*tag.Value); err == nil {
 				config.JobArraySize = size
 			}
-		case "spawn:job-array-index":
+		case tagprefix.Tag("job-array-index"):
 			if index, err := strconv.Atoi(*tag.Value); err == nil {
 				config.JobArrayIndex = index
 			}
 
 		// Observability - Metrics
-		case "spawn:metrics-enabled":
+		case tagprefix.Tag("metrics-enabled"):
 			config.Observability.Metrics.Enabled = *tag.Value == "true"
-		case "spawn:metrics-port":
+		case tagprefix.Tag("metrics-port"):
 			if port, err := strconv.Atoi(*tag.Value); err == nil && port >= 1024 && port <= 65535 {
 				config.Observability.Metrics.Port = port
 			}
-		case "spawn:metrics-bind":
+		case tagprefix.Tag("metrics-bind"):
 			config.Observability.Metrics.Bind = *tag.Value
-		case "spawn:metrics-path":
+		case tagprefix.Tag("metrics-path"):
 			config.Observability.Metrics.Path = *tag.Value
 
 		// Observability - Tracing
-		case "spawn:tracing-enabled":
+		case tagprefix.Tag("tracing-enabled"):
 			config.Observability.Tracing.Enabled = *tag.Value == "true"
-		case "spawn:tracing-exporter":
+		case tagprefix.Tag("tracing-exporter"):
 			config.Observability.Tracing.Exporter = *tag.Value
-		case "spawn:tracing-sampling":
+		case tagprefix.Tag("tracing-sampling"):
 			if rate, err := strconv.ParseFloat(*tag.Value, 64); err == nil {
 				config.Observability.Tracing.SamplingRate = rate
 			}
-		case "spawn:tracing-endpoint":
+		case tagprefix.Tag("tracing-endpoint"):
 			config.Observability.Tracing.Endpoint = *tag.Value
 		}
 	}

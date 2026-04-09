@@ -13,6 +13,7 @@ import (
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	ec2types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/tagprefix"
 )
 
 // PeerInfo contains information about a pipeline peer instance
@@ -123,7 +124,7 @@ func queryPipelineInstances(ctx context.Context, ec2Client *ec2.Client, pipeline
 	result, err := ec2Client.DescribeInstances(ctx, &ec2.DescribeInstancesInput{
 		Filters: []ec2types.Filter{
 			{
-				Name:   aws.String("tag:spawn:pipeline-id"),
+				Name:   aws.String(tagprefix.FilterTag("pipeline-id")),
 				Values: []string{pipelineID},
 			},
 			{
@@ -157,13 +158,13 @@ func queryPipelineInstances(ctx context.Context, ec2Client *ec2.Client, pipeline
 					continue
 				}
 				switch *tag.Key {
-				case "spawn:stage-id":
+				case tagprefix.Tag("stage-id"):
 					peer.StageID = *tag.Value
-				case "spawn:stage-index":
+				case tagprefix.Tag("stage-index"):
 					_, _ = fmt.Sscanf(*tag.Value, "%d", &peer.StageIndex)
-				case "spawn:instance-index":
+				case tagprefix.Tag("instance-index"):
 					_, _ = fmt.Sscanf(*tag.Value, "%d", &peer.Index)
-				case "spawn:dns-name":
+				case tagprefix.Tag("dns-name"):
 					peer.DNSName = *tag.Value
 				}
 			}

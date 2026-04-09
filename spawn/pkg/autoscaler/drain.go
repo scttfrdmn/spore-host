@@ -12,6 +12,7 @@ import (
 	dynamodbtypes "github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	ec2types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/tagprefix"
 )
 
 // DrainConfig defines graceful drain behavior
@@ -67,11 +68,11 @@ func (d *DrainManager) MarkForDrain(ctx context.Context, instanceIDs []string) e
 		Resources: instanceIDs,
 		Tags: []ec2types.Tag{
 			{
-				Key:   aws.String("spawn:drain-state"),
+				Key:   aws.String(tagprefix.Tag("drain-state")),
 				Value: aws.String("draining"),
 			},
 			{
-				Key:   aws.String("spawn:drain-started"),
+				Key:   aws.String(tagprefix.Tag("drain-started")),
 				Value: aws.String(time.Now().UTC().Format(time.RFC3339)),
 			},
 		},
@@ -90,11 +91,11 @@ func (d *DrainManager) GetDrainingInstances(ctx context.Context, groupID string)
 	result, err := d.ec2Client.DescribeInstances(ctx, &ec2.DescribeInstancesInput{
 		Filters: []ec2types.Filter{
 			{
-				Name:   aws.String("tag:spawn:autoscale-group"),
+				Name:   aws.String(tagprefix.FilterTag("autoscale-group")),
 				Values: []string{groupID},
 			},
 			{
-				Name:   aws.String("tag:spawn:drain-state"),
+				Name:   aws.String(tagprefix.FilterTag("drain-state")),
 				Values: []string{"draining"},
 			},
 			{
@@ -143,7 +144,7 @@ func (d *DrainManager) CheckDrainStatus(ctx context.Context, instanceIDs []strin
 			// Get drain start time from tags
 			var drainStarted time.Time
 			for _, tag := range instance.Tags {
-				if aws.ToString(tag.Key) == "spawn:drain-started" {
+				if aws.ToString(tag.Key) == tagprefix.Tag("drain-started") {
 					if t, err := time.Parse(time.RFC3339, aws.ToString(tag.Value)); err == nil {
 						drainStarted = t
 					}
@@ -257,8 +258,8 @@ func (d *DrainManager) ClearDrainState(ctx context.Context, instanceIDs []string
 	_, err := d.ec2Client.DeleteTags(ctx, &ec2.DeleteTagsInput{
 		Resources: instanceIDs,
 		Tags: []ec2types.Tag{
-			{Key: aws.String("spawn:drain-state")},
-			{Key: aws.String("spawn:drain-started")},
+			{Key: aws.String(tagprefix.Tag("drain-state"))},
+			{Key: aws.String(tagprefix.Tag("drain-started"))},
 		},
 	})
 

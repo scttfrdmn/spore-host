@@ -15,6 +15,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/scttfrdmn/spore-host/spawn/pkg/tagprefix"
 )
 
 // StageRunner executes a pipeline stage with data handoff
@@ -210,34 +211,34 @@ func loadStageInfoFromTags(ctx context.Context, client *ec2.Client, instanceID s
 		}
 
 		switch *tag.Key {
-		case "spawn:pipeline-id":
+		case tagprefix.Tag("pipeline-id"):
 			info.PipelineID = *tag.Value
 			hasRequiredTags = true
-		case "spawn:stage-id":
+		case tagprefix.Tag("stage-id"):
 			info.StageID = *tag.Value
-		case "spawn:stage-index":
+		case tagprefix.Tag("stage-index"):
 			_, _ = fmt.Sscanf(*tag.Value, "%d", &info.StageIndex)
-		case "spawn:instance-index":
+		case tagprefix.Tag("instance-index"):
 			_, _ = fmt.Sscanf(*tag.Value, "%d", &info.InstanceIndex)
-		case "spawn:s3-bucket":
+		case tagprefix.Tag("s3-bucket"):
 			info.S3Bucket = *tag.Value
-		case "spawn:s3-prefix":
+		case tagprefix.Tag("s3-prefix"):
 			info.S3Prefix = *tag.Value
-		case "spawn:s3-config-key":
+		case tagprefix.Tag("s3-config-key"):
 			info.S3ConfigKey = *tag.Value
 		}
 	}
 
 	if !hasRequiredTags {
-		return nil, fmt.Errorf("instance is not part of a pipeline (missing spawn:pipeline-id tag)")
+		return nil, fmt.Errorf("instance is not part of a pipeline (missing %s tag)", tagprefix.Tag("pipeline-id"))
 	}
 
 	if info.StageID == "" {
-		return nil, fmt.Errorf("missing spawn:stage-id tag")
+		return nil, fmt.Errorf("missing %s tag", tagprefix.Tag("stage-id"))
 	}
 
 	if info.S3ConfigKey == "" {
-		return nil, fmt.Errorf("missing spawn:s3-config-key tag")
+		return nil, fmt.Errorf("missing %s tag", tagprefix.Tag("s3-config-key"))
 	}
 
 	return info, nil
@@ -330,7 +331,7 @@ func IsPipelineInstance(ctx context.Context) (bool, error) {
 			},
 			{
 				Name:   aws.String("key"),
-				Values: []string{"spawn:pipeline-id"},
+				Values: []string{tagprefix.Tag("pipeline-id")},
 			},
 		},
 	})
