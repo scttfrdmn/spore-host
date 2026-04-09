@@ -194,17 +194,14 @@ func (p *Printer) PrintCSV(results []aws.InstanceTypeResult) error {
 }
 
 // PrintSpotTable outputs Spot pricing results as a formatted table
-func (p *Printer) PrintSpotTable(results []aws.SpotPriceResult, showSavings bool) error {
+func (p *Printer) PrintSpotTable(results []aws.SpotPriceResult) error {
 	headers := []string{
 		i18n.T("truffle.output.header.instance_type"),
 		i18n.T("truffle.output.header.region"),
 		i18n.T("truffle.output.header.availability_zone"),
 		i18n.T("truffle.output.header.spot_price"),
-	}
-	if showSavings {
-		headers = append(headers,
-			i18n.T("truffle.output.header.on_demand_price"),
-			i18n.T("truffle.output.header.savings"))
+		"On-Demand",
+		"Savings",
 	}
 
 	table := newTable(headers, p.useColor)
@@ -216,20 +213,18 @@ func (p *Printer) PrintSpotTable(results []aws.SpotPriceResult, showSavings bool
 
 	for instanceType, prices := range grouped {
 		for i, result := range prices {
+			odStr, savStr := "N/A", "N/A"
+			if result.OnDemandPrice > 0 {
+				odStr = fmt.Sprintf("$%.4f", result.OnDemandPrice)
+				savStr = fmt.Sprintf("%.0f%%", result.SavingsPercent)
+			}
 			row := []string{
 				instanceType,
 				result.Region,
 				result.AvailabilityZone,
 				fmt.Sprintf("$%.4f", result.SpotPrice),
-			}
-			if showSavings {
-				if result.OnDemandPrice > 0 {
-					row = append(row,
-						fmt.Sprintf("$%.4f", result.OnDemandPrice),
-						fmt.Sprintf("%.1f%%", result.SavingsPercent))
-				} else {
-					row = append(row, "N/A", "N/A")
-				}
+				odStr,
+				savStr,
 			}
 			if i > 0 {
 				row[0] = ""

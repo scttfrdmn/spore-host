@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/scttfrdmn/spore-host/pkg/i18n"
+	"github.com/scttfrdmn/spore-host/pkg/pricing"
 	"github.com/spf13/cobra"
 	"github.com/scttfrdmn/spore-host/truffle/pkg/aws"
 	"github.com/scttfrdmn/spore-host/truffle/pkg/output"
@@ -166,6 +167,15 @@ func runSpot(cmd *cobra.Command, args []string) error {
 		})
 	}
 
+	// Populate on-demand price and savings for each result
+	for idx := range spotResults {
+		odPrice := pricing.GetEC2HourlyRate(spotResults[idx].Region, spotResults[idx].InstanceType)
+		spotResults[idx].OnDemandPrice = odPrice
+		if odPrice > 0 {
+			spotResults[idx].SavingsPercent = (1 - spotResults[idx].SpotPrice/odPrice) * 100
+		}
+	}
+
 	// --pick-first: output just the instance type of the top result and exit
 	if spotPickFirst {
 		fmt.Println(spotResults[0].InstanceType)
@@ -185,7 +195,7 @@ func runSpot(cmd *cobra.Command, args []string) error {
 	case "csv":
 		return printer.PrintSpotCSV(spotResults)
 	case "table":
-		return printer.PrintSpotTable(spotResults, spotShowSavings)
+		return printer.PrintSpotTable(spotResults)
 	default:
 		return i18n.Te("truffle.spot.error.unsupported_format", nil, map[string]interface{}{
 			"Format": outputFormat,
