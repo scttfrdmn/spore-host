@@ -8,8 +8,9 @@ ARG TARGETARCH
 
 WORKDIR /build
 
-# Copy shared i18n dependency
+# Copy shared dependencies
 COPY pkg/i18n pkg/i18n/
+COPY pkg/pricing pkg/pricing/
 
 # Build spawn
 COPY spawn/go.mod spawn/go.sum spawn/
