@@ -49,7 +49,16 @@ func appendRow(table *tablewriter.Table, row []string) error {
 }
 
 // PrintTable outputs results as a formatted table
-func (p *Printer) PrintTable(results []aws.InstanceTypeResult, includeAZs bool) error {
+func (p *Printer) PrintTable(results []aws.InstanceTypeResult, includeAZs bool, showPrice bool) error {
+	// Check if any results have GPU info
+	hasGPU := false
+	for _, r := range results {
+		if r.GPUs > 0 {
+			hasGPU = true
+			break
+		}
+	}
+
 	headers := []string{
 		i18n.T("truffle.output.header.instance_type"),
 		i18n.T("truffle.output.header.region"),
@@ -57,13 +66,31 @@ func (p *Printer) PrintTable(results []aws.InstanceTypeResult, includeAZs bool) 
 		i18n.T("truffle.output.header.memory"),
 		i18n.T("truffle.output.header.architecture"),
 	}
+	if hasGPU {
+		headers = append(headers, "GPUs", "GPU Model", "VRAM (GiB)")
+	}
+	if showPrice {
+		headers = append(headers, "$/hr")
+	}
 	if includeAZs {
 		headers = append(headers, i18n.T("truffle.output.header.availability_zones"))
 	}
 
 	table := newTable(headers, p.useColor)
 
-	grouped := groupByInstanceType(results)
+	// Deduplicate: group by instanceType+region to collapse duplicate rows
+	type resultKey struct{ instanceType, region string }
+	seen := make(map[resultKey]bool)
+	var deduped []aws.InstanceTypeResult
+	for _, r := range results {
+		k := resultKey{r.InstanceType, r.Region}
+		if !seen[k] {
+			seen[k] = true
+			deduped = append(deduped, r)
+		}
+	}
+
+	grouped := groupByInstanceType(deduped)
 
 	for instanceType, regions := range grouped {
 		for i, result := range regions {
@@ -74,6 +101,25 @@ func (p *Printer) PrintTable(results []aws.InstanceTypeResult, includeAZs bool) 
 				strconv.Itoa(int(result.VCPUs)),
 				memGiB,
 				result.Architecture,
+			}
+			if hasGPU {
+				if result.GPUs > 0 {
+					gpuModel := result.GPUModel
+					if result.GPUManufacturer != "" {
+						gpuModel = result.GPUManufacturer + " " + gpuModel
+					}
+					vramGiB := fmt.Sprintf("%.0f", float64(result.GPUMemoryMiB)/1024.0)
+					row = append(row, strconv.Itoa(int(result.GPUs)), gpuModel, vramGiB)
+				} else {
+					row = append(row, "-", "-", "-")
+				}
+			}
+			if showPrice {
+				if result.OnDemandPrice > 0 {
+					row = append(row, fmt.Sprintf("$%.4f", result.OnDemandPrice))
+				} else {
+					row = append(row, "N/A")
+				}
 			}
 			if includeAZs {
 				azs := strings.Join(result.AvailableAZs, ", ")
@@ -93,7 +139,7 @@ func (p *Printer) PrintTable(results []aws.InstanceTypeResult, includeAZs bool) 
 
 	summaryMsg := i18n.Tf("truffle.output.summary.found", map[string]interface{}{
 		"Count":   len(grouped),
-		"Regions": countUniqueRegions(results),
+		"Regions": countUniqueRegions(deduped),
 	})
 	if p.useColor {
 		cyan := color.New(color.FgCyan, color.Bold)

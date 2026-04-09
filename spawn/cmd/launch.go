@@ -27,7 +27,7 @@ import (
 	"github.com/scttfrdmn/spore-host/spawn/pkg/locality"
 	"github.com/scttfrdmn/spore-host/spawn/pkg/platform"
 	"github.com/scttfrdmn/spore-host/spawn/pkg/plugin"
-	"github.com/scttfrdmn/spore-host/spawn/pkg/pricing"
+	"github.com/scttfrdmn/spore-host/pkg/pricing"
 	"github.com/scttfrdmn/spore-host/spawn/pkg/progress"
 	"github.com/scttfrdmn/spore-host/spawn/pkg/queue"
 	"github.com/scttfrdmn/spore-host/spawn/pkg/regions"

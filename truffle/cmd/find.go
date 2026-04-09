@@ -254,7 +254,7 @@ func printFindTable(results []find.FindResult, printer *output.Printer) error {
 		fmt.Fprintln(os.Stderr)
 	}
 
-	return printer.PrintTable(baseResults, !findSkipAZs)
+	return printer.PrintTable(baseResults, !findSkipAZs, false)
 }
 
 func convertToInstanceTypeResults(findResults []find.FindResult) []aws.InstanceTypeResult {

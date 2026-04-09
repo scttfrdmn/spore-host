@@ -161,7 +161,7 @@ func runAZSearch(cmd *cobra.Command, args []string) error {
 	case "csv":
 		return printer.PrintCSV(results)
 	case "table":
-		return printer.PrintTable(results, true) // Always show AZs
+		return printer.PrintTable(results, true, false) // Always show AZs
 	default:
 		return fmt.Errorf("unsupported output format: %s", outputFormat)
 	}

@@ -29,6 +29,11 @@ type InstanceTypeResult struct {
 	MemoryMiB      int64    `json:"memory_mib,omitempty" yaml:"memory_mib,omitempty"`
 	Architecture   string   `json:"architecture,omitempty" yaml:"architecture,omitempty"`
 	InstanceFamily string   `json:"instance_family,omitempty" yaml:"instance_family,omitempty"`
+	GPUs            int32   `json:"gpus,omitempty" yaml:"gpus,omitempty"`
+	GPUMemoryMiB    int64   `json:"gpu_memory_mib,omitempty" yaml:"gpu_memory_mib,omitempty"`
+	GPUModel        string  `json:"gpu_model,omitempty" yaml:"gpu_model,omitempty"`
+	GPUManufacturer string  `json:"gpu_manufacturer,omitempty" yaml:"gpu_manufacturer,omitempty"`
+	OnDemandPrice   float64 `json:"on_demand_price,omitempty" yaml:"on_demand_price,omitempty"`
 }
 
 // SpotPriceResult represents Spot instance pricing
@@ -279,6 +284,26 @@ func (c *Client) searchInRegion(ctx context.Context, region string, matcher *reg
 			// Get architecture
 			if len(it.ProcessorInfo.SupportedArchitectures) > 0 {
 				result.Architecture = string(it.ProcessorInfo.SupportedArchitectures[0])
+			}
+
+			// Get GPU info
+			if it.GpuInfo != nil && len(it.GpuInfo.Gpus) > 0 {
+				for _, gpu := range it.GpuInfo.Gpus {
+					result.GPUs += valueOrZero(gpu.Count)
+					if gpu.Name != nil {
+						result.GPUModel = *gpu.Name
+					}
+					if gpu.Manufacturer != nil {
+						result.GPUManufacturer = *gpu.Manufacturer
+					}
+					if gpu.MemoryInfo != nil && gpu.MemoryInfo.SizeInMiB != nil {
+						result.GPUMemoryMiB = int64(*gpu.MemoryInfo.SizeInMiB) * int64(valueOrZero(gpu.Count))
+					}
+				}
+				// Use total if per-GPU not available
+				if result.GPUMemoryMiB == 0 && it.GpuInfo.TotalGpuMemoryInMiB != nil {
+					result.GPUMemoryMiB = int64(valueOrZero(it.GpuInfo.TotalGpuMemoryInMiB))
+				}
 			}
 
 			// Get availability zones if requested

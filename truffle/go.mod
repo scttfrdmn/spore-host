@@ -12,6 +12,7 @@ require (
 	github.com/fatih/color v1.18.0
 	github.com/olekukonko/tablewriter v1.1.3
 	github.com/scttfrdmn/spore-host/pkg/i18n v0.0.0-00010101000000-000000000000
+	github.com/scttfrdmn/spore-host/pkg/pricing v0.0.0-00010101000000-000000000000
 	github.com/scttfrdmn/substrate v0.44.2
 	github.com/spf13/cobra v1.10.2
 	gopkg.in/yaml.v3 v3.0.1
@@ -104,3 +105,5 @@ require (
 //   results, _ := client.SearchInstanceTypes(ctx, regions, matcher, opts)
 
 replace github.com/scttfrdmn/spore-host/pkg/i18n => ../pkg/i18n
+
+replace github.com/scttfrdmn/spore-host/pkg/pricing => ../pkg/pricing

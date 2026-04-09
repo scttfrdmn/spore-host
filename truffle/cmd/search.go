@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/scttfrdmn/spore-host/pkg/i18n"
+	"github.com/scttfrdmn/spore-host/pkg/pricing"
 	"github.com/spf13/cobra"
 	"github.com/scttfrdmn/spore-host/truffle/pkg/aws"
 	"github.com/scttfrdmn/spore-host/truffle/pkg/output"
@@ -17,13 +18,14 @@ import (
 )
 
 var (
-	skipAZs        bool
-	architecture   string
-	minVCPUs       int
-	minMemory      float64
-	instanceFamily string
+	skipAZs         bool
+	architecture    string
+	minVCPUs        int
+	minMemory       float64
+	instanceFamily  string
 	searchPickFirst bool
-	timeout        time.Duration
+	searchShowPrice bool
+	timeout         time.Duration
 )
 
 var searchCmd = &cobra.Command{
@@ -42,6 +44,7 @@ func init() {
 	searchCmd.Flags().Float64Var(&minMemory, "min-memory", 0, "Minimum memory in GiB")
 	searchCmd.Flags().StringVar(&instanceFamily, "family", "", "Filter by instance family (e.g., m5, c5)")
 	searchCmd.Flags().BoolVar(&searchPickFirst, "pick-first", false, "Output only the top result's instance type (useful for piping to spawn)")
+	searchCmd.Flags().BoolVar(&searchShowPrice, "show-price", false, "Show on-demand pricing (uses static pricing data)")
 	searchCmd.Flags().DurationVar(&timeout, "timeout", 5*time.Minute, "Timeout for AWS API calls")
 
 	// Register completion for instance type argument
@@ -140,6 +143,13 @@ func runSearch(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
+	// Populate on-demand pricing if requested (or always for table/json)
+	if searchShowPrice {
+		for idx := range results {
+			results[idx].OnDemandPrice = pricing.GetEC2HourlyRate(results[idx].Region, results[idx].InstanceType)
+		}
+	}
+
 	// --pick-first: output just the instance type of the top result and exit
 	if searchPickFirst {
 		fmt.Println(results[0].InstanceType)
@@ -156,7 +166,7 @@ func runSearch(cmd *cobra.Command, args []string) error {
 	case "csv":
 		return printer.PrintCSV(results)
 	case "table":
-		return printer.PrintTable(results, !skipAZs) // Show AZs by default
+		return printer.PrintTable(results, !skipAZs, searchShowPrice)
 	default:
 		return i18n.Te("truffle.search.error.unsupported_format", nil, map[string]interface{}{
 			"Format": outputFormat,

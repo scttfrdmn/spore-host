@@ -15,7 +15,7 @@ import (
 	iamtypes "github.com/aws/aws-sdk-go-v2/service/iam/types"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 	"github.com/scttfrdmn/spore-host/spawn/pkg/observability/tracing"
-	"github.com/scttfrdmn/spore-host/spawn/pkg/pricing"
+	"github.com/scttfrdmn/spore-host/pkg/pricing"
 )
 
 type Client struct {
