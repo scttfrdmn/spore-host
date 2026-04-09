@@ -1,5 +1,34 @@
 // spore.host Landing Page - Interactive Features
 
+// Accessibility: announce messages to screen readers via aria-live region
+function announce(msg) {
+    const el = document.getElementById('a11y-announcer');
+    if (el) { el.textContent = ''; requestAnimationFrame(() => { el.textContent = msg; }); }
+}
+
+// Accessibility: modal focus management
+let modalPreviousFocus = null;
+
+function modalEscapeHandler(e) {
+    if (e.key === 'Escape') closeTeamModal();
+}
+
+function trapFocusInModal(e) {
+    const modal = document.getElementById('team-modal');
+    if (!modal || modal.style.display === 'none') return;
+    const focusable = modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+    if (focusable.length === 0) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (e.key === 'Tab') {
+        if (e.shiftKey && document.activeElement === first) {
+            e.preventDefault(); last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+            e.preventDefault(); first.focus();
+        }
+    }
+}
+
 // Tab Switching for Install Instructions
 function showTab(tabName, event) {
     const contents = document.querySelectorAll('.tab-content');
@@ -131,6 +160,9 @@ function toggleTheme() {
 
     const icon = document.getElementById('theme-icon');
     if (icon) icon.textContent = newTheme === 'dark' ? '🌙' : '☀️';
+
+    const toggleBtn = document.getElementById('theme-toggle');
+    if (toggleBtn) toggleBtn.setAttribute('aria-label', newTheme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme');
 
     // Re-render charts so colors adapt to new theme
     if (typeof loadCostChart === 'function' && (costTrendChart || costBreakdownChart)) {
@@ -886,7 +918,7 @@ function renderInstanceRow(instance, index, expandedInstanceIds = new Set(), isJ
         }
 
         return `
-            <tr id="${rowId}" class="instance-row" data-instance-id="${escapeHtml(instance.instance_id)}" onclick="toggleInstanceDetails('${detailId}', '${rowId}')" style="cursor: pointer;">
+            <tr id="${rowId}" class="instance-row" data-instance-id="${escapeHtml(instance.instance_id)}" onclick="toggleInstanceDetails('${detailId}', '${rowId}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleInstanceDetails('${detailId}','${rowId}')}" tabindex="0" aria-expanded="false" style="cursor: pointer;">
                 <td data-label="Name" style="${nameCellStyle}"><strong>${escapeHtml(instance.name)}</strong> <span style="color: var(--text-muted); font-size: 0.85rem;">${arrowIcon}</span></td>
                 <td data-label="Type"><code>${escapeHtml(instance.instance_type)}</code></td>
                 <td data-label="State"><span class="badge badge-${stateClass}">${escapeHtml(instance.state)}</span></td>
@@ -947,6 +979,7 @@ function toggleInstanceDetails(detailId, rowId) {
 
     // Toggle display
     detailRow.style.display = isVisible ? 'none' : 'table-row';
+    instanceRow.setAttribute('aria-expanded', !isVisible);
 
     // Update arrow indicator
     const arrow = instanceRow.querySelector('span');
@@ -1059,6 +1092,7 @@ function applyTableFilters() {
     }
 
     displayInstances(filteredInstances, expandedInstanceIds);
+    announce(filteredInstances.length + ' instances shown');
 }
 
 function clearTableFilters() {
@@ -1082,7 +1116,10 @@ function sortTable(column) {
         currentSort.direction = 'asc';
     }
 
-    // Update sort indicators
+    // Update sort indicators and aria-sort
+    document.querySelectorAll('.instances-table th[aria-sort]').forEach(th => {
+        th.setAttribute('aria-sort', 'none');
+    });
     ['name', 'type', 'state', 'region', 'ip', 'dns', 'ttl'].forEach(col => {
         const indicator = document.getElementById(`sort-${col}`);
         if (indicator) {
@@ -1094,8 +1131,13 @@ function sortTable(column) {
             }
         }
     });
+    const activeHeader = document.querySelector(`.instances-table th[onclick*="sortTable('${column}')"]`);
+    if (activeHeader) {
+        activeHeader.setAttribute('aria-sort', currentSort.direction === 'asc' ? 'ascending' : 'descending');
+    }
 
     applyTableFilters();
+    announce('Table sorted by ' + column + ', ' + (currentSort.direction === 'asc' ? 'ascending' : 'descending'));
 }
 
 function sortInstances(instances, column, direction) {
@@ -1183,6 +1225,7 @@ function switchDashboardTab(tab) {
             btn.classList.remove('active');
             btn.style.borderBottom = '3px solid transparent';
             btn.style.color = 'var(--text-muted)';
+            btn.setAttribute('aria-selected', 'false');
         }
         if (content) content.style.display = 'none';
     });
@@ -1193,8 +1236,10 @@ function switchDashboardTab(tab) {
         activeBtn.classList.add('active');
         activeBtn.style.borderBottom = '3px solid var(--accent-blue)';
         activeBtn.style.color = 'var(--accent-blue)';
+        activeBtn.setAttribute('aria-selected', 'true');
     }
     if (activeContent) activeContent.style.display = 'block';
+    announce(tab + ' tab selected');
 
     if (tab === 'instances') {
         loadDashboard();
@@ -1423,6 +1468,7 @@ function applySweepFilters() {
         filtered = sortSweeps(filtered, sweepSortState.column, sweepSortState.direction);
     }
     renderSweepsTable(filtered);
+    announce(filtered.length + ' sweeps shown');
 }
 // Sort sweeps
 function sortSweeps(sweeps, column, direction) {
@@ -1478,7 +1524,10 @@ function sortSweepsTable(column) {
         sweepSortState.column = column;
         sweepSortState.direction = 'asc';
     }
-    // Update sort indicators
+    // Update sort indicators and aria-sort
+    document.querySelectorAll('.sweeps-table th[aria-sort]').forEach(th => {
+        th.setAttribute('aria-sort', 'none');
+    });
     ['name', 'status', 'progress', 'region', 'created', 'cost'].forEach(col => {
         const indicator = document.getElementById(`sweep-sort-${col}`);
         if (indicator) {
@@ -1489,8 +1538,13 @@ function sortSweepsTable(column) {
             }
         }
     });
+    const activeHeader = document.querySelector(`.sweeps-table th[onclick*="sortSweepsTable('${column}')"]`);
+    if (activeHeader) {
+        activeHeader.setAttribute('aria-sort', sweepSortState.direction === 'asc' ? 'ascending' : 'descending');
+    }
     // Sort filtered results
     applySweepFilters();
+    announce('Sweeps sorted by ' + column + ', ' + (sweepSortState.direction === 'asc' ? 'ascending' : 'descending'));
 }
 // Cancel sweep
 async function cancelSweep(sweepId) {
@@ -2531,10 +2585,24 @@ function onTeamSelectorChange(teamId) {
 // ── Team modal ────────────────────────────────────────────────
 
 function openTeamModal() {
+    modalPreviousFocus = document.activeElement;
     const modal = document.getElementById('team-modal');
     const backdrop = document.getElementById('team-modal-backdrop');
     if (modal) modal.style.display = '';
     if (backdrop) backdrop.style.display = '';
+
+    // Hide background from screen readers
+    const nav = document.querySelector('nav');
+    const container = document.querySelector('.container');
+    if (nav) nav.setAttribute('aria-hidden', 'true');
+    if (container) container.setAttribute('aria-hidden', 'true');
+
+    // Focus first input and trap focus
+    const nameInput = document.getElementById('new-team-name');
+    if (nameInput) setTimeout(() => nameInput.focus(), 50);
+    document.addEventListener('keydown', modalEscapeHandler);
+    document.addEventListener('keydown', trapFocusInModal);
+
     loadTeamList();
 }
 
@@ -2543,6 +2611,17 @@ function closeTeamModal() {
     const backdrop = document.getElementById('team-modal-backdrop');
     if (modal) modal.style.display = 'none';
     if (backdrop) backdrop.style.display = 'none';
+
+    // Restore background
+    const nav = document.querySelector('nav');
+    const container = document.querySelector('.container');
+    if (nav) nav.removeAttribute('aria-hidden');
+    if (container) container.removeAttribute('aria-hidden');
+
+    // Remove listeners and restore focus
+    document.removeEventListener('keydown', modalEscapeHandler);
+    document.removeEventListener('keydown', trapFocusInModal);
+    if (modalPreviousFocus) modalPreviousFocus.focus();
 }
 
 async function createTeam() {

@@ -14,11 +14,13 @@
     <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1564.0.min.js"></script>
 </head>
 <body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
     <!-- Navigation -->
     <nav class="nav">
         <div class="nav-container">
             <div class="nav-brand">
-                <span class="nav-logo">🍄</span>
+                <span class="nav-logo" aria-hidden="true">🍄</span>
                 <span class="nav-title">spore.host</span>
             </div>
             <button class="hamburger" id="hamburger-btn" aria-label="Toggle navigation" aria-expanded="false">
@@ -27,19 +29,19 @@
             <div class="nav-links">
                 <a href="#install">Install</a>
                 <a href="#examples">Examples</a>
-                <a href="/dashboard.html" class="btn-login-nav" style="background: var(--accent-blue); color: white; padding: 0.5rem 1rem; border-radius: 6px; text-decoration: none; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">🔐 Dashboard / Login</a>
-                <a href="https://github.com/scttfrdmn/mycelium" target="_blank">GitHub</a>
-                <button id="theme-toggle" onclick="toggleTheme()" style="background: none; border: 1px solid var(--border); border-radius: 6px; padding: 0.5rem 0.75rem; cursor: pointer; color: var(--text-primary); font-size: 1.2rem; transition: all 0.3s ease;" title="Toggle theme">
-                    <span id="theme-icon">🌙</span>
+                <a href="/dashboard.html" class="btn-login-nav" style="background: var(--accent-blue); color: white; padding: 0.5rem 1rem; border-radius: 6px; text-decoration: none; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'"><span aria-hidden="true">🔐</span> Dashboard / Login</a>
+                <a href="https://github.com/scttfrdmn/mycelium" target="_blank" aria-label="GitHub (opens in new tab)">GitHub</a>
+                <button id="theme-toggle" onclick="toggleTheme()" style="background: none; border: 1px solid var(--border); border-radius: 6px; padding: 0.5rem 0.75rem; cursor: pointer; color: var(--text-primary); font-size: 1.2rem; transition: all 0.3s ease;" title="Toggle theme" aria-label="Switch to light theme">
+                    <span id="theme-icon" aria-hidden="true">🌙</span>
                 </button>
             </div>
         </div>
     </nav>
 
-    <div class="container">
+    <main id="main-content" class="container">
         <!-- Hero Section -->
         <header class="hero">
-            <div style="font-size: 4rem; margin-bottom: 1rem;">🍄</div>
+            <div style="font-size: 4rem; margin-bottom: 1rem;" aria-hidden="true">🍄</div>
             <h1>Launch EC2 in 2 Minutes</h1>
             <p class="tagline">Auto-terminate. Zero surprise bills.</p>
             <div class="hero-buttons">
@@ -47,9 +49,9 @@
                 <a href="#examples" class="btn btn-secondary">See Examples</a>
             </div>
             <div class="hero-stats">
-                <span>✓ Free & Open Source</span>
-                <span>✓ ~$0.01/hr</span>
-                <span>✓ Mac, Windows, Linux</span>
+                <span><span aria-hidden="true">✓</span> Free &amp; Open Source</span>
+                <span><span aria-hidden="true">✓</span> ~$0.01/hr</span>
+                <span><span aria-hidden="true">✓</span> Mac, Windows, Linux</span>
             </div>
         </header>
 
@@ -76,13 +78,13 @@
                 <div class="icon">🚀</div>
                 <h3>Spawn</h3>
                 <p>Launch instances in 2 minutes with interactive wizard or CLI</p>
-                <span class="badge" data-tooltip="Instances terminate automatically when TTL expires">Auto-termination</span>
+                <span class="badge" data-tooltip="Instances terminate automatically when TTL expires" aria-describedby="tip-auto-term">Auto-termination<span id="tip-auto-term" role="tooltip" class="sr-only">Instances terminate automatically when TTL expires</span></span>
             </div>
             <div class="feature-card">
                 <div class="icon">🤖</div>
                 <h3>Spored</h3>
-                <p>Monitor automatically with <span data-tooltip="Time-To-Live: instances automatically terminate after this duration">TTL</span>, idle detection, and hibernation</p>
-                <span class="badge" data-tooltip="Runs on the instance itself, not your local machine">Laptop-independent</span>
+                <p>Monitor automatically with <span data-tooltip="Time-To-Live: instances automatically terminate after this duration" aria-describedby="tip-ttl1">TTL<span id="tip-ttl1" role="tooltip" class="sr-only">Time-To-Live: instances automatically terminate after this duration</span></span>, idle detection, and hibernation</p>
+                <span class="badge" data-tooltip="Runs on the instance itself, not your local machine" aria-describedby="tip-laptop">Laptop-independent<span id="tip-laptop" role="tooltip" class="sr-only">Runs on the instance itself, not your local machine</span></span>
             </div>
         </section>
 
@@ -134,7 +136,7 @@ tar -xzf spawn_*_$(uname -s)_$(uname -m).tar.gz
                 </div>
                 <div class="feature-item">
                     <span class="check">✓</span>
-                    <strong>No Surprise Bills</strong> - Auto-termination with <span data-tooltip="Time-To-Live: instances automatically terminate after this duration">TTL</span>
+                    <strong>No Surprise Bills</strong> - Auto-termination with <span data-tooltip="Time-To-Live: instances automatically terminate after this duration" aria-describedby="tip-ttl2">TTL<span id="tip-ttl2" role="tooltip" class="sr-only">Time-To-Live: instances automatically terminate after this duration</span></span>
                 </div>
                 <div class="feature-item">
                     <span class="check">✓</span>
@@ -146,7 +148,7 @@ tar -xzf spawn_*_$(uname -s)_$(uname -m).tar.gz
                 </div>
                 <div class="feature-item">
                     <span class="check">✓</span>
-                    <strong><span data-tooltip="Pause instance to disk and stop billing for compute, resume later">Hibernation</span></strong> - Save 99% costs when idle
+                    <strong><span data-tooltip="Pause instance to disk and stop billing for compute, resume later" aria-describedby="tip-hibernate">Hibernation<span id="tip-hibernate" role="tooltip" class="sr-only">Pause instance to disk and stop billing for compute, resume later</span></span></strong> - Save 99% costs when idle
                 </div>
                 <div class="feature-item">
                     <span class="check">✓</span>
@@ -229,7 +231,10 @@ Cost: $1.006/hr active, $0.01/hr hibernated</code></pre>
             </div>
         </section>
 
-        <!-- Footer -->
+    </main>
+
+    <!-- Footer -->
+    <div class="container">
         <footer>
             <div class="footer-roadmap">
                 <h3>🚧 Roadmap</h3>
@@ -251,7 +256,7 @@ Cost: $1.006/hr active, $0.01/hr hibernated</code></pre>
                 <a href="/terms.html">Terms</a>
             </div>
             <p class="footer-text">
-                Made with 🍄 by <a href="https://github.com/scttfrdmn">@scttfrdmn</a>
+                Made with <span aria-hidden="true">🍄</span> by <a href="https://github.com/scttfrdmn">@scttfrdmn</a>
                 <br>
                 Licensed under <a href="https://github.com/scttfrdmn/mycelium/blob/main/LICENSE">Apache 2.0</a>
             </p>

@@ -38,11 +38,13 @@
     </style>
 </head>
 <body>
+    <a href="#dashboard" class="skip-link">Skip to main content</a>
+
     <!-- Navigation -->
     <nav class="nav">
         <div class="nav-container">
             <div class="nav-brand">
-                <span class="nav-logo">🍄</span>
+                <span class="nav-logo" aria-hidden="true">🍄</span>
                 <span class="nav-title">spore.host</span>
             </div>
             <button class="hamburger" id="hamburger-btn" aria-label="Toggle navigation" aria-expanded="false">
@@ -52,13 +54,13 @@
                 <a href="/">Home</a>
                 <a href="/#install">Install</a>
                 <a href="/#examples">Examples</a>
-                <a href="https://github.com/scttfrdmn/mycelium" target="_blank">GitHub</a>
-                <select id="team-selector" style="display:none;" onchange="onTeamSelectorChange(this.value)" title="Switch team context">
+                <a href="https://github.com/scttfrdmn/mycelium" target="_blank" aria-label="GitHub (opens in new tab)">GitHub</a>
+                <select id="team-selector" style="display:none;" onchange="onTeamSelectorChange(this.value)" title="Switch team context" aria-label="Switch team">
                     <option value="">Personal</option>
                 </select>
-                <button id="manage-teams-btn" style="display:none;" onclick="openTeamModal()" class="btn-manage-teams" title="Manage teams">Teams</button>
-                <button id="theme-toggle" onclick="toggleTheme()" style="background: none; border: 1px solid var(--border); border-radius: 6px; padding: 0.5rem 0.75rem; cursor: pointer; color: var(--text-primary); font-size: 1.2rem; transition: all 0.3s ease;" title="Toggle theme">
-                    <span id="theme-icon">🌙</span>
+                <button id="manage-teams-btn" style="display:none;" onclick="openTeamModal()" class="btn-manage-teams" title="Manage teams" aria-label="Manage teams">Teams</button>
+                <button id="theme-toggle" onclick="toggleTheme()" style="background: none; border: 1px solid var(--border); border-radius: 6px; padding: 0.5rem 0.75rem; cursor: pointer; color: var(--text-primary); font-size: 1.2rem; transition: all 0.3s ease;" title="Toggle theme" aria-label="Switch to light theme">
+                    <span id="theme-icon" aria-hidden="true">🌙</span>
                 </button>
             </div>
         </div>
@@ -67,14 +69,14 @@
     <div class="container">
         <!-- Login Section -->
         <section id="login-section" class="login-section">
-            <h2>🔐 Sign In to Dashboard</h2>
+            <h2><span aria-hidden="true">🔐</span> Sign In to Dashboard</h2>
             <p class="login-subtitle">Choose your authentication provider to access your instances</p>
 
             <div id="auth-error" style="display: none; padding: 1rem; margin: 2rem auto; max-width: 600px; background: rgba(255, 100, 100, 0.1); border: 1px solid rgba(255, 100, 100, 0.3); border-radius: 8px; color: var(--accent-red);"></div>
 
             <div class="login-providers">
                 <button onclick="authManager.login('globus')" class="login-btn login-btn-globus">
-                    <span class="login-icon">🌐</span>
+                    <span class="login-icon" aria-hidden="true">🌐</span>
                     <div class="login-text">
                         <strong>Sign in with Globus Auth</strong>
                         <small>Research & academic users</small>
@@ -82,7 +84,7 @@
                 </button>
 
                 <button onclick="authManager.login('google')" class="login-btn login-btn-google">
-                    <span class="login-icon">🔵</span>
+                    <span class="login-icon" aria-hidden="true">🔵</span>
                     <div class="login-text">
                         <strong>Sign in with Google</strong>
                         <small>Use your Google account</small>
@@ -90,7 +92,7 @@
                 </button>
 
                 <button onclick="authManager.login('github')" class="login-btn login-btn-github">
-                    <span class="login-icon">⚫</span>
+                    <span class="login-icon" aria-hidden="true">⚫</span>
                     <div class="login-text">
                         <strong>Sign in with GitHub</strong>
                         <small>Use your GitHub account</small>
@@ -110,48 +112,49 @@
         </section>
 
         <!-- Web Dashboard -->
-        <section id="dashboard" class="dashboard" style="display: none;">
+        <main id="dashboard" class="dashboard" style="display: none;">
+            <div id="a11y-announcer" class="sr-only" aria-live="polite" aria-atomic="true"></div>
             <div id="connection-status" class="status-disconnected" title="Disconnected"></div>
             <div id="user-display" class="user-display"></div>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                <h2 style="margin: 0;">🍄 Your Spores</h2>
+                <h2 style="margin: 0;"><span aria-hidden="true">🍄</span> Your Spores</h2>
                 <div style="display: flex; align-items: center; gap: 1rem;">
                     <span id="last-updated" style="font-size: 0.85rem; color: var(--text-muted);"></span>
-                    <button onclick="refreshDashboard()" id="refresh-btn" class="btn-refresh" style="padding: 0.5rem 1rem; background: var(--accent-blue); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem; transition: opacity 0.2s; min-width: 130px;">
-                        🔄 Refresh
+                    <button onclick="refreshDashboard()" id="refresh-btn" class="btn-refresh" style="padding: 0.5rem 1rem; background: var(--accent-blue); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem; transition: opacity 0.2s; min-width: 130px;" aria-label="Refresh dashboard">
+                        <span aria-hidden="true">🔄</span> Refresh
                     </button>
                 </div>
             </div>
 
             <!-- Dashboard Tabs -->
-            <div class="dashboard-tabs" style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 2px solid var(--border);">
-                <button onclick="switchDashboardTab('instances')" id="tab-instances" class="dashboard-tab active" style="padding: 0.75rem 1.5rem; background: none; border: none; border-bottom: 3px solid var(--accent-blue); color: var(--accent-blue); cursor: pointer; font-size: 1rem; font-weight: 600; transition: all 0.2s;">
-                    🖥️ Instances
+            <div class="dashboard-tabs" role="tablist" aria-label="Dashboard sections" style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 2px solid var(--border);">
+                <button onclick="switchDashboardTab('instances')" id="tab-instances" class="dashboard-tab active" role="tab" aria-selected="true" aria-controls="instances-tab-content" style="padding: 0.75rem 1.5rem; background: none; border: none; border-bottom: 3px solid var(--accent-blue); color: var(--accent-blue); cursor: pointer; font-size: 1rem; font-weight: 600; transition: all 0.2s;">
+                    <span aria-hidden="true">🖥️</span> Instances
                 </button>
-                <button onclick="switchDashboardTab('sweeps')" id="tab-sweeps" class="dashboard-tab" style="padding: 0.75rem 1.5rem; background: none; border: none; border-bottom: 3px solid transparent; color: var(--text-muted); cursor: pointer; font-size: 1rem; font-weight: 600; transition: all 0.2s;">
-                    📊 Sweeps
+                <button onclick="switchDashboardTab('sweeps')" id="tab-sweeps" class="dashboard-tab" role="tab" aria-selected="false" aria-controls="sweeps-tab-content" style="padding: 0.75rem 1.5rem; background: none; border: none; border-bottom: 3px solid transparent; color: var(--text-muted); cursor: pointer; font-size: 1rem; font-weight: 600; transition: all 0.2s;">
+                    <span aria-hidden="true">📊</span> Sweeps
                 </button>
-                <button onclick="switchDashboardTab('autoscale')" id="tab-autoscale" class="dashboard-tab" style="padding: 0.75rem 1.5rem; background: none; border: none; border-bottom: 3px solid transparent; color: var(--text-muted); cursor: pointer; font-size: 1rem; font-weight: 600; transition: all 0.2s;">
-                    ⚙️ Autoscale Groups
+                <button onclick="switchDashboardTab('autoscale')" id="tab-autoscale" class="dashboard-tab" role="tab" aria-selected="false" aria-controls="autoscale-tab-content" style="padding: 0.75rem 1.5rem; background: none; border: none; border-bottom: 3px solid transparent; color: var(--text-muted); cursor: pointer; font-size: 1rem; font-weight: 600; transition: all 0.2s;">
+                    <span aria-hidden="true">⚙️</span> Autoscale Groups
                 </button>
-                <button onclick="switchDashboardTab('settings')" id="tab-settings" class="dashboard-tab" style="padding: 0.75rem 1.5rem; background: none; border: none; border-bottom: 3px solid transparent; color: var(--text-muted); cursor: pointer; font-size: 1rem; font-weight: 600; transition: all 0.2s;">
-                    🔔 Settings
+                <button onclick="switchDashboardTab('settings')" id="tab-settings" class="dashboard-tab" role="tab" aria-selected="false" aria-controls="settings-tab-content" style="padding: 0.75rem 1.5rem; background: none; border: none; border-bottom: 3px solid transparent; color: var(--text-muted); cursor: pointer; font-size: 1rem; font-weight: 600; transition: all 0.2s;">
+                    <span aria-hidden="true">🔔</span> Settings
                 </button>
-                <button onclick="switchDashboardTab('software')" id="tab-software" class="dashboard-tab" style="padding: 0.75rem 1.5rem; background: none; border: none; border-bottom: 3px solid transparent; color: var(--text-muted); cursor: pointer; font-size: 1rem; font-weight: 600; transition: all 0.2s;">
+                <button onclick="switchDashboardTab('software')" id="tab-software" class="dashboard-tab" role="tab" aria-selected="false" aria-controls="software-tab-content" style="padding: 0.75rem 1.5rem; background: none; border: none; border-bottom: 3px solid transparent; color: var(--text-muted); cursor: pointer; font-size: 1rem; font-weight: 600; transition: all 0.2s;">
                     Software
                 </button>
             </div>
 
             <!-- Instances Tab Content -->
-            <div id="instances-tab-content" class="dashboard-tab-content">
+            <div id="instances-tab-content" class="dashboard-tab-content" role="tabpanel" aria-labelledby="tab-instances">
                 <p class="dashboard-subtitle">View and monitor your spawned instances across all regions</p>
 
             <!-- Table Controls -->
             <div class="table-controls" style="margin-bottom: 1rem; padding: 1rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;">
                 <div style="display: grid; grid-template-columns: 1fr auto auto auto; gap: 1rem; align-items: center;">
-                    <input type="text" id="search-input" placeholder="🔍 Search by name, ID, or tag..." style="padding: 0.6rem 1rem; background: var(--bg-dark); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); font-size: 0.9rem;" oninput="applyTableFilters()">
+                    <input type="text" id="search-input" placeholder="🔍 Search by name, ID, or tag..." aria-label="Search instances" style="padding: 0.6rem 1rem; background: var(--bg-dark); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); font-size: 0.9rem;" oninput="applyTableFilters()">
 
-                    <select id="state-filter" style="padding: 0.6rem 1rem; background: var(--bg-dark); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); font-size: 0.9rem; cursor: pointer;" onchange="applyTableFilters()">
+                    <select id="state-filter" aria-label="Filter by state" style="padding: 0.6rem 1rem; background: var(--bg-dark); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); font-size: 0.9rem; cursor: pointer;" onchange="applyTableFilters()">
                         <option value="">All States</option>
                         <option value="running">Running</option>
                         <option value="pending">Pending</option>
@@ -159,7 +162,7 @@
                         <option value="terminated">Terminated</option>
                     </select>
 
-                    <select id="region-filter" style="padding: 0.6rem 1rem; background: var(--bg-dark); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); font-size: 0.9rem; cursor: pointer;" onchange="applyTableFilters()">
+                    <select id="region-filter" aria-label="Filter by region" style="padding: 0.6rem 1rem; background: var(--bg-dark); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); font-size: 0.9rem; cursor: pointer;" onchange="applyTableFilters()">
                         <option value="">All Regions</option>
                     </select>
 
@@ -169,23 +172,23 @@
                 </div>
             </div>
 
-            <div id="dashboard-loading" style="display: none; text-align: center; padding: 2rem; color: var(--text-muted);">
+            <div id="dashboard-loading" role="status" style="display: none; text-align: center; padding: 2rem; color: var(--text-muted);">
                 Loading spores...
             </div>
 
-            <div id="dashboard-error" style="display: none; padding: 1rem; margin: 1rem 0; background: rgba(255, 100, 100, 0.1); border: 1px solid rgba(255, 100, 100, 0.3); border-radius: 8px; color: var(--accent-red);"></div>
+            <div id="dashboard-error" role="alert" style="display: none; padding: 1rem; margin: 1rem 0; background: rgba(255, 100, 100, 0.1); border: 1px solid rgba(255, 100, 100, 0.3); border-radius: 8px; color: var(--accent-red);"></div>
 
             <div class="table-container">
                 <table class="instances-table">
                     <thead>
                         <tr>
-                            <th onclick="sortTable('name')" style="cursor: pointer; user-select: none;">Name <span id="sort-name" style="color: var(--text-muted); font-size: 0.8rem;"></span></th>
-                            <th onclick="sortTable('type')" style="cursor: pointer; user-select: none;">Type <span id="sort-type" style="color: var(--text-muted); font-size: 0.8rem;"></span></th>
-                            <th onclick="sortTable('state')" style="cursor: pointer; user-select: none;">State <span id="sort-state" style="color: var(--text-muted); font-size: 0.8rem;"></span></th>
-                            <th onclick="sortTable('region')" style="cursor: pointer; user-select: none;">Region <span id="sort-region" style="color: var(--text-muted); font-size: 0.8rem;"></span></th>
-                            <th onclick="sortTable('ip')" style="cursor: pointer; user-select: none;">Public IP <span id="sort-ip" style="color: var(--text-muted); font-size: 0.8rem;"></span></th>
-                            <th onclick="sortTable('dns')" style="cursor: pointer; user-select: none;">DNS Name <span id="sort-dns" style="color: var(--text-muted); font-size: 0.8rem;"></span></th>
-                            <th onclick="sortTable('ttl')" style="cursor: pointer; user-select: none;">TTL <span id="sort-ttl" style="color: var(--text-muted); font-size: 0.8rem;"></span></th>
+                            <th onclick="sortTable('name')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortTable('name')}" tabindex="0" aria-sort="none" style="cursor: pointer; user-select: none;">Name <span id="sort-name" style="color: var(--text-muted); font-size: 0.8rem;" aria-hidden="true"></span></th>
+                            <th onclick="sortTable('type')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortTable('type')}" tabindex="0" aria-sort="none" style="cursor: pointer; user-select: none;">Type <span id="sort-type" style="color: var(--text-muted); font-size: 0.8rem;" aria-hidden="true"></span></th>
+                            <th onclick="sortTable('state')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortTable('state')}" tabindex="0" aria-sort="none" style="cursor: pointer; user-select: none;">State <span id="sort-state" style="color: var(--text-muted); font-size: 0.8rem;" aria-hidden="true"></span></th>
+                            <th onclick="sortTable('region')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortTable('region')}" tabindex="0" aria-sort="none" style="cursor: pointer; user-select: none;">Region <span id="sort-region" style="color: var(--text-muted); font-size: 0.8rem;" aria-hidden="true"></span></th>
+                            <th onclick="sortTable('ip')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortTable('ip')}" tabindex="0" aria-sort="none" style="cursor: pointer; user-select: none;">Public IP <span id="sort-ip" style="color: var(--text-muted); font-size: 0.8rem;" aria-hidden="true"></span></th>
+                            <th onclick="sortTable('dns')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortTable('dns')}" tabindex="0" aria-sort="none" style="cursor: pointer; user-select: none;">DNS Name <span id="sort-dns" style="color: var(--text-muted); font-size: 0.8rem;" aria-hidden="true"></span></th>
+                            <th onclick="sortTable('ttl')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortTable('ttl')}" tabindex="0" aria-sort="none" style="cursor: pointer; user-select: none;">TTL <span id="sort-ttl" style="color: var(--text-muted); font-size: 0.8rem;" aria-hidden="true"></span></th>
                         </tr>
                     </thead>
                     <tbody id="instances-tbody">
@@ -206,15 +209,15 @@
             </div>
 
             <!-- Sweeps Tab Content -->
-            <div id="sweeps-tab-content" class="dashboard-tab-content" style="display: none;">
+            <div id="sweeps-tab-content" class="dashboard-tab-content" role="tabpanel" aria-labelledby="tab-sweeps" style="display: none;">
                 <p class="dashboard-subtitle">View and monitor your parameter sweeps</p>
 
                 <!-- Sweep Filters -->
                 <div class="table-controls" style="margin-bottom: 1rem; padding: 1rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;">
                     <div style="display: grid; grid-template-columns: 1fr auto auto auto; gap: 1rem; align-items: center;">
-                        <input type="text" id="sweep-search-input" placeholder="🔍 Search by name or ID..." style="padding: 0.6rem 1rem; background: var(--bg-dark); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); font-size: 0.9rem;" oninput="applySweepFilters()">
+                        <input type="text" id="sweep-search-input" placeholder="🔍 Search by name or ID..." aria-label="Search sweeps" style="padding: 0.6rem 1rem; background: var(--bg-dark); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); font-size: 0.9rem;" oninput="applySweepFilters()">
 
-                        <select id="sweep-status-filter" style="padding: 0.6rem 1rem; background: var(--bg-dark); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); font-size: 0.9rem; cursor: pointer;" onchange="applySweepFilters()">
+                        <select id="sweep-status-filter" aria-label="Filter by status" style="padding: 0.6rem 1rem; background: var(--bg-dark); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); font-size: 0.9rem; cursor: pointer;" onchange="applySweepFilters()">
                             <option value="">All Statuses</option>
                             <option value="RUNNING">Running</option>
                             <option value="COMPLETED">Completed</option>
@@ -222,8 +225,8 @@
                             <option value="CANCELLED">Cancelled</option>
                         </select>
 
-                        <button onclick="deleteCompletedSweeps()" style="padding: 0.6rem 1rem; background: var(--bg-dark); border: 1px solid var(--accent-red); border-radius: 6px; color: var(--accent-red); font-size: 0.9rem; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,100,100,0.1)'" onmouseout="this.style.background='var(--bg-dark)'" title="Delete completed and cancelled sweeps">
-                            🗑️ Cleanup
+                        <button onclick="deleteCompletedSweeps()" style="padding: 0.6rem 1rem; background: var(--bg-dark); border: 1px solid var(--accent-red); border-radius: 6px; color: var(--accent-red); font-size: 0.9rem; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,100,100,0.1)'" onmouseout="this.style.background='var(--bg-dark)'" title="Delete completed and cancelled sweeps" aria-label="Delete completed sweeps">
+                            <span aria-hidden="true">🗑️</span> Cleanup
                         </button>
 
                         <button onclick="clearSweepFilters()" style="padding: 0.6rem 1rem; background: var(--bg-dark); border: 1px solid var(--border); border-radius: 6px; color: var(--text-secondary); font-size: 0.9rem; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--accent-blue)'" onmouseout="this.style.borderColor='var(--border)'">
@@ -236,18 +239,18 @@
                     Loading sweeps...
                 </div>
 
-                <div id="sweeps-error" style="display: none; padding: 1rem; margin: 1rem 0; background: rgba(255, 100, 100, 0.1); border: 1px solid rgba(255, 100, 100, 0.3); border-radius: 8px; color: var(--accent-red);"></div>
+                <div id="sweeps-error" role="alert" style="display: none; padding: 1rem; margin: 1rem 0; background: rgba(255, 100, 100, 0.1); border: 1px solid rgba(255, 100, 100, 0.3); border-radius: 8px; color: var(--accent-red);"></div>
 
                 <div class="table-container">
                     <table class="sweeps-table">
                         <thead>
                             <tr>
-                                <th onclick="sortSweepsTable('name')" style="cursor: pointer; user-select: none;">Name <span id="sweep-sort-name" style="color: var(--text-muted); font-size: 0.8rem;"></span></th>
-                                <th onclick="sortSweepsTable('status')" style="cursor: pointer; user-select: none;">Status <span id="sweep-sort-status" style="color: var(--text-muted); font-size: 0.8rem;"></span></th>
-                                <th onclick="sortSweepsTable('progress')" style="cursor: pointer; user-select: none;">Progress <span id="sweep-sort-progress" style="color: var(--text-muted); font-size: 0.8rem;"></span></th>
-                                <th onclick="sortSweepsTable('region')" style="cursor: pointer; user-select: none;">Region <span id="sweep-sort-region" style="color: var(--text-muted); font-size: 0.8rem;"></span></th>
-                                <th onclick="sortSweepsTable('created')" style="cursor: pointer; user-select: none;">Created <span id="sweep-sort-created" style="color: var(--text-muted); font-size: 0.8rem;"></span></th>
-                                <th onclick="sortSweepsTable('cost')" style="cursor: pointer; user-select: none;">Est. Cost <span id="sweep-sort-cost" style="color: var(--text-muted); font-size: 0.8rem;"></span></th>
+                                <th onclick="sortSweepsTable('name')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortSweepsTable('name')}" tabindex="0" aria-sort="none" style="cursor: pointer; user-select: none;">Name <span id="sweep-sort-name" style="color: var(--text-muted); font-size: 0.8rem;" aria-hidden="true"></span></th>
+                                <th onclick="sortSweepsTable('status')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortSweepsTable('status')}" tabindex="0" aria-sort="none" style="cursor: pointer; user-select: none;">Status <span id="sweep-sort-status" style="color: var(--text-muted); font-size: 0.8rem;" aria-hidden="true"></span></th>
+                                <th onclick="sortSweepsTable('progress')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortSweepsTable('progress')}" tabindex="0" aria-sort="none" style="cursor: pointer; user-select: none;">Progress <span id="sweep-sort-progress" style="color: var(--text-muted); font-size: 0.8rem;" aria-hidden="true"></span></th>
+                                <th onclick="sortSweepsTable('region')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortSweepsTable('region')}" tabindex="0" aria-sort="none" style="cursor: pointer; user-select: none;">Region <span id="sweep-sort-region" style="color: var(--text-muted); font-size: 0.8rem;" aria-hidden="true"></span></th>
+                                <th onclick="sortSweepsTable('created')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortSweepsTable('created')}" tabindex="0" aria-sort="none" style="cursor: pointer; user-select: none;">Created <span id="sweep-sort-created" style="color: var(--text-muted); font-size: 0.8rem;" aria-hidden="true"></span></th>
+                                <th onclick="sortSweepsTable('cost')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortSweepsTable('cost')}" tabindex="0" aria-sort="none" style="cursor: pointer; user-select: none;">Est. Cost <span id="sweep-sort-cost" style="color: var(--text-muted); font-size: 0.8rem;" aria-hidden="true"></span></th>
                                 <th style="width: 100px;">Actions</th>
                             </tr>
                         </thead>
@@ -269,7 +272,7 @@
             </div>
 
             <!-- Autoscale Groups Tab Content -->
-            <div id="autoscale-tab-content" class="dashboard-tab-content" style="display: none;">
+            <div id="autoscale-tab-content" class="dashboard-tab-content" role="tabpanel" aria-labelledby="tab-autoscale" style="display: none;">
                 <p class="dashboard-subtitle">Monitor auto-scaling job arrays and capacity</p>
 
                 <!-- Cost Summary Widget -->
@@ -295,9 +298,9 @@
                 <!-- Autoscale Group Filters -->
                 <div class="table-controls" style="margin-bottom: 1rem; padding: 1rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;">
                     <div style="display: grid; grid-template-columns: 1fr auto auto; gap: 1rem; align-items: center;">
-                        <input type="text" id="autoscale-search-input" placeholder="🔍 Search by name or ID..." style="padding: 0.6rem 1rem; background: var(--bg-dark); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); font-size: 0.9rem;" oninput="applyAutoscaleFilters()">
+                        <input type="text" id="autoscale-search-input" placeholder="🔍 Search by name or ID..." aria-label="Search autoscale groups" style="padding: 0.6rem 1rem; background: var(--bg-dark); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); font-size: 0.9rem;" oninput="applyAutoscaleFilters()">
 
-                        <select id="autoscale-status-filter" style="padding: 0.6rem 1rem; background: var(--bg-dark); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); font-size: 0.9rem; cursor: pointer;" onchange="applyAutoscaleFilters()">
+                        <select id="autoscale-status-filter" aria-label="Filter by status" style="padding: 0.6rem 1rem; background: var(--bg-dark); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); font-size: 0.9rem; cursor: pointer;" onchange="applyAutoscaleFilters()">
                             <option value="">All Statuses</option>
                             <option value="active">Active</option>
                             <option value="paused">Paused</option>
@@ -314,7 +317,7 @@
                     Loading autoscale groups...
                 </div>
 
-                <div id="autoscale-error" style="display: none; padding: 1rem; margin: 1rem 0; background: rgba(255, 100, 100, 0.1); border: 1px solid rgba(255, 100, 100, 0.3); border-radius: 8px; color: var(--accent-red);"></div>
+                <div id="autoscale-error" role="alert" style="display: none; padding: 1rem; margin: 1rem 0; background: rgba(255, 100, 100, 0.1); border: 1px solid rgba(255, 100, 100, 0.3); border-radius: 8px; color: var(--accent-red);"></div>
 
                 <div class="table-container">
                     <table class="autoscale-table">
@@ -367,7 +370,7 @@
             </div>
 
             <!-- Settings Tab Content -->
-            <div id="settings-tab-content" class="dashboard-tab-content" style="display: none;">
+            <div id="settings-tab-content" class="dashboard-tab-content" role="tabpanel" aria-labelledby="tab-settings" style="display: none;">
                 <p class="dashboard-subtitle">Configure alerts and notification preferences</p>
 
                 <div style="max-width: 600px;">
@@ -416,10 +419,10 @@
                     </div>
                 </div>
             </div>
-        </section>
+        </main>
 
         <!-- Software Environment Tab -->
-        <section id="software-tab-content" class="dashboard-tab-content" style="display: none;">
+        <section id="software-tab-content" class="dashboard-tab-content" role="tabpanel" aria-labelledby="tab-software" style="display: none;">
             <h2 style="margin-bottom: 0.5rem;">Software Environments</h2>
             <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Select a pre-built software formation for your next instance launch. Copy the flag below and pass it to <code>spawn launch</code>.</p>
 
@@ -448,8 +451,8 @@
                 <div class="team-section">
                     <h4>Create New Team</h4>
                     <div class="team-form">
-                        <input type="text" id="new-team-name" placeholder="Team name" class="team-input">
-                        <input type="text" id="new-team-desc" placeholder="Description (optional)" class="team-input">
+                        <input type="text" id="new-team-name" placeholder="Team name" class="team-input" aria-label="Team name">
+                        <input type="text" id="new-team-desc" placeholder="Description (optional)" class="team-input" aria-label="Team description">
                         <button onclick="createTeam()" class="btn-team-action">Create</button>
                     </div>
                     <div id="team-create-error" class="team-error" style="display:none;"></div>
