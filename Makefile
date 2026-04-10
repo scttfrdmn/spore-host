@@ -1,5 +1,5 @@
 # Makefile for spore-host suite
-.PHONY: all build build-all clean install test test-i18n test-coverage test-coverage-report help
+.PHONY: all build build-all clean install test test-i18n test-coverage test-coverage-report vuln scan-fs sast security help
 
 # Build for current platform
 build:
@@ -95,6 +95,32 @@ test-coverage-report:
 	@echo ""
 	@echo "Open coverage-*.html files in your browser to view the reports"
 
+# Go vulnerability check (all modules)
+vuln:
+	@echo "Running govulncheck..."
+	@govulncheck ./...
+	@cd spawn && govulncheck ./...
+	@cd truffle && govulncheck ./...
+	@cd pkg/i18n && govulncheck ./...
+	@cd pkg/pricing && govulncheck ./...
+	@echo "✅ No known vulnerabilities found"
+
+# Trivy filesystem scan
+scan-fs:
+	@echo "Running Trivy filesystem scan..."
+	@trivy fs --severity HIGH,CRITICAL .
+	@echo "✅ Trivy filesystem scan complete"
+
+# Semgrep SAST
+sast:
+	@echo "Running Semgrep SAST..."
+	@semgrep scan --config=auto --error .
+	@echo "✅ Semgrep scan complete"
+
+# Run all security checks
+security: vuln scan-fs sast
+	@echo "✅ All security checks passed"
+
 # Show help
 help:
 	@echo "spore-host - The underground network for AWS compute"
@@ -108,6 +134,10 @@ help:
 	@echo "  make test-i18n              - Run i18n validation tests"
 	@echo "  make test-coverage          - Run tests with coverage summary"
 	@echo "  make test-coverage-report   - Generate HTML coverage report"
+	@echo "  make vuln                   - Run govulncheck on all modules"
+	@echo "  make scan-fs                - Run Trivy filesystem scan"
+	@echo "  make sast                   - Run Semgrep SAST scan"
+	@echo "  make security               - Run all security checks"
 	@echo "  make help                   - Show this help"
 	@echo ""
 	@echo "Quick start:"

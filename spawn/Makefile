@@ -1,4 +1,4 @@
-.PHONY: all build build-spawn build-spored build-all clean install test test-coverage test-short test-integration test-integration-scheduler test-integration-queue check
+.PHONY: all build build-spawn build-spored build-all clean install test test-coverage test-short test-integration test-integration-scheduler test-integration-queue check vuln
 
 # Version
 VERSION ?= 0.1.0
@@ -112,6 +112,12 @@ test-integration-queue:
 	@echo "Running queue integration tests..."
 	@echo "Note: Requires AWS credentials (spore-host-dev profile)"
 	go test -v -tags=integration -run TestQueue -timeout 20m ./...
+
+# Go vulnerability check
+vuln:
+	@echo "Running govulncheck..."
+	@govulncheck ./...
+	@echo "✓ No known vulnerabilities"
 
 # Pre-commit checks (fast)
 check:

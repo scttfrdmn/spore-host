@@ -1,4 +1,4 @@
-.PHONY: build clean install test lint run help
+.PHONY: build clean install test lint run help vuln
 
 # Variables
 BINARY_NAME=truffle
@@ -62,6 +62,12 @@ test-coverage:
 	$(GOTEST) -v -coverprofile=coverage.out ./...
 	$(GOCMD) tool cover -html=coverage.out -o coverage.html
 	@echo "Coverage report generated: coverage.html"
+
+## vuln: Run govulncheck
+vuln:
+	@echo "Running govulncheck..."
+	@govulncheck ./...
+	@echo "✓ No known vulnerabilities"
 
 ## lint: Run linter
 lint:
