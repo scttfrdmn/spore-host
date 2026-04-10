@@ -153,8 +153,8 @@ Resources:
         - UseEncryption
         - ServerSideEncryptionConfiguration:
             - ServerSideEncryptionByDefault:
-                SSEAlgorithm: !If [UseCustomKMS, 'aws:kms', 'AES256']
-                KMSMasterKeyID: !If [UseCustomKMS, !Ref KMSKeyArn, !Ref AWS::NoValue]
+                SSEAlgorithm: 'aws:kms'
+                KMSMasterKeyID: !If [UseCustomKMS, !Ref KMSKeyArn, 'alias/aws/s3']
         - !Ref AWS::NoValue
       VersioningConfiguration:
         Status: Enabled
@@ -184,8 +184,8 @@ Resources:
         - UseEncryption
         - ServerSideEncryptionConfiguration:
             - ServerSideEncryptionByDefault:
-                SSEAlgorithm: !If [UseCustomKMS, 'aws:kms', 'AES256']
-                KMSMasterKeyID: !If [UseCustomKMS, !Ref KMSKeyArn, !Ref AWS::NoValue]
+                SSEAlgorithm: 'aws:kms'
+                KMSMasterKeyID: !If [UseCustomKMS, !Ref KMSKeyArn, 'alias/aws/s3']
         - !Ref AWS::NoValue
       LifecycleConfiguration:
         Rules:
