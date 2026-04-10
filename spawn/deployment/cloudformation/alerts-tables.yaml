@@ -99,6 +99,7 @@ Resources:
     Properties:
       TopicName: spawn-sweep-alerts
       DisplayName: Spawn Sweep Alerts
+      KmsMasterKeyId: alias/aws/sns
       Tags:
         - Key: Environment
           Value: !Ref Environment
@@ -112,6 +113,7 @@ Resources:
     Properties:
       TopicName: spawn-schedule-alerts
       DisplayName: Spawn Schedule Alerts
+      KmsMasterKeyId: alias/aws/sns
       Tags:
         - Key: Environment
           Value: !Ref Environment
@@ -125,6 +127,7 @@ Resources:
     Properties:
       TopicName: spawn-cost-alerts
       DisplayName: Spawn Cost Alerts
+      KmsMasterKeyId: alias/aws/sns
       Tags:
         - Key: Environment
           Value: !Ref Environment
