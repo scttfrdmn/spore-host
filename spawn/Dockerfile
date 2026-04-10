@@ -43,6 +43,9 @@ RUN apk --no-cache add \
     jq \
     curl
 
+# Create non-root user for runtime
+RUN adduser -D -h /home/spawn spawn
+
 # Copy binaries from builder
 COPY --from=builder /build/spawn/spawn /usr/local/bin/spawn
 COPY --from=builder /build/truffle/truffle /usr/local/bin/truffle
@@ -51,14 +54,10 @@ COPY --from=builder /build/truffle/truffle /usr/local/bin/truffle
 RUN spawn --version || spawn --help
 RUN truffle --version || truffle --help
 
-# AWS credentials will be mounted at runtime
-ENV AWS_SHARED_CREDENTIALS_FILE=/root/.aws/credentials
-ENV AWS_CONFIG_FILE=/root/.aws/config
-
-# Default to mycelium-dev profile for EC2 operations
-ENV AWS_PROFILE=mycelium-dev
-
 WORKDIR /workspace
+RUN chown spawn:spawn /workspace
+
+USER spawn
 
 ENTRYPOINT ["spawn"]
 CMD ["--help"]

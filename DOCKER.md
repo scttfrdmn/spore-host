@@ -24,7 +24,7 @@ Both tools need AWS credentials to interact with AWS services. You can provide c
 ```bash
 # Mount your local AWS credentials
 docker run --rm \
-  -v ~/.aws:/root/.aws:ro \
+  -v ~/.aws:/home/spawn/.aws:ro \
   sporedothost/spawn:latest --help
 ```
 
@@ -40,11 +40,11 @@ docker run --rm \
 
 ### Option 3: Use AWS profiles
 
-The image defaults to the `spore-host-dev` profile. Override with:
+No default AWS profile is set. Specify your profile with:
 
 ```bash
 docker run --rm \
-  -v ~/.aws:/root/.aws:ro \
+  -v ~/.aws:/home/spawn/.aws:ro \
   -e AWS_PROFILE=your-profile \
   sporedothost/spawn:latest --help
 ```
@@ -56,21 +56,21 @@ Spawn is the default entrypoint, so you can run it directly:
 ```bash
 # List instances
 docker run --rm \
-  -v ~/.aws:/root/.aws:ro \
+  -v ~/.aws:/home/spawn/.aws:ro \
   sporedothost/spawn:latest list
 
 # Launch an instance
 docker run --rm \
-  -v ~/.aws:/root/.aws:ro \
-  -v ~/.ssh:/root/.ssh:ro \
+  -v ~/.aws:/home/spawn/.aws:ro \
+  -v ~/.ssh:/home/spawn/.ssh:ro \
   sporedothost/spawn:latest launch \
     --instance-type t3.micro \
     --name test-instance
 
 # Run a sweep
 docker run --rm \
-  -v ~/.aws:/root/.aws:ro \
-  -v ~/.ssh:/root/.ssh:ro \
+  -v ~/.aws:/home/spawn/.aws:ro \
+  -v ~/.ssh:/home/spawn/.ssh:ro \
   -v $(pwd):/workspace \
   -w /workspace \
   sporedothost/spawn:latest sweep \
@@ -82,8 +82,8 @@ docker run --rm \
 **Quick test instance:**
 ```bash
 docker run --rm \
-  -v ~/.aws:/root/.aws:ro \
-  -v ~/.ssh:/root/.ssh:ro \
+  -v ~/.aws:/home/spawn/.aws:ro \
+  -v ~/.ssh:/home/spawn/.ssh:ro \
   sporedothost/spawn:latest launch \
     --instance-type t3.micro \
     --ttl 1h
@@ -92,8 +92,8 @@ docker run --rm \
 **GPU instance for ML:**
 ```bash
 docker run --rm \
-  -v ~/.aws:/root/.aws:ro \
-  -v ~/.ssh:/root/.ssh:ro \
+  -v ~/.aws:/home/spawn/.aws:ro \
+  -v ~/.ssh:/home/spawn/.ssh:ro \
   sporedothost/spawn:latest launch \
     --instance-type g5.xlarge \
     --ami-type gpu \
@@ -103,8 +103,8 @@ docker run --rm \
 **Parameter sweep from config:**
 ```bash
 docker run --rm \
-  -v ~/.aws:/root/.aws:ro \
-  -v ~/.ssh:/root/.ssh:ro \
+  -v ~/.aws:/home/spawn/.aws:ro \
+  -v ~/.ssh:/home/spawn/.ssh:ro \
   -v $(pwd):/workspace \
   -w /workspace \
   sporedothost/spawn:latest sweep \
@@ -120,19 +120,19 @@ Truffle requires overriding the entrypoint:
 # Search for instance types
 docker run --rm \
   --entrypoint truffle \
-  -v ~/.aws:/root/.aws:ro \
+  -v ~/.aws:/home/spawn/.aws:ro \
   sporedothost/spawn:latest search m7i.large
 
 # Check quotas
 docker run --rm \
   --entrypoint truffle \
-  -v ~/.aws:/root/.aws:ro \
+  -v ~/.aws:/home/spawn/.aws:ro \
   sporedothost/spawn:latest quotas --regions us-east-1
 
 # Natural language search
 docker run --rm \
   --entrypoint truffle \
-  -v ~/.aws:/root/.aws:ro \
+  -v ~/.aws:/home/spawn/.aws:ro \
   sporedothost/spawn:latest find "8 vcpus 32gb memory arm"
 ```
 
@@ -142,7 +142,7 @@ docker run --rm \
 ```bash
 docker run --rm \
   --entrypoint truffle \
-  -v ~/.aws:/root/.aws:ro \
+  -v ~/.aws:/home/spawn/.aws:ro \
   sporedothost/spawn:latest search "g5.*" \
     --regions us-east-1,us-west-2
 ```
@@ -151,7 +151,7 @@ docker run --rm \
 ```bash
 docker run --rm \
   --entrypoint truffle \
-  -v ~/.aws:/root/.aws:ro \
+  -v ~/.aws:/home/spawn/.aws:ro \
   sporedothost/spawn:latest az m7i.large \
     --regions us-east-1
 ```
@@ -160,7 +160,7 @@ docker run --rm \
 ```bash
 docker run --rm \
   --entrypoint truffle \
-  -v ~/.aws:/root/.aws:ro \
+  -v ~/.aws:/home/spawn/.aws:ro \
   sporedothost/spawn:latest spot m7i.large \
     --regions us-east-1
 ```
@@ -169,7 +169,7 @@ docker run --rm \
 ```bash
 docker run --rm \
   --entrypoint truffle \
-  -v ~/.aws:/root/.aws:ro \
+  -v ~/.aws:/home/spawn/.aws:ro \
   sporedothost/spawn:latest capacity \
     --instance-types p5.48xlarge
 ```
@@ -178,7 +178,7 @@ docker run --rm \
 ```bash
 docker run --rm \
   --entrypoint truffle \
-  -v ~/.aws:/root/.aws:ro \
+  -v ~/.aws:/home/spawn/.aws:ro \
   sporedothost/spawn:latest search m7i.large \
     --output json | jq '.'
 ```
@@ -191,13 +191,13 @@ Use truffle to find instances, then pipe to spawn to launch them:
 # Find and launch
 docker run --rm \
   --entrypoint truffle \
-  -v ~/.aws:/root/.aws:ro \
+  -v ~/.aws:/home/spawn/.aws:ro \
   sporedothost/spawn:latest search "m7i.*" \
     --regions us-east-1 \
     --output json | \
 docker run --rm -i \
-  -v ~/.aws:/root/.aws:ro \
-  -v ~/.ssh:/root/.ssh:ro \
+  -v ~/.aws:/home/spawn/.aws:ro \
+  -v ~/.ssh:/home/spawn/.ssh:ro \
   sporedothost/spawn:latest launch --from-stdin
 ```
 
@@ -207,8 +207,8 @@ Make it easier to use by adding shell aliases:
 
 ```bash
 # Add to ~/.bashrc or ~/.zshrc
-alias spawn='docker run --rm -v ~/.aws:/root/.aws:ro -v ~/.ssh:/root/.ssh:ro sporedothost/spawn:latest'
-alias truffle='docker run --rm --entrypoint truffle -v ~/.aws:/root/.aws:ro sporedothost/spawn:latest'
+alias spawn='docker run --rm -v ~/.aws:/home/spawn/.aws:ro -v ~/.ssh:/home/spawn/.ssh:ro sporedothost/spawn:latest'
+alias truffle='docker run --rm --entrypoint truffle -v ~/.aws:/home/spawn/.aws:ro sporedothost/spawn:latest'
 
 # Now you can use them directly:
 spawn list
@@ -222,8 +222,8 @@ Mount volumes to access local files:
 ```bash
 # Read sweep config from current directory
 docker run --rm \
-  -v ~/.aws:/root/.aws:ro \
-  -v ~/.ssh:/root/.ssh:ro \
+  -v ~/.aws:/home/spawn/.aws:ro \
+  -v ~/.ssh:/home/spawn/.ssh:ro \
   -v $(pwd):/workspace \
   -w /workspace \
   sporedothost/spawn:latest sweep --config ./sweep.yaml
@@ -231,7 +231,7 @@ docker run --rm \
 # Output results to local directory
 docker run --rm \
   --entrypoint truffle \
-  -v ~/.aws:/root/.aws:ro \
+  -v ~/.aws:/home/spawn/.aws:ro \
   -v $(pwd):/workspace \
   -w /workspace \
   sporedothost/spawn:latest search "m7i.*" \
@@ -245,8 +245,8 @@ Run an interactive shell with both tools available:
 ```bash
 docker run --rm -it \
   --entrypoint /bin/bash \
-  -v ~/.aws:/root/.aws:ro \
-  -v ~/.ssh:/root/.ssh:ro \
+  -v ~/.aws:/home/spawn/.aws:ro \
+  -v ~/.ssh:/home/spawn/.ssh:ro \
   sporedothost/spawn:latest
 
 # Inside the container:
@@ -284,14 +284,14 @@ chmod 644 ~/.ssh/id_rsa.pub
 ```bash
 # Verify credentials are mounted
 docker run --rm \
-  -v ~/.aws:/root/.aws:ro \
+  -v ~/.aws:/home/spawn/.aws:ro \
   --entrypoint /bin/sh \
   sporedothost/spawn:latest \
-  -c "ls -la /root/.aws"
+  -c "ls -la /home/spawn/.aws"
 
 # Check which profile is being used
 docker run --rm \
-  -v ~/.aws:/root/.aws:ro \
+  -v ~/.aws:/home/spawn/.aws:ro \
   --entrypoint /bin/sh \
   sporedothost/spawn:latest \
   -c "echo Profile: $AWS_PROFILE"
@@ -302,7 +302,7 @@ docker run --rm \
 ```bash
 # Explicitly set region
 docker run --rm \
-  -v ~/.aws:/root/.aws:ro \
+  -v ~/.aws:/home/spawn/.aws:ro \
   -e AWS_DEFAULT_REGION=us-east-1 \
   sporedothost/spawn:latest list
 ```
