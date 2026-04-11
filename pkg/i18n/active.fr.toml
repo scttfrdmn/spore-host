@@ -1368,3 +1368,169 @@ other = "échec de création de la clé SSH : {{.Error}}"
 other = "clé SSH requise mais aucune spécifiée"
 
 # END OF FRENCH TRANSLATION - COMPLETE
+
+# Lagotto - Surveillance de capacité EC2
+# =============================================================================
+
+[lagotto.root.short]
+other = "Surveiller la disponibilité des instances EC2 dans les régions"
+
+[lagotto.root.long]
+other = "Lagotto surveille la disponibilité des types d'instances EC2 actuellement indisponibles\n(ex. instances GPU rares comme p5.48xlarge, ou capacité Spot dans une région préférée)\net notifie lorsque de la capacité apparaît.\n\nNommé d'après le Lagotto Romagnolo, le chien chercheur de truffes."
+
+[lagotto.watch.short]
+other = "Créer une surveillance de capacité pour un type d'instance"
+
+[lagotto.watch.long]
+other = "Surveiller la disponibilité des instances EC2 dans les régions et zones de disponibilité.\n\nLe modèle prend en charge les caractères génériques : \"p5.*\" correspond à toutes les tailles p5, \"g5.xlarge\" est exact.\nLorsque de la capacité correspondant à vos critères est trouvée, l'action configurée est exécutée."
+
+[lagotto.list.short]
+other = "Lister vos surveillances"
+
+[lagotto.cancel.short]
+other = "Annuler une surveillance active"
+
+[lagotto.status.short]
+other = "Afficher les détails d'une surveillance"
+
+[lagotto.history.short]
+other = "Afficher l'historique des correspondances"
+
+[lagotto.poll.short]
+other = "Exécuter un cycle de sondage (pour les tests)"
+
+[lagotto.poll.long]
+other = "Déclencher manuellement un sondage de toutes les surveillances actives. Ceci est destiné aux tests locaux ; en production, le sondage s'exécute selon un calendrier Lambda."
+
+[lagotto.version.short]
+other = "Afficher le numéro de version"
+
+[lagotto.extend.short]
+other = "Prolonger le TTL d'une surveillance"
+
+[lagotto.flag.regions]
+other = "Régions à surveiller (séparées par des virgules ; vide = toutes activées)"
+
+[lagotto.flag.spot]
+other = "Surveiller la capacité Spot (par défaut : à la demande)"
+
+[lagotto.flag.max_price]
+other = "Prix maximum acceptable par heure (0 = indifférent)"
+
+[lagotto.flag.action]
+other = "Action en cas de correspondance : notify, spawn"
+
+[lagotto.flag.ttl]
+other = "Durée de surveillance (ex. 24h, 7d)"
+
+[lagotto.flag.notify]
+other = "Canaux de notification (ex. email:utilisateur@exemple.com, webhook:https://...)"
+
+[lagotto.flag.spawn_config]
+other = "Fichier YAML avec LaunchConfig de spawn (requis pour --action spawn)"
+
+[lagotto.flag.all]
+other = "Afficher tous les statuts (par défaut : actifs uniquement)"
+
+[lagotto.flag.watch_id]
+other = "Filtrer par ID de surveillance"
+
+[lagotto.watch.created]
+other = "Surveillance créée {{.WatchID}}"
+
+[lagotto.watch.label.pattern]
+other = "Modèle"
+
+[lagotto.watch.label.regions]
+other = "Régions"
+
+[lagotto.watch.label.spot]
+other = "Spot"
+
+[lagotto.watch.label.max_price]
+other = "Prix max"
+
+[lagotto.watch.label.action]
+other = "Action"
+
+[lagotto.watch.label.spawn_config]
+other = "Config de spawn"
+
+[lagotto.watch.label.expires]
+other = "Expire"
+
+[lagotto.watch.schedule_enabled]
+other = "Calendrier de sondage activé {{.Name}}"
+
+[lagotto.list.no_watches]
+other = "Aucune surveillance trouvée."
+
+[lagotto.cancel.cancelled]
+other = "Surveillance annulée {{.WatchID}}"
+
+[lagotto.cancel.not_active]
+other = "la surveillance {{.WatchID}} n'est pas active (statut : {{.Status}})"
+
+[lagotto.poll.no_matches]
+other = "Aucune correspondance trouvée dans ce cycle."
+
+[lagotto.poll.found_matches]
+one = "{{.Count}} correspondance trouvée :"
+other = "{{.Count}} correspondance(s) trouvée(s) :"
+
+[lagotto.history.no_history]
+other = "Aucun historique de correspondances trouvé."
+
+[lagotto.status.not_found]
+other = "surveillance {{.WatchID}} non trouvée"
+
+[lagotto.status.label.watch]
+other = "Surveillance"
+
+[lagotto.status.label.status]
+other = "Statut"
+
+[lagotto.status.label.created]
+other = "Créé"
+
+[lagotto.status.label.last_polled]
+other = "Dernier sondage"
+
+[lagotto.status.label.matches]
+other = "Correspondances"
+
+[lagotto.status.last_match]
+other = "Dernière correspondance"
+
+[lagotto.extend.extended]
+other = "Surveillance {{.WatchID}} prolongée jusqu'au {{.ExpiresAt}}"
+
+[lagotto.extend.reactivated]
+other = "Surveillance expirée {{.WatchID}} réactivée"
+
+[lagotto.error.invalid_ttl]
+other = "TTL invalide \"{{.TTL}}\" : {{.Error}}"
+
+[lagotto.error.invalid_action]
+other = "action invalide \"{{.Action}}\" : doit être notify ou spawn"
+
+[lagotto.error.spawn_config_required]
+other = "--spawn-config est requis quand --action=spawn"
+
+[lagotto.error.invalid_notify_format]
+other = "format de notification invalide \"{{.Value}}\" : type:cible attendu"
+
+[lagotto.error.invalid_notify_type]
+other = "type de notification invalide \"{{.Type}}\" : doit être email, webhook ou sns"
+
+[lagotto.error.aws_config]
+other = "charger la configuration AWS : {{.Error}}"
+
+[lagotto.error.caller_identity]
+other = "obtenir l'identité : {{.Error}}"
+
+[lagotto.error.watch_not_found]
+other = "surveillance {{.WatchID}} non trouvée"
+
+[lagotto.error.create_watch]
+other = "créer la surveillance : {{.Error}}"

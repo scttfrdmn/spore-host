@@ -52,9 +52,12 @@ func runPoll(cmd *cobra.Command, args []string) error {
 		fmt.Fprintf(os.Stderr, "Note: auto-spawn unavailable: %v\n", err)
 	}
 
+	holder := watcher.NewHolder(cfg)
+
 	poller := watcher.NewPoller(truffleClient, store, verbose, watcher.PollerOpts{
 		Notifier: notifier,
 		Spawner:  spawner,
+		Holder:   holder,
 	})
 
 	matches, err := poller.PollAll(ctx)

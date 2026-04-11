@@ -13,6 +13,8 @@ const (
 	ActionNotify ActionMode = "notify"
 	// ActionSpawn sends a notification and auto-launches an instance.
 	ActionSpawn ActionMode = "spawn"
+	// ActionHold creates an On-Demand Capacity Reservation to hold capacity.
+	ActionHold ActionMode = "hold"
 )
 
 // WatchStatus represents the lifecycle state of a watch.
@@ -62,6 +64,7 @@ type MatchResult struct {
 	MatchedAt        time.Time `json:"matched_at" dynamodbav:"matched_at"`
 	ActionTaken      string    `json:"action_taken" dynamodbav:"action_taken"`
 	InstanceID       string    `json:"instance_id,omitempty" dynamodbav:"instance_id,omitempty"`
+	ReservationID    string    `json:"reservation_id,omitempty" dynamodbav:"reservation_id,omitempty"`
 	TTLTimestamp     int64     `json:"ttl_timestamp" dynamodbav:"ttl_timestamp"`
 }
 

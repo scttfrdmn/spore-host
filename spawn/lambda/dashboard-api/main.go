@@ -206,6 +206,19 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	case path == "/api/user/profile" && method == "GET":
 		return handleGetUserProfile(ctx, cfg, userID, cliIamArn, accountBase36)
 
+	case path == "/api/watches" && method == "GET":
+		return handleListWatches(ctx, cfg, cliIamArn)
+
+	case strings.HasPrefix(path, "/api/watches/history") && method == "GET":
+		return handleWatchHistory(ctx, cfg, cliIamArn)
+
+	case strings.HasPrefix(path, "/api/watches/") && method == "GET":
+		watchID := strings.TrimPrefix(path, "/api/watches/")
+		if watchID == "" {
+			return errorResponse(400, "Watch ID is required"), nil
+		}
+		return handleGetWatch(ctx, cfg, watchID, cliIamArn)
+
 	case path == "/api/strata/catalog" && method == "GET":
 		return handleStrataGetCatalog()
 

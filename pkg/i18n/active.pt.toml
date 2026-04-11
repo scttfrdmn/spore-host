@@ -1624,3 +1624,169 @@ other = "Arquitetura"
 other = "Zonas de Disponibilidade"
 
 # FIM DA TRADUÇÃO PORTUGUESA - COMPLETA
+
+# Lagotto - Monitor de capacidade EC2
+# =============================================================================
+
+[lagotto.root.short]
+other = "Monitorar capacidade de instâncias EC2 em regiões"
+
+[lagotto.root.long]
+other = "Lagotto monitora a disponibilidade de tipos de instância EC2 que não estão disponíveis no momento\n(ex. instâncias GPU escassas como p5.48xlarge, ou capacidade Spot em uma região preferida)\ne notifica quando capacidade é encontrada.\n\nNomeado em homenagem ao Lagotto Romagnolo, o cão caçador de trufas."
+
+[lagotto.watch.short]
+other = "Criar monitoramento de capacidade para um tipo de instância"
+
+[lagotto.watch.long]
+other = "Monitorar disponibilidade de instâncias EC2 em regiões e zonas de disponibilidade.\n\nO padrão suporta curingas: \"p5.*\" corresponde a todos os tamanhos p5, \"g5.xlarge\" é exato.\nQuando capacidade correspondente aos seus critérios é encontrada, a ação configurada é executada."
+
+[lagotto.list.short]
+other = "Listar seus monitoramentos"
+
+[lagotto.cancel.short]
+other = "Cancelar um monitoramento ativo"
+
+[lagotto.status.short]
+other = "Mostrar detalhes de um monitoramento"
+
+[lagotto.history.short]
+other = "Mostrar histórico de correspondências"
+
+[lagotto.poll.short]
+other = "Executar um ciclo de pesquisa (para testes)"
+
+[lagotto.poll.long]
+other = "Acionar manualmente uma pesquisa de todos os monitoramentos ativos. Isto é para testes locais; em produção, a pesquisa é executada em um agendamento Lambda."
+
+[lagotto.version.short]
+other = "Exibir o número da versão"
+
+[lagotto.extend.short]
+other = "Estender o TTL de um monitoramento"
+
+[lagotto.flag.regions]
+other = "Regiões a monitorar (separadas por vírgula; vazio = todas habilitadas)"
+
+[lagotto.flag.spot]
+other = "Monitorar capacidade Spot (padrão: sob demanda)"
+
+[lagotto.flag.max_price]
+other = "Preço máximo aceitável por hora (0 = qualquer)"
+
+[lagotto.flag.action]
+other = "Ação ao encontrar correspondência: notify, spawn"
+
+[lagotto.flag.ttl]
+other = "Por quanto tempo monitorar (ex. 24h, 7d)"
+
+[lagotto.flag.notify]
+other = "Canais de notificação (ex. email:usuario@exemplo.com, webhook:https://...)"
+
+[lagotto.flag.spawn_config]
+other = "Arquivo YAML com LaunchConfig do spawn (obrigatório para --action spawn)"
+
+[lagotto.flag.all]
+other = "Mostrar todos os status (padrão: apenas ativos)"
+
+[lagotto.flag.watch_id]
+other = "Filtrar por ID do monitoramento"
+
+[lagotto.watch.created]
+other = "Monitoramento criado {{.WatchID}}"
+
+[lagotto.watch.label.pattern]
+other = "Padrão"
+
+[lagotto.watch.label.regions]
+other = "Regiões"
+
+[lagotto.watch.label.spot]
+other = "Spot"
+
+[lagotto.watch.label.max_price]
+other = "Preço máx."
+
+[lagotto.watch.label.action]
+other = "Ação"
+
+[lagotto.watch.label.spawn_config]
+other = "Config do spawn"
+
+[lagotto.watch.label.expires]
+other = "Expira"
+
+[lagotto.watch.schedule_enabled]
+other = "Agendamento de pesquisa habilitado {{.Name}}"
+
+[lagotto.list.no_watches]
+other = "Nenhum monitoramento encontrado."
+
+[lagotto.cancel.cancelled]
+other = "Monitoramento cancelado {{.WatchID}}"
+
+[lagotto.cancel.not_active]
+other = "monitoramento {{.WatchID}} não está ativo (status: {{.Status}})"
+
+[lagotto.poll.no_matches]
+other = "Nenhuma correspondência encontrada neste ciclo."
+
+[lagotto.poll.found_matches]
+one = "{{.Count}} correspondência encontrada:"
+other = "{{.Count}} correspondência(s) encontrada(s):"
+
+[lagotto.history.no_history]
+other = "Nenhum histórico de correspondências encontrado."
+
+[lagotto.status.not_found]
+other = "monitoramento {{.WatchID}} não encontrado"
+
+[lagotto.status.label.watch]
+other = "Monitoramento"
+
+[lagotto.status.label.status]
+other = "Status"
+
+[lagotto.status.label.created]
+other = "Criado"
+
+[lagotto.status.label.last_polled]
+other = "Última pesquisa"
+
+[lagotto.status.label.matches]
+other = "Correspondências"
+
+[lagotto.status.last_match]
+other = "Última correspondência"
+
+[lagotto.extend.extended]
+other = "Monitoramento {{.WatchID}} estendido até {{.ExpiresAt}}"
+
+[lagotto.extend.reactivated]
+other = "Monitoramento expirado {{.WatchID}} reativado"
+
+[lagotto.error.invalid_ttl]
+other = "TTL inválido \"{{.TTL}}\": {{.Error}}"
+
+[lagotto.error.invalid_action]
+other = "ação inválida \"{{.Action}}\": deve ser notify ou spawn"
+
+[lagotto.error.spawn_config_required]
+other = "--spawn-config é obrigatório quando --action=spawn"
+
+[lagotto.error.invalid_notify_format]
+other = "formato de notificação inválido \"{{.Value}}\": esperado tipo:destino"
+
+[lagotto.error.invalid_notify_type]
+other = "tipo de notificação inválido \"{{.Type}}\": deve ser email, webhook ou sns"
+
+[lagotto.error.aws_config]
+other = "carregar configuração AWS: {{.Error}}"
+
+[lagotto.error.caller_identity]
+other = "obter identidade: {{.Error}}"
+
+[lagotto.error.watch_not_found]
+other = "monitoramento {{.WatchID}} não encontrado"
+
+[lagotto.error.create_watch]
+other = "criar monitoramento: {{.Error}}"

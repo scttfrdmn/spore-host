@@ -2080,3 +2080,231 @@ other = "Architecture"
 description = "Availability zones column header"
 other = "Availability Zones"
 
+
+# =============================================================================
+# Lagotto - EC2 Capacity Watcher
+# =============================================================================
+
+[lagotto.root.short]
+description = "Root command short description"
+other = "Watch for EC2 instance capacity across regions"
+
+[lagotto.root.long]
+description = "Root command long description"
+other = "Lagotto watches for EC2 instance type availability that doesn't exist right now\n(e.g., scarce GPU instances like p5.48xlarge, or Spot capacity in a preferred region)\nand notifies you when capacity appears.\n\nNamed after the Lagotto Romagnolo, the truffle-hunting dog."
+
+[lagotto.watch.short]
+description = "Watch command short description"
+other = "Create a capacity watch for an instance type"
+
+[lagotto.watch.long]
+description = "Watch command long description"
+other = "Watch for EC2 instance availability across regions and AZs.\n\nThe pattern supports wildcards: \"p5.*\" matches all p5 sizes, \"g5.xlarge\" is exact.\nWhen capacity is found matching your criteria, the configured action is taken."
+
+[lagotto.list.short]
+description = "List command short description"
+other = "List your watches"
+
+[lagotto.cancel.short]
+description = "Cancel command short description"
+other = "Cancel an active watch"
+
+[lagotto.status.short]
+description = "Status command short description"
+other = "Show details of a watch"
+
+[lagotto.history.short]
+description = "History command short description"
+other = "Show match history"
+
+[lagotto.poll.short]
+description = "Poll command short description"
+other = "Run one polling cycle (for testing/debugging)"
+
+[lagotto.poll.long]
+description = "Poll command long description"
+other = "Manually trigger a single poll of all active watches. This is for local testing; in production, polling runs on a Lambda schedule."
+
+[lagotto.version.short]
+description = "Version command short description"
+other = "Print the version number"
+
+[lagotto.extend.short]
+description = "Extend command short description"
+other = "Extend a watch's TTL"
+
+# Flags
+
+[lagotto.flag.regions]
+description = "Regions flag"
+other = "Regions to watch (comma-separated; empty = all enabled)"
+
+[lagotto.flag.spot]
+description = "Spot flag"
+other = "Watch for Spot capacity (default: On-Demand)"
+
+[lagotto.flag.max_price]
+description = "Max price flag"
+other = "Maximum acceptable price per hour (0 = any)"
+
+[lagotto.flag.action]
+description = "Action flag"
+other = "Action on match: notify, spawn"
+
+[lagotto.flag.ttl]
+description = "TTL flag"
+other = "How long to keep watching (e.g., 24h, 7d)"
+
+[lagotto.flag.notify]
+description = "Notify flag"
+other = "Notification channels (e.g., email:user@example.com, webhook:https://...)"
+
+[lagotto.flag.spawn_config]
+description = "Spawn config flag"
+other = "YAML file with spawn LaunchConfig (required for --action spawn)"
+
+[lagotto.flag.all]
+description = "All flag for list"
+other = "Show all statuses (default: active only)"
+
+[lagotto.flag.watch_id]
+description = "Watch ID flag for history"
+other = "Filter by watch ID"
+
+# Messages
+
+[lagotto.watch.created]
+description = "Watch created message"
+other = "Created watch {{.WatchID}}"
+
+[lagotto.watch.label.pattern]
+description = "Pattern label"
+other = "Pattern"
+
+[lagotto.watch.label.regions]
+description = "Regions label"
+other = "Regions"
+
+[lagotto.watch.label.spot]
+description = "Spot label"
+other = "Spot"
+
+[lagotto.watch.label.max_price]
+description = "Max price label"
+other = "Max price"
+
+[lagotto.watch.label.action]
+description = "Action label"
+other = "Action"
+
+[lagotto.watch.label.spawn_config]
+description = "Spawn config label"
+other = "Spawn config"
+
+[lagotto.watch.label.expires]
+description = "Expires label"
+other = "Expires"
+
+[lagotto.watch.schedule_enabled]
+description = "Polling schedule enabled"
+other = "Enabled polling schedule {{.Name}}"
+
+[lagotto.list.no_watches]
+description = "No watches found"
+other = "No watches found."
+
+[lagotto.cancel.cancelled]
+description = "Watch cancelled message"
+other = "Cancelled watch {{.WatchID}}"
+
+[lagotto.cancel.not_active]
+description = "Watch not active error"
+other = "watch {{.WatchID}} is not active (status: {{.Status}})"
+
+[lagotto.poll.no_matches]
+description = "No matches in poll cycle"
+other = "No matches found in this poll cycle."
+
+[lagotto.poll.found_matches]
+description = "Matches found count"
+one = "Found {{.Count}} match:"
+other = "Found {{.Count}} match(es):"
+
+[lagotto.history.no_history]
+description = "No match history"
+other = "No match history found."
+
+[lagotto.status.not_found]
+description = "Watch not found"
+other = "watch {{.WatchID}} not found"
+
+[lagotto.status.label.watch]
+description = "Watch label"
+other = "Watch"
+
+[lagotto.status.label.status]
+description = "Status label"
+other = "Status"
+
+[lagotto.status.label.created]
+description = "Created label"
+other = "Created"
+
+[lagotto.status.label.last_polled]
+description = "Last polled label"
+other = "Last polled"
+
+[lagotto.status.label.matches]
+description = "Matches label"
+other = "Matches"
+
+[lagotto.status.last_match]
+description = "Last match header"
+other = "Last match"
+
+[lagotto.extend.extended]
+description = "Watch extended message"
+other = "Extended watch {{.WatchID}} until {{.ExpiresAt}}"
+
+[lagotto.extend.reactivated]
+description = "Expired watch reactivated"
+other = "Reactivated expired watch {{.WatchID}}"
+
+# Errors
+
+[lagotto.error.invalid_ttl]
+description = "Invalid TTL"
+other = "invalid TTL \"{{.TTL}}\": {{.Error}}"
+
+[lagotto.error.invalid_action]
+description = "Invalid action"
+other = "invalid action \"{{.Action}}\": must be notify or spawn"
+
+[lagotto.error.spawn_config_required]
+description = "Spawn config required"
+other = "--spawn-config is required when --action=spawn"
+
+[lagotto.error.invalid_notify_format]
+description = "Invalid notify format"
+other = "invalid notify format \"{{.Value}}\": expected type:target (e.g., email:user@example.com)"
+
+[lagotto.error.invalid_notify_type]
+description = "Invalid notify type"
+other = "invalid notify type \"{{.Type}}\": must be email, webhook, or sns"
+
+[lagotto.error.aws_config]
+description = "AWS config error"
+other = "load AWS config: {{.Error}}"
+
+[lagotto.error.caller_identity]
+description = "Caller identity error"
+other = "get caller identity: {{.Error}}"
+
+[lagotto.error.watch_not_found]
+description = "Watch not found"
+other = "watch {{.WatchID}} not found"
+
+[lagotto.error.create_watch]
+description = "Create watch error"
+other = "create watch: {{.Error}}"
+

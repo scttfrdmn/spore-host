@@ -1624,3 +1624,169 @@ other = "アーキテクチャ"
 other = "アベイラビリティーゾーン"
 
 # END OF JAPANESE TRANSLATION - COMPLETE
+
+# Lagotto - EC2キャパシティウォッチャー
+# =============================================================================
+
+[lagotto.root.short]
+other = "リージョン全体のEC2インスタンスキャパシティを監視"
+
+[lagotto.root.long]
+other = "Lagottoは現在利用できないEC2インスタンスタイプの空き状況を監視します\n（例：p5.48xlargeなどの希少なGPUインスタンスや、希望リージョンのSpotキャパシティ）\nキャパシティが見つかると通知します。\n\nトリュフ探しの犬、ラゴット・ロマニョーロにちなんで命名されました。"
+
+[lagotto.watch.short]
+other = "インスタンスタイプのキャパシティ監視を作成"
+
+[lagotto.watch.long]
+other = "リージョンとアベイラビリティゾーン全体のEC2インスタンスの空き状況を監視します。\n\nパターンはワイルドカードをサポート：\"p5.*\"はすべてのp5サイズに一致、\"g5.xlarge\"は完全一致。\n条件に一致するキャパシティが見つかると、設定されたアクションが実行されます。"
+
+[lagotto.list.short]
+other = "監視の一覧を表示"
+
+[lagotto.cancel.short]
+other = "アクティブな監視をキャンセル"
+
+[lagotto.status.short]
+other = "監視の詳細を表示"
+
+[lagotto.history.short]
+other = "一致履歴を表示"
+
+[lagotto.poll.short]
+other = "ポーリングサイクルを1回実行（テスト用）"
+
+[lagotto.poll.long]
+other = "すべてのアクティブな監視のポーリングを手動でトリガーします。これはローカルテスト用です。本番環境ではポーリングはLambdaスケジュールで実行されます。"
+
+[lagotto.version.short]
+other = "バージョン番号を表示"
+
+[lagotto.extend.short]
+other = "監視のTTLを延長"
+
+[lagotto.flag.regions]
+other = "監視するリージョン（カンマ区切り、空 = すべて有効）"
+
+[lagotto.flag.spot]
+other = "Spotキャパシティを監視（デフォルト：オンデマンド）"
+
+[lagotto.flag.max_price]
+other = "1時間あたりの最大許容価格（0 = 任意）"
+
+[lagotto.flag.action]
+other = "一致時のアクション：notify、spawn"
+
+[lagotto.flag.ttl]
+other = "監視期間（例：24h、7d）"
+
+[lagotto.flag.notify]
+other = "通知チャネル（例：email:user@example.com、webhook:https://...）"
+
+[lagotto.flag.spawn_config]
+other = "spawn LaunchConfigのYAMLファイル（--action spawn時に必須）"
+
+[lagotto.flag.all]
+other = "すべてのステータスを表示（デフォルト：アクティブのみ）"
+
+[lagotto.flag.watch_id]
+other = "監視IDでフィルタ"
+
+[lagotto.watch.created]
+other = "監視を作成しました {{.WatchID}}"
+
+[lagotto.watch.label.pattern]
+other = "パターン"
+
+[lagotto.watch.label.regions]
+other = "リージョン"
+
+[lagotto.watch.label.spot]
+other = "Spot"
+
+[lagotto.watch.label.max_price]
+other = "最大価格"
+
+[lagotto.watch.label.action]
+other = "アクション"
+
+[lagotto.watch.label.spawn_config]
+other = "Spawn設定"
+
+[lagotto.watch.label.expires]
+other = "有効期限"
+
+[lagotto.watch.schedule_enabled]
+other = "ポーリングスケジュール {{.Name}} を有効化しました"
+
+[lagotto.list.no_watches]
+other = "監視が見つかりません。"
+
+[lagotto.cancel.cancelled]
+other = "監視をキャンセルしました {{.WatchID}}"
+
+[lagotto.cancel.not_active]
+other = "監視 {{.WatchID}} はアクティブではありません（ステータス：{{.Status}}）"
+
+[lagotto.poll.no_matches]
+other = "このポーリングサイクルで一致は見つかりませんでした。"
+
+[lagotto.poll.found_matches]
+one = "{{.Count}} 件の一致が見つかりました："
+other = "{{.Count}} 件の一致が見つかりました："
+
+[lagotto.history.no_history]
+other = "一致履歴が見つかりません。"
+
+[lagotto.status.not_found]
+other = "監視 {{.WatchID}} が見つかりません"
+
+[lagotto.status.label.watch]
+other = "監視"
+
+[lagotto.status.label.status]
+other = "ステータス"
+
+[lagotto.status.label.created]
+other = "作成日時"
+
+[lagotto.status.label.last_polled]
+other = "最終ポーリング"
+
+[lagotto.status.label.matches]
+other = "一致数"
+
+[lagotto.status.last_match]
+other = "最終一致"
+
+[lagotto.extend.extended]
+other = "監視 {{.WatchID}} を {{.ExpiresAt}} まで延長しました"
+
+[lagotto.extend.reactivated]
+other = "期限切れの監視 {{.WatchID}} を再有効化しました"
+
+[lagotto.error.invalid_ttl]
+other = "無効なTTL \"{{.TTL}}\"：{{.Error}}"
+
+[lagotto.error.invalid_action]
+other = "無効なアクション \"{{.Action}}\"：notifyまたはspawnである必要があります"
+
+[lagotto.error.spawn_config_required]
+other = "--action=spawnの場合、--spawn-configが必要です"
+
+[lagotto.error.invalid_notify_format]
+other = "無効な通知フォーマット \"{{.Value}}\"：タイプ:ターゲットの形式が必要です"
+
+[lagotto.error.invalid_notify_type]
+other = "無効な通知タイプ \"{{.Type}}\"：email、webhook、またはsnsである必要があります"
+
+[lagotto.error.aws_config]
+other = "AWS設定の読み込み：{{.Error}}"
+
+[lagotto.error.caller_identity]
+other = "呼び出し元IDの取得：{{.Error}}"
+
+[lagotto.error.watch_not_found]
+other = "監視 {{.WatchID}} が見つかりません"
+
+[lagotto.error.create_watch]
+other = "監視の作成：{{.Error}}"

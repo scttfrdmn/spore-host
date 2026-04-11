@@ -1368,3 +1368,169 @@ other = "SSH-Schlüsselerstellung fehlgeschlagen: {{.Error}}"
 other = "SSH-Schlüssel erforderlich, aber keiner angegeben"
 
 # END OF GERMAN TRANSLATION - COMPLETE
+
+# Lagotto - EC2-Kapazitätsüberwachung
+# =============================================================================
+
+[lagotto.root.short]
+other = "EC2-Instanzkapazität in Regionen überwachen"
+
+[lagotto.root.long]
+other = "Lagotto überwacht die Verfügbarkeit von EC2-Instanztypen, die derzeit nicht verfügbar sind\n(z.B. seltene GPU-Instanzen wie p5.48xlarge oder Spot-Kapazität in einer bevorzugten Region)\nund benachrichtigt, wenn Kapazität verfügbar wird.\n\nBenannt nach dem Lagotto Romagnolo, dem Trüffelsuchhund."
+
+[lagotto.watch.short]
+other = "Kapazitätsüberwachung für einen Instanztyp erstellen"
+
+[lagotto.watch.long]
+other = "EC2-Instanzverfügbarkeit in Regionen und Verfügbarkeitszonen überwachen.\n\nDas Muster unterstützt Platzhalter: \"p5.*\" passt auf alle p5-Größen, \"g5.xlarge\" ist exakt.\nWenn Kapazität gefunden wird, die Ihren Kriterien entspricht, wird die konfigurierte Aktion ausgeführt."
+
+[lagotto.list.short]
+other = "Ihre Überwachungen auflisten"
+
+[lagotto.cancel.short]
+other = "Eine aktive Überwachung abbrechen"
+
+[lagotto.status.short]
+other = "Details einer Überwachung anzeigen"
+
+[lagotto.history.short]
+other = "Trefferhistorie anzeigen"
+
+[lagotto.poll.short]
+other = "Einen Abfragezyklus ausführen (zum Testen)"
+
+[lagotto.poll.long]
+other = "Manuell eine Abfrage aller aktiven Überwachungen auslösen. Dies ist für lokale Tests; in der Produktion wird die Abfrage nach einem Lambda-Zeitplan ausgeführt."
+
+[lagotto.version.short]
+other = "Versionsnummer ausgeben"
+
+[lagotto.extend.short]
+other = "TTL einer Überwachung verlängern"
+
+[lagotto.flag.regions]
+other = "Zu überwachende Regionen (kommagetrennt; leer = alle aktivierten)"
+
+[lagotto.flag.spot]
+other = "Spot-Kapazität überwachen (Standard: On-Demand)"
+
+[lagotto.flag.max_price]
+other = "Maximal akzeptabler Preis pro Stunde (0 = beliebig)"
+
+[lagotto.flag.action]
+other = "Aktion bei Treffer: notify, spawn"
+
+[lagotto.flag.ttl]
+other = "Überwachungsdauer (z.B. 24h, 7d)"
+
+[lagotto.flag.notify]
+other = "Benachrichtigungskanäle (z.B. email:benutzer@beispiel.de, webhook:https://...)"
+
+[lagotto.flag.spawn_config]
+other = "YAML-Datei mit spawn LaunchConfig (erforderlich für --action spawn)"
+
+[lagotto.flag.all]
+other = "Alle Status anzeigen (Standard: nur aktive)"
+
+[lagotto.flag.watch_id]
+other = "Nach Überwachungs-ID filtern"
+
+[lagotto.watch.created]
+other = "Überwachung erstellt {{.WatchID}}"
+
+[lagotto.watch.label.pattern]
+other = "Muster"
+
+[lagotto.watch.label.regions]
+other = "Regionen"
+
+[lagotto.watch.label.spot]
+other = "Spot"
+
+[lagotto.watch.label.max_price]
+other = "Max. Preis"
+
+[lagotto.watch.label.action]
+other = "Aktion"
+
+[lagotto.watch.label.spawn_config]
+other = "Spawn-Konfiguration"
+
+[lagotto.watch.label.expires]
+other = "Läuft ab"
+
+[lagotto.watch.schedule_enabled]
+other = "Abfragezeitplan aktiviert {{.Name}}"
+
+[lagotto.list.no_watches]
+other = "Keine Überwachungen gefunden."
+
+[lagotto.cancel.cancelled]
+other = "Überwachung abgebrochen {{.WatchID}}"
+
+[lagotto.cancel.not_active]
+other = "Überwachung {{.WatchID}} ist nicht aktiv (Status: {{.Status}})"
+
+[lagotto.poll.no_matches]
+other = "Keine Treffer in diesem Abfragezyklus."
+
+[lagotto.poll.found_matches]
+one = "{{.Count}} Treffer gefunden:"
+other = "{{.Count}} Treffer gefunden:"
+
+[lagotto.history.no_history]
+other = "Keine Trefferhistorie gefunden."
+
+[lagotto.status.not_found]
+other = "Überwachung {{.WatchID}} nicht gefunden"
+
+[lagotto.status.label.watch]
+other = "Überwachung"
+
+[lagotto.status.label.status]
+other = "Status"
+
+[lagotto.status.label.created]
+other = "Erstellt"
+
+[lagotto.status.label.last_polled]
+other = "Letzte Abfrage"
+
+[lagotto.status.label.matches]
+other = "Treffer"
+
+[lagotto.status.last_match]
+other = "Letzter Treffer"
+
+[lagotto.extend.extended]
+other = "Überwachung {{.WatchID}} verlängert bis {{.ExpiresAt}}"
+
+[lagotto.extend.reactivated]
+other = "Abgelaufene Überwachung {{.WatchID}} reaktiviert"
+
+[lagotto.error.invalid_ttl]
+other = "Ungültiger TTL \"{{.TTL}}\": {{.Error}}"
+
+[lagotto.error.invalid_action]
+other = "Ungültige Aktion \"{{.Action}}\": muss notify oder spawn sein"
+
+[lagotto.error.spawn_config_required]
+other = "--spawn-config ist erforderlich wenn --action=spawn"
+
+[lagotto.error.invalid_notify_format]
+other = "Ungültiges Benachrichtigungsformat \"{{.Value}}\": Typ:Ziel erwartet"
+
+[lagotto.error.invalid_notify_type]
+other = "Ungültiger Benachrichtigungstyp \"{{.Type}}\": muss email, webhook oder sns sein"
+
+[lagotto.error.aws_config]
+other = "AWS-Konfiguration laden: {{.Error}}"
+
+[lagotto.error.caller_identity]
+other = "Identität abrufen: {{.Error}}"
+
+[lagotto.error.watch_not_found]
+other = "Überwachung {{.WatchID}} nicht gefunden"
+
+[lagotto.error.create_watch]
+other = "Überwachung erstellen: {{.Error}}"

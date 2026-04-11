@@ -143,6 +143,42 @@ func (s *Store) ListActiveWatches(ctx context.Context) ([]Watch, error) {
 	return watches, nil
 }
 
+// ExtendWatch updates the expiry time of a watch. If the watch was expired,
+// it also resets the status to active.
+func (s *Store) ExtendWatch(ctx context.Context, watchID string, newExpiry time.Time, reactivate bool) error {
+	expr := "SET expires_at = :exp, ttl_timestamp = :ttl, updated_at = :now"
+	values := map[string]types.AttributeValue{
+		":exp": &types.AttributeValueMemberS{Value: newExpiry.Format(time.RFC3339)},
+		":ttl": &types.AttributeValueMemberN{Value: fmt.Sprintf("%d", newExpiry.Unix())},
+		":now": &types.AttributeValueMemberS{Value: time.Now().UTC().Format(time.RFC3339)},
+	}
+	names := map[string]string{}
+
+	if reactivate {
+		expr += ", #st = :active"
+		values[":active"] = &types.AttributeValueMemberS{Value: string(StatusActive)}
+		names["#st"] = "status"
+	}
+
+	input := &dynamodb.UpdateItemInput{
+		TableName: &s.watchesTable,
+		Key: map[string]types.AttributeValue{
+			"watch_id": &types.AttributeValueMemberS{Value: watchID},
+		},
+		UpdateExpression:          aws.String(expr),
+		ExpressionAttributeValues: values,
+	}
+	if len(names) > 0 {
+		input.ExpressionAttributeNames = names
+	}
+
+	_, err := s.client.UpdateItem(ctx, input)
+	if err != nil {
+		return fmt.Errorf("extend watch: %w", err)
+	}
+	return nil
+}
+
 // UpdateWatchStatus atomically updates a watch's status.
 func (s *Store) UpdateWatchStatus(ctx context.Context, watchID string, status WatchStatus) error {
 	_, err := s.client.UpdateItem(ctx, &dynamodb.UpdateItemInput{

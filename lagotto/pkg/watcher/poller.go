@@ -17,6 +17,7 @@ type Poller struct {
 	store    *Store
 	notifier *Notifier // nil = skip notifications
 	spawner  *Spawner  // nil = skip auto-spawn
+	holder   *Holder   // nil = skip capacity reservations
 	verbose  bool
 }
 
@@ -24,6 +25,7 @@ type Poller struct {
 type PollerOpts struct {
 	Notifier *Notifier
 	Spawner  *Spawner
+	Holder   *Holder
 }
 
 // NewPoller creates a Poller backed by a truffle client and DynamoDB store.
@@ -36,6 +38,7 @@ func NewPoller(truffle *truffleaws.Client, store *Store, verbose bool, opts ...P
 	if len(opts) > 0 {
 		p.notifier = opts[0].Notifier
 		p.spawner = opts[0].Spawner
+		p.holder = opts[0].Holder
 	}
 	return p
 }
@@ -189,13 +192,27 @@ func (p *Poller) pollGroup(ctx context.Context, regions []string, pattern string
 					w.WatchID, bestMatch.InstanceType, bestMatch.Region, bestMatch.Price)
 			}
 
-			// Auto-spawn if configured (before notification so we can include instance ID)
-			if w.Action == ActionSpawn && p.spawner != nil {
-				if err := p.spawner.Spawn(ctx, w, bestMatch); err != nil {
-					fmt.Fprintf(os.Stderr, "Warning: auto-spawn failed for %s: %v\n", w.WatchID, err)
-					bestMatch.ActionTaken = "spawn_failed"
+			// Execute action (before notification so we can include result details)
+			switch w.Action {
+			case ActionSpawn:
+				if p.spawner != nil {
+					if err := p.spawner.Spawn(ctx, w, bestMatch); err != nil {
+						fmt.Fprintf(os.Stderr, "Warning: auto-spawn failed for %s: %v\n", w.WatchID, err)
+						bestMatch.ActionTaken = "spawn_failed"
+					}
+				} else {
+					bestMatch.ActionTaken = "notified"
 				}
-			} else {
+			case ActionHold:
+				if p.holder != nil {
+					if err := p.holder.Hold(ctx, w, bestMatch); err != nil {
+						fmt.Fprintf(os.Stderr, "Warning: hold failed for %s: %v\n", w.WatchID, err)
+						bestMatch.ActionTaken = "hold_failed"
+					}
+				} else {
+					bestMatch.ActionTaken = "notified"
+				}
+			default:
 				bestMatch.ActionTaken = "notified"
 			}
 

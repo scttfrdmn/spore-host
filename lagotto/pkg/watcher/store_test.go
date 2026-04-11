@@ -200,3 +200,40 @@ func TestUpdateLastPolled(t *testing.T) {
 
 	// Just verify no error — the timestamp is set server-side
 }
+
+func TestExtendWatch(t *testing.T) {
+	store := setupStore(t)
+	ctx := context.Background()
+
+	w := newTestWatch("w-extend", "arn:aws:iam::123456789012:user/test")
+	_ = store.PutWatch(ctx, w)
+
+	newExpiry := time.Now().UTC().Add(48 * time.Hour)
+	if err := store.ExtendWatch(ctx, "w-extend", newExpiry, false); err != nil {
+		t.Fatalf("ExtendWatch: %v", err)
+	}
+
+	got, _ := store.GetWatch(ctx, "w-extend")
+	if got.TTLTimestamp != newExpiry.Unix() {
+		t.Errorf("TTLTimestamp = %d, want %d", got.TTLTimestamp, newExpiry.Unix())
+	}
+}
+
+func TestExtendWatch_Reactivate(t *testing.T) {
+	store := setupStore(t)
+	ctx := context.Background()
+
+	w := newTestWatch("w-reactivate", "arn:aws:iam::123456789012:user/test")
+	w.Status = watcher.StatusExpired
+	_ = store.PutWatch(ctx, w)
+
+	newExpiry := time.Now().UTC().Add(24 * time.Hour)
+	if err := store.ExtendWatch(ctx, "w-reactivate", newExpiry, true); err != nil {
+		t.Fatalf("ExtendWatch reactivate: %v", err)
+	}
+
+	got, _ := store.GetWatch(ctx, "w-reactivate")
+	if got.Status != watcher.StatusActive {
+		t.Errorf("Status = %q, want active", got.Status)
+	}
+}

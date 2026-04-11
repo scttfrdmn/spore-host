@@ -45,7 +45,7 @@ func init() {
 	watchCmd.Flags().StringSliceVarP(&watchRegions, "regions", "r", nil, "Regions to watch (comma-separated; empty = all enabled)")
 	watchCmd.Flags().BoolVar(&watchSpot, "spot", false, "Watch for Spot capacity (default: On-Demand)")
 	watchCmd.Flags().Float64Var(&watchMaxPrice, "max-price", 0, "Maximum acceptable price per hour (0 = any)")
-	watchCmd.Flags().StringVar(&watchAction, "action", "notify", "Action on match: notify, spawn")
+	watchCmd.Flags().StringVar(&watchAction, "action", "notify", "Action on match: notify, spawn, hold")
 	watchCmd.Flags().StringVar(&watchTTL, "ttl", "24h", "How long to keep watching (e.g., 24h, 7d)")
 	watchCmd.Flags().StringSliceVar(&watchNotify, "notify", nil, "Notification channels (e.g., email:user@example.com, webhook:https://...)")
 	watchCmd.Flags().StringVar(&watchSpawnConfig, "spawn-config", "", "YAML file with spawn LaunchConfig (required for --action spawn)")
@@ -67,9 +67,9 @@ func runWatch(cmd *cobra.Command, args []string) error {
 	// Validate action
 	action := watcher.ActionMode(watchAction)
 	switch action {
-	case watcher.ActionNotify, watcher.ActionSpawn:
+	case watcher.ActionNotify, watcher.ActionSpawn, watcher.ActionHold:
 	default:
-		return fmt.Errorf("invalid action %q: must be notify or spawn", watchAction)
+		return fmt.Errorf("invalid action %q: must be notify, spawn, or hold", watchAction)
 	}
 
 	// Load spawn config if action is spawn
