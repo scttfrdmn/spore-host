@@ -143,6 +143,9 @@
                 <button onclick="switchDashboardTab('software')" id="tab-software" class="dashboard-tab" role="tab" aria-selected="false" aria-controls="software-tab-content" style="padding: 0.75rem 1.5rem; background: none; border: none; border-bottom: 3px solid transparent; color: var(--text-muted); cursor: pointer; font-size: 1rem; font-weight: 600; transition: all 0.2s;">
                     Software
                 </button>
+                <button onclick="switchDashboardTab('watches')" id="tab-watches" class="dashboard-tab" role="tab" aria-selected="false" aria-controls="watches-tab-content" style="padding: 0.75rem 1.5rem; background: none; border: none; border-bottom: 3px solid transparent; color: var(--text-muted); cursor: pointer; font-size: 1rem; font-weight: 600; transition: all 0.2s;">
+                    <span aria-hidden="true">&#x1F415;</span> Watches
+                </button>
             </div>
 
             <!-- Instances Tab Content -->
@@ -435,6 +438,49 @@
                 <p style="margin: 0 0 0.5rem; font-weight: 600;">Selected formation:</p>
                 <code id="strata-launch-flag" style="display: block; background: var(--bg-main); padding: 0.5rem 0.75rem; border-radius: 4px; font-size: 0.9rem; word-break: break-all;"></code>
                 <button onclick="copyStrataFlag()" style="margin-top: 0.75rem; padding: 0.4rem 1rem; background: var(--accent-blue); color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85rem;">Copy flag</button>
+            </div>
+        </section>
+
+        <!-- Watches Tab Content -->
+        <section id="watches-tab-content" class="dashboard-tab-content" role="tabpanel" aria-labelledby="tab-watches" style="display: none;">
+            <p class="dashboard-subtitle">Monitor capacity watches across regions</p>
+
+            <div id="watches-loading" style="color: var(--text-muted); font-size: 0.9rem;">Loading watches...</div>
+            <div id="watches-error" style="display: none; color: var(--accent-red); font-size: 0.9rem;"></div>
+
+            <table id="watches-table" class="dashboard-table" style="display: none; width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr>
+                        <th style="text-align: left; padding: 0.75rem;">Watch ID</th>
+                        <th style="text-align: left; padding: 0.75rem;">Pattern</th>
+                        <th style="text-align: left; padding: 0.75rem;">Regions</th>
+                        <th style="text-align: left; padding: 0.75rem;">Status</th>
+                        <th style="text-align: left; padding: 0.75rem;">Spot</th>
+                        <th style="text-align: left; padding: 0.75rem;">Action</th>
+                        <th style="text-align: left; padding: 0.75rem;">Matches</th>
+                        <th style="text-align: left; padding: 0.75rem;">Expires</th>
+                    </tr>
+                </thead>
+                <tbody id="watches-tbody">
+                    <tr><td colspan="8" style="text-align: center; padding: 2rem;">Loading watches...</td></tr>
+                </tbody>
+            </table>
+
+            <div id="watches-history-section" style="display: none; margin-top: 2rem;">
+                <h3 style="margin-bottom: 0.5rem;">Recent Matches</h3>
+                <table class="dashboard-table" style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr>
+                            <th style="text-align: left; padding: 0.75rem;">Instance Type</th>
+                            <th style="text-align: left; padding: 0.75rem;">Region</th>
+                            <th style="text-align: left; padding: 0.75rem;">AZ</th>
+                            <th style="text-align: left; padding: 0.75rem;">Price</th>
+                            <th style="text-align: left; padding: 0.75rem;">Action</th>
+                            <th style="text-align: left; padding: 0.75rem;">Matched At</th>
+                        </tr>
+                    </thead>
+                    <tbody id="watches-history-tbody"></tbody>
+                </table>
             </div>
         </section>
     </div>

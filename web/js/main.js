@@ -1217,7 +1217,7 @@ let sweepSortState = { column: null, direction: 'asc' };
 function switchDashboardTab(tab) {
     currentDashboardTab = tab;
 
-    const allTabs = ['instances', 'sweeps', 'autoscale', 'settings', 'software'];
+    const allTabs = ['instances', 'sweeps', 'autoscale', 'settings', 'software', 'watches'];
     allTabs.forEach(t => {
         const btn = document.getElementById(`tab-${t}`);
         const content = document.getElementById(`${t}-tab-content`);
@@ -1253,6 +1253,8 @@ function switchDashboardTab(tab) {
         loadAlertPreferences();
     } else if (tab === 'software') {
         loadStrataCatalog();
+    } else if (tab === 'watches') {
+        loadWatches();
     }
 }
 
@@ -1272,6 +1274,8 @@ async function refreshCurrentDashboardView() {
         }
         // Always refresh cost summary (not real-time)
         await loadCostSummary();
+    } else if (currentDashboardTab === 'watches') {
+        await loadWatches();
     }
 }
 
@@ -2872,6 +2876,117 @@ function copyStrataFlag() {
         const btn = document.querySelector('#strata-selection-banner button');
         if (btn) { btn.textContent = 'Copied!'; setTimeout(() => { btn.textContent = 'Copy flag'; }, 1500); }
     });
+}
+
+// =============================================================================
+// Lagotto Watches
+// =============================================================================
+
+let allWatchesCache = [];
+
+async function loadWatches() {
+    const tbody = document.getElementById('watches-tbody');
+    const loadingDiv = document.getElementById('watches-loading');
+    const errorDiv = document.getElementById('watches-error');
+    const table = document.getElementById('watches-table');
+
+    try {
+        if (loadingDiv) loadingDiv.style.display = 'block';
+        if (errorDiv) errorDiv.style.display = 'none';
+        if (table) table.style.display = 'none';
+
+        const response = await fetch('https://api.spore.host/api/watches', {
+            method: 'GET',
+            headers: getAPIHeaders(),
+            credentials: 'include'
+        });
+        if (!response.ok) throw new Error(`API returned ${response.status}`);
+        const data = await response.json();
+
+        if (loadingDiv) loadingDiv.style.display = 'none';
+
+        if (data.success && data.watches && data.watches.length > 0) {
+            allWatchesCache = data.watches;
+            renderWatchesTable(data.watches);
+            if (table) table.style.display = 'table';
+        } else {
+            allWatchesCache = [];
+            if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:2rem; color:var(--text-muted);">No watches found. Create one with <code>lagotto watch</code></td></tr>';
+            if (table) table.style.display = 'table';
+        }
+
+        loadWatchHistory();
+    } catch (error) {
+        if (loadingDiv) loadingDiv.style.display = 'none';
+        if (errorDiv) {
+            errorDiv.style.display = 'block';
+            errorDiv.innerHTML = '<strong>Error:</strong> ' + escapeHtml(error.message);
+        }
+    }
+}
+
+function renderWatchesTable(watches) {
+    const tbody = document.getElementById('watches-tbody');
+    if (!tbody) return;
+
+    tbody.innerHTML = watches.map(function(w) {
+        var statusColors = {
+            active: 'var(--accent-blue)',
+            matched: '#22c55e',
+            expired: 'var(--text-muted)',
+            cancelled: '#ef4444'
+        };
+        var statusColor = statusColors[w.status] || 'var(--text-muted)';
+        var regions = (w.regions && w.regions.length > 0) ? w.regions.join(', ') : 'all';
+        var expires = w.expires_at ? new Date(w.expires_at).toLocaleString() : '-';
+
+        return '<tr style="border-bottom: 1px solid var(--border);">' +
+            '<td style="padding: 0.75rem;"><code>' + escapeHtml(w.watch_id) + '</code></td>' +
+            '<td style="padding: 0.75rem; font-weight: 500;">' + escapeHtml(w.instance_type_pattern) + '</td>' +
+            '<td style="padding: 0.75rem; font-size: 0.9rem;">' + escapeHtml(regions) + '</td>' +
+            '<td style="padding: 0.75rem;"><span style="color: ' + statusColor + '; font-weight: 600;">' + escapeHtml(w.status) + '</span></td>' +
+            '<td style="padding: 0.75rem;">' + (w.spot ? 'Yes' : 'No') + '</td>' +
+            '<td style="padding: 0.75rem;">' + escapeHtml(w.action) + '</td>' +
+            '<td style="padding: 0.75rem;">' + (w.match_count || 0) + '</td>' +
+            '<td style="padding: 0.75rem; font-size: 0.85rem;">' + expires + '</td>' +
+            '</tr>';
+    }).join('');
+}
+
+async function loadWatchHistory() {
+    const tbody = document.getElementById('watches-history-tbody');
+    const section = document.getElementById('watches-history-section');
+    if (!tbody || !section) return;
+
+    try {
+        const response = await fetch('https://api.spore.host/api/watches/history', {
+            method: 'GET',
+            headers: getAPIHeaders(),
+            credentials: 'include'
+        });
+        if (!response.ok) return;
+        const data = await response.json();
+
+        if (data.success && data.matches && data.matches.length > 0) {
+            section.style.display = 'block';
+            tbody.innerHTML = data.matches.map(function(m) {
+                var matchedAt = m.matched_at ? new Date(m.matched_at).toLocaleString() : '-';
+                var price = m.price ? '$' + m.price.toFixed(4) + '/hr' : '-';
+                return '<tr style="border-bottom: 1px solid var(--border);">' +
+                    '<td style="padding: 0.75rem;"><code>' + escapeHtml(m.instance_type) + '</code></td>' +
+                    '<td style="padding: 0.75rem;">' + escapeHtml(m.region) + '</td>' +
+                    '<td style="padding: 0.75rem;">' + escapeHtml(m.availability_zone) + '</td>' +
+                    '<td style="padding: 0.75rem;">' + price + '</td>' +
+                    '<td style="padding: 0.75rem;">' + escapeHtml(m.action_taken) + '</td>' +
+                    '<td style="padding: 0.75rem; font-size: 0.85rem;">' + matchedAt + '</td>' +
+                    '</tr>';
+            }).join('');
+        } else {
+            section.style.display = 'none';
+        }
+    } catch (error) {
+        console.error('Failed to load watch history:', error);
+    }
 }
 
 // Export for use in other scripts
