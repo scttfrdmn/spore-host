@@ -1,0 +1,246 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: 'Lagotto capacity watcher - DynamoDB, SNS, Lambda, EventBridge'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: production
+    AllowedValues:
+      - production
+      - staging
+      - development
+    Description: Environment name for resource tagging
+
+  LambdaCodeBucket:
+    Type: String
+    Default: ''
+    Description: S3 bucket containing Lambda code (leave empty to skip Lambda deployment)
+
+  LambdaCodeKey:
+    Type: String
+    Default: ''
+    Description: S3 key for Lambda zip file
+
+Conditions:
+  DeployLambda: !Not [!Equals [!Ref LambdaCodeBucket, '']]
+
+Resources:
+  # DynamoDB Tables
+
+  LagottoWatchesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: lagotto-watches
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: watch_id
+          AttributeType: S
+        - AttributeName: user_id
+          AttributeType: S
+        - AttributeName: status
+          AttributeType: S
+      KeySchema:
+        - AttributeName: watch_id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: user_id-index
+          KeySchema:
+            - AttributeName: user_id
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+        - IndexName: status-index
+          KeySchema:
+            - AttributeName: status
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+      TimeToLiveSpecification:
+        AttributeName: ttl_timestamp
+        Enabled: true
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Application
+          Value: lagotto
+        - Key: Component
+          Value: watches
+
+  LagottoMatchHistoryTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: lagotto-match-history
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: watch_id
+          AttributeType: S
+        - AttributeName: matched_at
+          AttributeType: S
+        - AttributeName: user_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: watch_id
+          KeyType: HASH
+        - AttributeName: matched_at
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: user_id-index
+          KeySchema:
+            - AttributeName: user_id
+              KeyType: HASH
+            - AttributeName: matched_at
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      TimeToLiveSpecification:
+        AttributeName: ttl_timestamp
+        Enabled: true
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Application
+          Value: lagotto
+        - Key: Component
+          Value: match-history
+
+  # SNS Topic
+
+  LagottoCapacityAlertsTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: lagotto-capacity-alerts
+      DisplayName: Lagotto Capacity Alerts
+      KmsMasterKeyId: alias/aws/sns
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Application
+          Value: lagotto
+        - Key: Component
+          Value: alerts
+
+  # Lambda Function (conditional)
+
+  CapacityPollerFunction:
+    Type: AWS::Serverless::Function
+    Condition: DeployLambda
+    Properties:
+      FunctionName: lagotto-capacity-poller
+      Runtime: provided.al2023
+      Architectures:
+        - arm64
+      Handler: bootstrap
+      Timeout: 900
+      MemorySize: 512
+      CodeUri:
+        Bucket: !Ref LambdaCodeBucket
+        Key: !Ref LambdaCodeKey
+      Environment:
+        Variables:
+          WATCHES_TABLE: !Ref LagottoWatchesTable
+          HISTORY_TABLE: !Ref LagottoMatchHistoryTable
+          SNS_TOPIC_ARN: !Ref LagottoCapacityAlertsTopic
+          SCHEDULE_NAME: lagotto-capacity-poller
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref LagottoWatchesTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref LagottoMatchHistoryTable
+        - SNSPublishMessagePolicy:
+            TopicArn: !Ref LagottoCapacityAlertsTopic
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ec2:DescribeInstanceTypes
+                - ec2:DescribeInstanceTypeOfferings
+                - ec2:DescribeSpotPriceHistory
+                - ec2:DescribeRegions
+              Resource: '*'
+            - Effect: Allow
+              Action:
+                - scheduler:UpdateSchedule
+                - scheduler:GetSchedule
+              Resource: !Sub 'arn:aws:scheduler:${AWS::Region}:${AWS::AccountId}:schedule/default/lagotto-capacity-poller'
+      Tags:
+        Environment: !Ref Environment
+        Application: lagotto
+        Component: capacity-poller
+
+  # EventBridge Schedule — starts DISABLED; CLI enables on first watch
+
+  CapacityPollerSchedule:
+    Type: AWS::Scheduler::Schedule
+    Condition: DeployLambda
+    Properties:
+      Name: lagotto-capacity-poller
+      Description: Polls for EC2 capacity matching active lagotto watches
+      ScheduleExpression: rate(5 minutes)
+      FlexibleTimeWindow:
+        Mode: 'OFF'
+      Target:
+        Arn: !GetAtt CapacityPollerFunction.Arn
+        RoleArn: !GetAtt SchedulerInvokeRole.Arn
+      State: DISABLED
+
+  SchedulerInvokeRole:
+    Type: AWS::IAM::Role
+    Condition: DeployLambda
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: scheduler.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: InvokeLambda
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: lambda:InvokeFunction
+                Resource: !GetAtt CapacityPollerFunction.Arn
+
+Outputs:
+  WatchesTableName:
+    Description: Name of the watches table
+    Value: !Ref LagottoWatchesTable
+    Export:
+      Name: !Sub '${AWS::StackName}-watches-table'
+
+  WatchesTableArn:
+    Description: ARN of the watches table
+    Value: !GetAtt LagottoWatchesTable.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-watches-table-arn'
+
+  MatchHistoryTableName:
+    Description: Name of the match history table
+    Value: !Ref LagottoMatchHistoryTable
+    Export:
+      Name: !Sub '${AWS::StackName}-match-history-table'
+
+  MatchHistoryTableArn:
+    Description: ARN of the match history table
+    Value: !GetAtt LagottoMatchHistoryTable.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-match-history-table-arn'
+
+  CapacityAlertsTopicArn:
+    Description: ARN of the capacity alerts SNS topic
+    Value: !Ref LagottoCapacityAlertsTopic
+    Export:
+      Name: !Sub '${AWS::StackName}-capacity-alerts-topic'
+
+  CapacityPollerFunctionArn:
+    Condition: DeployLambda
+    Description: ARN of the capacity poller Lambda
+    Value: !GetAtt CapacityPollerFunction.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-capacity-poller-function'

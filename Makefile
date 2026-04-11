@@ -1,32 +1,36 @@
 # Makefile for spore-host suite
-.PHONY: all build build-all clean install test test-i18n test-coverage test-coverage-report vuln scan-fs sast security help
+.PHONY: all build build-all clean install test test-i18n test-coverage test-coverage-report vuln scan-fs sast security help lagotto
 
 # Build for current platform
 build:
 	@echo "Building spore-host suite..."
 	@cd truffle && $(MAKE) build
 	@cd spawn && $(MAKE) build
+	@cd lagotto && $(MAKE) build
 	@echo "✅ Build complete!"
 	@echo ""
 	@echo "Binaries:"
 	@echo "  truffle/bin/truffle"
 	@echo "  spawn/bin/spawn"
 	@echo "  spawn/bin/spawnd"
+	@echo "  lagotto/bin/lagotto"
 
 # Build for all platforms
 build-all:
 	@echo "Building spore-host suite for all platforms..."
 	@cd truffle && $(MAKE) build-all
 	@cd spawn && $(MAKE) build-all
+	@cd lagotto && $(MAKE) build-all
 	@echo "✅ Build complete for all platforms!"
 	@echo ""
-	@echo "See truffle/bin/ and spawn/bin/ for binaries"
+	@echo "See truffle/bin/, spawn/bin/, and lagotto/bin/ for binaries"
 
 # Clean build artifacts
 clean:
 	@echo "Cleaning build artifacts..."
 	@cd truffle && $(MAKE) clean
 	@cd spawn && $(MAKE) clean
+	@cd lagotto && $(MAKE) clean
 	@echo "✅ Clean complete"
 
 # Install locally (requires sudo)
@@ -42,6 +46,7 @@ test:
 	@cd pkg/i18n && go test .
 	@cd truffle && go test ./...
 	@cd spawn && go test ./...
+	@cd lagotto && go test ./...
 	@echo "✅ Tests passed"
 
 # Run i18n validation tests
@@ -101,6 +106,7 @@ vuln:
 	@govulncheck ./...
 	@cd spawn && govulncheck ./...
 	@cd truffle && govulncheck ./...
+	@cd lagotto && govulncheck ./...
 	@cd pkg/i18n && govulncheck ./...
 	@cd pkg/pricing && govulncheck ./...
 	@echo "✅ No known vulnerabilities found"

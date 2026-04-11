@@ -45,6 +45,25 @@ builds:
       - -X github.com/scttfrdmn/spore-host/spawn/cmd.Version={{.Version}}
     mod_timestamp: '{{ .CommitTimestamp }}'
 
+  # lagotto - EC2 capacity watcher
+  - id: lagotto
+    dir: lagotto
+    main: .
+    binary: lagotto
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X github.com/scttfrdmn/spore-host/lagotto/cmd.Version={{.Version}}
+    mod_timestamp: '{{ .CommitTimestamp }}'
+
   # spored - Daemon (Linux only)
   - id: spored
     dir: spawn
@@ -75,6 +94,13 @@ archives:
     ids:
       - spawn
     name_template: 'spawn_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
+    files:
+      - LICENSE*
+
+  - id: lagotto-archive
+    ids:
+      - lagotto
+    name_template: 'lagotto_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
     files:
       - LICENSE*
 
@@ -158,6 +184,26 @@ nfpms:
     rpm:
       summary: "Launch ephemeral AWS EC2 instances effortlessly"
 
+  - id: lagotto-pkg
+    package_name: lagotto
+    ids:
+      - lagotto
+    vendor: spore.host
+    homepage: https://spore.host
+    maintainer: "spore.host <hello@spore.host>"
+    description: "Watch for EC2 instance capacity across regions"
+    license: Apache-2.0
+    formats:
+      - deb
+      - rpm
+    file_name_template: "{{ .PackageName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    contents:
+      - src: LICENSE
+        dst: /usr/share/doc/lagotto/copyright
+        type: doc
+    rpm:
+      summary: "Watch for EC2 instance capacity across regions"
+
   - id: spored-pkg
     package_name: spored
     ids:
@@ -217,6 +263,26 @@ brews:
     install: |
       bin.install "spawn"
 
+  - name: lagotto
+    ids:
+      - lagotto-archive
+    repository:
+      owner: scttfrdmn
+      name: homebrew-tap
+      branch: main
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    directory: Formula
+    homepage: https://github.com/scttfrdmn/spore-host
+    description: "Watch for EC2 instance capacity across regions"
+    license: Apache-2.0
+    dependencies:
+      - name: scttfrdmn/tap/truffle
+        type: runtime
+    test: |
+      system "#{bin}/lagotto", "version"
+    install: |
+      bin.install "lagotto"
+
 # Scoop Bucket
 scoops:
   - name: truffle
@@ -243,6 +309,21 @@ scoops:
     directory: bucket
     homepage: https://github.com/scttfrdmn/spore-host
     description: "Launch ephemeral AWS EC2 instances effortlessly"
+    license: Apache-2.0
+    depends:
+      - scttfrdmn/truffle
+
+  - name: lagotto
+    ids:
+      - lagotto-archive
+    repository:
+      owner: scttfrdmn
+      name: scoop-bucket
+      branch: main
+      token: "{{ .Env.SCOOP_BUCKET_GITHUB_TOKEN }}"
+    directory: bucket
+    homepage: https://github.com/scttfrdmn/spore-host
+    description: "Watch for EC2 instance capacity across regions"
     license: Apache-2.0
     depends:
       - scttfrdmn/truffle

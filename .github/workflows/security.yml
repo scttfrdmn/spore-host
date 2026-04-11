@@ -35,6 +35,9 @@ jobs:
       - name: govulncheck - truffle
         run: cd truffle && govulncheck ./...
 
+      - name: govulncheck - lagotto
+        run: cd lagotto && govulncheck ./...
+
       - name: govulncheck - pkg/i18n
         run: cd pkg/i18n && govulncheck ./...
 
