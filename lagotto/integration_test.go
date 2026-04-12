@@ -47,13 +47,15 @@ func TestIntegration_WatchLifecycle(t *testing.T) {
 	watchID := "w-integ-" + uuid.New().String()[:6]
 	now := time.Now().UTC()
 
-	// Create a watch for t3.micro (always available)
+	// Create a watch for g7e.xlarge (NVIDIA L40S GPU — scarce, realistic test case).
+	// Not finding matches is a valid outcome; the test validates the poll *ran*,
+	// not that capacity existed. Use multiple regions to exercise the deduping logic.
 	w := &watcher.Watch{
 		WatchID:             watchID,
 		UserID:              "integration-test",
 		Status:              watcher.StatusActive,
-		InstanceTypePattern: "t3.micro",
-		Regions:             []string{"us-east-1"},
+		InstanceTypePattern: "g7e.xlarge",
+		Regions:             []string{"us-east-1", "us-east-2", "us-west-2"},
 		Spot:                false,
 		Action:              watcher.ActionNotify,
 		CreatedAt:           now,
@@ -94,8 +96,9 @@ func TestIntegration_WatchLifecycle(t *testing.T) {
 	if err != nil {
 		t.Fatalf("PollWatch: %v", err)
 	}
+	// g7e.xlarge may or may not be available — both outcomes are valid for this test.
 	if len(matches) == 0 {
-		t.Log("Warning: no matches for t3.micro in us-east-1 (expected to match)")
+		t.Log("No g7e.xlarge capacity found (valid outcome for scarce instance)")
 	} else {
 		t.Logf("Match found: %s in %s at $%.4f/hr", matches[0].InstanceType, matches[0].Region, matches[0].Price)
 	}
@@ -121,7 +124,7 @@ func TestIntegration_ExtendWatch(t *testing.T) {
 		WatchID:             watchID,
 		UserID:              "integration-test",
 		Status:              watcher.StatusActive,
-		InstanceTypePattern: "t3.micro",
+		InstanceTypePattern: "g7e.xlarge",
 		Regions:             []string{"us-east-1"},
 		Action:              watcher.ActionNotify,
 		CreatedAt:           now,
