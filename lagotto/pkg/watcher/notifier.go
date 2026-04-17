@@ -42,7 +42,13 @@ func (n *Notifier) Notify(ctx context.Context, w *Watch, m *MatchResult) error {
 		case "email":
 			err = n.sendEmail(ctx, ch.Target, w, m)
 		case "webhook":
-			err = n.sendWebhook(ctx, ch.Target, w, m)
+			// Defense-in-depth: re-validate at send time to catch watches created
+			// before the URL validation fix was deployed.
+			if verr := ValidateWebhookURL(ch.Target); verr != nil {
+				err = fmt.Errorf("blocked unsafe webhook URL: %w", verr)
+			} else {
+				err = n.sendWebhook(ctx, ch.Target, w, m)
+			}
 		case "sns":
 			err = n.sendSNS(ctx, ch.Target, w, m)
 		default:

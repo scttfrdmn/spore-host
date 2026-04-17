@@ -35,24 +35,27 @@ class DashboardWebSocket {
             this.isConnecting = true;
             this.updateConnectionStatus('connecting');
 
-            // Get credentials
-            const credentials = AWS.config.credentials;
-            if (!credentials.accessKeyId || !credentials.secretAccessKey) {
-                throw new Error('Invalid AWS credentials');
+            // Exchange credentials for a short-lived opaque ticket.
+            // Credentials are sent via request headers (never in the URL),
+            // keeping them out of API Gateway logs, browser history, and CDN logs.
+            const ticketResp = await fetch('https://api.spore.host/api/ws-token', {
+                method: 'POST',
+                headers: getAPIHeaders(),
+                credentials: 'include'
+            });
+            if (!ticketResp.ok) {
+                throw new Error(`Failed to get connection ticket: ${ticketResp.status}`);
             }
-
-            // Construct auth token
-            const token = btoa(JSON.stringify({
-                accessKeyId: credentials.accessKeyId,
-                secretAccessKey: credentials.secretAccessKey,
-                sessionToken: credentials.sessionToken || ''
-            }));
+            const { ticket } = await ticketResp.json();
+            if (!ticket) {
+                throw new Error('No ticket returned from server');
+            }
 
             // WebSocket API Gateway endpoint
             this.wsEndpoint = 'wss://ir832sgfz2.execute-api.us-east-1.amazonaws.com/production';
 
-            // Connect to WebSocket
-            const url = `${this.wsEndpoint}?token=${encodeURIComponent(token)}`;
+            // Connect with opaque ticket only — no credentials in the URL
+            const url = `${this.wsEndpoint}?ticket=${encodeURIComponent(ticket)}`;
             console.log('WebSocket: Connecting to', this.wsEndpoint);
 
             this.ws = new WebSocket(url);

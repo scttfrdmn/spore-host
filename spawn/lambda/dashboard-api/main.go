@@ -206,6 +206,9 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	case path == "/api/user/profile" && method == "GET":
 		return handleGetUserProfile(ctx, cfg, userID, cliIamArn, accountBase36)
 
+	case path == "/api/ws-token" && method == "POST":
+		return handleGetWSToken(ctx, cfg, cliIamArn)
+
 	case path == "/api/watches" && method == "GET":
 		return handleListWatches(ctx, cfg, cliIamArn)
 

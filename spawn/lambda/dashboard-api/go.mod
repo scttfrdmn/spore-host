@@ -12,6 +12,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ec2 v1.294.0
 	github.com/aws/aws-sdk-go-v2/service/sqs v1.42.21
 	github.com/aws/aws-sdk-go-v2/service/sts v1.41.8
+	github.com/google/uuid v1.6.0
 	github.com/scttfrdmn/strata v0.22.0
 )
 

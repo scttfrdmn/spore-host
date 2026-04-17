@@ -2,9 +2,8 @@ package main
 
 import (
 	"context"
-	"encoding/base64"
-	"encoding/json"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -14,7 +13,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
-	"github.com/aws/aws-sdk-go-v2/service/sts"
 )
 
 const (
@@ -30,11 +28,11 @@ type Connection struct {
 	TTL          int64     `dynamodbav:"ttl"`
 }
 
-// AWSCredentials represents the credentials passed via query string
-type AWSCredentials struct {
-	AccessKeyID     string `json:"accessKeyId"`
-	SecretAccessKey string `json:"secretAccessKey"`
-	SessionToken    string `json:"sessionToken"`
+// wsTicket mirrors the ticket stored by dashboard-api's handleGetWSToken.
+type wsTicket struct {
+	TicketID string `dynamodbav:"ticket_id"`
+	UserARN  string `dynamodbav:"user_arn"`
+	TTL      int64  `dynamodbav:"ttl"`
 }
 
 // handler is the main Lambda handler for WebSocket events
@@ -60,30 +58,19 @@ func handler(ctx context.Context, request events.APIGatewayWebsocketProxyRequest
 	}
 }
 
-// handleConnect handles WebSocket connection establishment
+// handleConnect handles WebSocket connection establishment using a short-lived opaque ticket.
+// The client obtains a ticket from POST /api/ws-token (dashboard-api) and passes it as
+// ?ticket= in the WebSocket URL. This keeps AWS credentials out of URLs and server logs.
 func handleConnect(ctx context.Context, cfg aws.Config, dynamoClient *dynamodb.Client, request events.APIGatewayWebsocketProxyRequest) (events.APIGatewayProxyResponse, error) {
-	// Extract token from query string
-	tokenParam, ok := request.QueryStringParameters["token"]
-	if !ok || tokenParam == "" {
-		return errorResponse(401, "Missing authentication token"), nil
+	ticketParam, ok := request.QueryStringParameters["ticket"]
+	if !ok || ticketParam == "" {
+		return errorResponse(401, "Missing connection ticket"), nil
 	}
 
-	// Decode base64 token
-	tokenJSON, err := base64.StdEncoding.DecodeString(tokenParam)
+	// Redeem the ticket: single-use, 30-second TTL
+	userID, err := redeemWSTicket(ctx, cfg, ticketParam)
 	if err != nil {
-		return errorResponse(401, "Invalid token format"), nil
-	}
-
-	// Parse credentials
-	var creds AWSCredentials
-	if err := json.Unmarshal(tokenJSON, &creds); err != nil {
-		return errorResponse(401, "Invalid token structure"), nil
-	}
-
-	// Validate credentials using STS
-	userID, err := validateCredentials(ctx, creds)
-	if err != nil {
-		return errorResponse(401, fmt.Sprintf("Authentication failed: %v", err)), nil
+		return errorResponse(401, fmt.Sprintf("Invalid or expired ticket: %v", err)), nil
 	}
 
 	// Save connection to DynamoDB
@@ -151,36 +138,42 @@ func handleMessage(ctx context.Context, dynamoClient *dynamodb.Client, request e
 	}, nil
 }
 
-// validateCredentials validates AWS credentials using STS and returns the IAM user ARN
-func validateCredentials(ctx context.Context, creds AWSCredentials) (string, error) {
-	// Create a custom config with the provided credentials
-	cfg, err := config.LoadDefaultConfig(ctx,
-		config.WithCredentialsProvider(aws.CredentialsProviderFunc(func(ctx context.Context) (aws.Credentials, error) {
-			return aws.Credentials{
-				AccessKeyID:     creds.AccessKeyID,
-				SecretAccessKey: creds.SecretAccessKey,
-				SessionToken:    creds.SessionToken,
-			}, nil
-		})),
-	)
+// redeemWSTicket atomically deletes a ticket from DynamoDB and returns the user ARN.
+// Tickets are single-use and expire after 30 seconds.
+func redeemWSTicket(ctx context.Context, cfg aws.Config, ticketID string) (string, error) {
+	client := dynamodb.NewFromConfig(cfg)
+	tableName := os.Getenv("SPAWN_WS_TICKETS_TABLE")
+	if tableName == "" {
+		tableName = "spawn-ws-tickets"
+	}
+
+	// DeleteItem with ReturnValues=ALL_OLD is atomic — if two connections race,
+	// only the first delete succeeds; the second gets nil Attributes.
+	result, err := client.DeleteItem(ctx, &dynamodb.DeleteItemInput{
+		TableName: aws.String(tableName),
+		Key: map[string]types.AttributeValue{
+			"ticket_id": &types.AttributeValueMemberS{Value: ticketID},
+		},
+		ReturnValues: types.ReturnValueAllOld,
+	})
 	if err != nil {
-		return "", fmt.Errorf("failed to create config: %w", err)
+		return "", fmt.Errorf("redeem ticket: %w", err)
+	}
+	if result.Attributes == nil {
+		return "", fmt.Errorf("ticket not found or already used")
 	}
 
-	// Call STS GetCallerIdentity to validate credentials
-	stsClient := sts.NewFromConfig(cfg)
-	identity, err := stsClient.GetCallerIdentity(ctx, &sts.GetCallerIdentityInput{})
-	if err != nil {
-		return "", fmt.Errorf("invalid credentials: %w", err)
+	var ticket wsTicket
+	if err := attributevalue.UnmarshalMap(result.Attributes, &ticket); err != nil {
+		return "", fmt.Errorf("unmarshal ticket: %w", err)
 	}
 
-	if identity.Arn == nil {
-		return "", fmt.Errorf("ARN not returned by STS")
+	// DynamoDB TTL deletion is eventual; enforce expiry explicitly
+	if time.Now().Unix() > ticket.TTL {
+		return "", fmt.Errorf("ticket expired")
 	}
 
-	// Extract user ARN (format: arn:aws:sts::123456789012:assumed-role/role-name/user-name)
-	userARN := *identity.Arn
-	return userARN, nil
+	return ticket.UserARN, nil
 }
 
 // errorResponse creates an error response

@@ -224,7 +224,11 @@ func parseNotifyChannels(raw []string) ([]watcher.NotifyChannel, error) {
 		}
 		ch := watcher.NotifyChannel{Type: parts[0], Target: parts[1]}
 		switch ch.Type {
-		case "email", "webhook", "sns":
+		case "email", "sns":
+		case "webhook":
+			if err := watcher.ValidateWebhookURL(ch.Target); err != nil {
+				return nil, fmt.Errorf("invalid webhook URL: %w", err)
+			}
 		default:
 			return nil, fmt.Errorf("invalid notify type %q: must be email, webhook, or sns", ch.Type)
 		}
