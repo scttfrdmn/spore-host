@@ -8,6 +8,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.28.6
 	github.com/aws/aws-sdk-go-v2/service/ec2 v1.191.0
 	github.com/aws/aws-sdk-go-v2/service/route53 v1.46.4
+	github.com/fullsailor/pkcs7 v0.0.0-20190404230743-d7302db945fa
 )
 
 require (

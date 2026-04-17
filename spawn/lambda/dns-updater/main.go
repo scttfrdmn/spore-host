@@ -153,8 +153,11 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		return errorResponse(400, "Instance identity document missing required fields")
 	}
 
-	// TODO: Verify instance identity signature
-	// For now, we rely on instance validation via AWS API
+	// Verify the cryptographic signature on the identity document.
+	// This is the primary security control for cross-account requests.
+	if err := verifyInstanceIdentitySignature(identityDocBytes, req.InstanceIdentitySignature); err != nil {
+		return errorResponse(403, fmt.Sprintf("Instance identity signature verification failed: %v", err))
+	}
 
 	// Validate instance
 	if err := validateInstance(ctx, identityDoc.InstanceID, identityDoc.Region, req.IPAddress, req.Action); err != nil {
@@ -225,13 +228,12 @@ func validateInstance(ctx context.Context, instanceID, region, ipAddress, action
 	})
 
 	if err != nil {
-		// Cross-account case: Can't describe instance in another account
-		// This is OK for open source - we rely on instance identity signature
-		// For now, just validate that the instance ID format is correct
-		if action == "UPSERT" && ipAddress == "" {
-			return fmt.Errorf("IP address required for UPSERT")
-		}
-		// Allow the request to proceed - signature validation is the primary security
+		// Cross-account instance: EC2 API unavailable for this account.
+		// Signature verification (performed before this call) is the security control.
+		// Log for observability but allow the request — the caller proved instance ownership
+		// by providing a valid AWS-signed identity document.
+		fmt.Printf("cross-account instance %s in %s: EC2 describe unavailable (%v), proceeding on verified signature\n",
+			instanceID, region, err)
 		return nil
 	}
 
