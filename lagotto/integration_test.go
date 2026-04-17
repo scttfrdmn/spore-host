@@ -47,7 +47,7 @@ func TestIntegration_WatchLifecycle(t *testing.T) {
 	watchID := "w-integ-" + uuid.New().String()[:6]
 	now := time.Now().UTC()
 
-	// Create a watch for g7e.xlarge (NVIDIA L40S GPU — scarce, realistic test case).
+	// Create a watch for g7e.xlarge (NVIDIA RTX Pro 6000 Blackwell, 96GB — scarce, realistic test case).
 	// Not finding matches is a valid outcome; the test validates the poll *ran*,
 	// not that capacity existed. Use multiple regions to exercise the deduping logic.
 	w := &watcher.Watch{
